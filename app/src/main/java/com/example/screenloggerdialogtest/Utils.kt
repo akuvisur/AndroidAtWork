@@ -7,6 +7,7 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.Toast
 
 const val STUDY_STATE_SHAREDPREFS : String = "STUDY_STATE_SHAREDPREFS"
 const val CONSENT_GIVEN : String = "CONSENT_GIVEN"
@@ -24,15 +25,15 @@ const val STUDY_STATE : String = "STUDY_STATE"
     8 = Study complete
 
  */
-val STUDY_STATE_FIRST_LAUNCH = 0
-val STUDY_STATE_CONSENT_GIVEN = 1
-val STUDY_STATE_BASELINE_ONGOING = 2
-val STUDY_STATE_POST_BASELINE = 3
-val STUDY_STATE_INT1 = 4
-val STUDY_STATE_POST_INT1 = 5
-val STUDY_STATE_INT2 = 6
-val STUDY_STATE_POST_INT2_SURVEY_REQUIRED = 7
-val STUDY_STATE_COMPLETE = 8
+const val STUDY_STATE_FIRST_LAUNCH = 0
+const val STUDY_STATE_CONSENT_GIVEN = 1
+const val STUDY_STATE_BASELINE_ONGOING = 2
+const val STUDY_STATE_POST_BASELINE = 3
+const val STUDY_STATE_INT1 = 4
+const val STUDY_STATE_POST_INT1 = 5
+const val STUDY_STATE_INT2 = 6
+const val STUDY_STATE_POST_INT2_SURVEY_REQUIRED = 7
+const val STUDY_STATE_COMPLETE = 8
 
 fun setStudyState(c : Context?, state : Int) {
     var sharedPrefs = c?.getSharedPreferences(STUDY_STATE_SHAREDPREFS, Context.MODE_PRIVATE)
@@ -41,6 +42,7 @@ fun setStudyState(c : Context?, state : Int) {
         editor.putInt(STUDY_STATE, state)
         editor.apply()
     }
+    if (c != null) Toast.makeText(c, "Study state changed to $state", Toast.LENGTH_SHORT).show()
 }
 
 fun getStudyState(c : Context?): Int {

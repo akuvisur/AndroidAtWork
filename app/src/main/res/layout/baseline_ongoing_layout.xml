@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp">
+
+    <!-- TextView for Current Phase -->
+    <TextView
+        android:id="@+id/currentPhaseText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="BASELINE"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:textColor="@color/teal_600"
+        android:layout_gravity="center_horizontal"
+        android:paddingBottom="24dp" />
+
+    <!-- Slider for Baseline Day -->
+    <com.google.android.material.slider.Slider
+        android:id="@+id/studyPhaseSlider"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:valueFrom="1"
+        android:valueTo="14"
+        android:stepSize="1"
+        android:value="1"
+        app:labelBehavior="floating"
+        android:layout_marginTop="16dp"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        app:trackColor="@color/teal_200"
+        app:trackColorActive="@color/teal_200"
+        app:tickColorInactive="@color/teal_600"
+        app:tickRadiusInactive="5sp"
+        app:thumbColor="@color/teal_800"
+        android:enabled="false"
+        android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
+
+    <!-- TextView for Notes/Instructions at the Bottom -->
+    <TextView
+        android:id="@+id/bottomText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="* Please complete 14 days of baseline measurements."
+        android:textSize="14sp"
+        android:textStyle="italic"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="24dp" />
+</LinearLayout>

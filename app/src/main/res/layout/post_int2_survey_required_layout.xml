@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp"
+    android:background="@color/deep_purple_50">
+
+    <TextView
+        android:id="@+id/data_collection_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DATA COLLECTION PERIOD IS NOW OVER"
+        android:textSize="24sp"
+        android:textColor="@color/deep_purple_900"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:id="@+id/survey_prompt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Please complete the exit survey. It has questions about the intervention mechanisms."
+        android:textSize="18sp"
+        android:textColor="@color/deep_purple_700" />
+
+    <Button
+        android:id="@+id/postStudyExitSurveyButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="EXIT SURVEY"
+        android:textSize="16sp"
+        android:textColor="@color/deep_purple_50"
+        android:backgroundTint="@color/deep_purple_500"
+        android:layout_marginBottom="16dp"
+        />
+
+    <TextView
+        android:id="@+id/spai_questionnaire_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Please also fill the Smartphone Addiction Survey (SPAI) again. It is done to underestand if the intervention influenced your reliance on your smartphone."
+        android:textSize="16sp"
+        android:textColor="@color/deep_purple_600"
+        />
+
+
+
+    <Button
+        android:id="@+id/postStudySpaiButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Smartphone Addiction Survey (SPAI)"
+        android:backgroundTint="@color/deep_purple_500"
+        android:textColor="@color/deep_purple_50"
+        android:layout_marginBottom="32dp"/>
+
+    <Button
+        android:id="@+id/completeStudyButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="COMPLETE STUDY"
+        android:textColor="@android:color/white"
+        android:backgroundTint="@color/deep_purple_500"
+        android:padding="16dp"/>
+
+</LinearLayout>

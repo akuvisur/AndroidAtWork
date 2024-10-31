@@ -1,6 +1,7 @@
 package com.example.screenloggerdialogtest
 
 import android.annotation.SuppressLint
+import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -12,7 +13,11 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.EditText
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -24,6 +29,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.slider.Slider
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import java.util.Calendar
 
 class MainActivity : FragmentActivity() {
 
@@ -49,6 +55,13 @@ class MainActivity : FragmentActivity() {
         study_start_ts = sharedPrefs.getInt("study_start_ts", 0)
 
         setContentView(R.layout.activity_main)
+
+    }
+
+    @SuppressLint("NotifyDataSetChanged", "SetTextI18n")
+    override fun onResume() {
+        super.onResume()
+
 
         studyPhaseSlider = findViewById(R.id.studyPhaseSlider)
         studyPhaseSlider.isEnabled = false
@@ -105,37 +118,32 @@ class MainActivity : FragmentActivity() {
 
         enableEdgeToEdge()
 
-    }
-
-    @SuppressLint("NotifyDataSetChanged", "SetTextI18n")
-    override fun onResume() {
-        super.onResume()
-
         study_state = getStudyState(this)
         var study_day = 123
 
-        studyPhaseText.text = "Study day $study_day: " + when (study_state) {
-            STUDY_STATE_FIRST_LAUNCH -> "Study start"
-            STUDY_STATE_CONSENT_GIVEN -> "Consent given"
-            STUDY_STATE_BASELINE_ONGOING -> "Baseline phase started"
+        studyPhaseText.text = "Study phase: " + when (study_state) {
+            STUDY_STATE_FIRST_LAUNCH -> "Start"
+            STUDY_STATE_CONSENT_GIVEN -> "User input required before baseline"
+            STUDY_STATE_BASELINE_ONGOING -> "Baseline"
             STUDY_STATE_POST_BASELINE -> "User input required before Intervention #1"
-            STUDY_STATE_INT1 -> "Intervention 1 ongoing"
+            STUDY_STATE_INT1 -> "Intervention #1"
             STUDY_STATE_POST_INT1 -> "User input required before Intervention #2"
-            STUDY_STATE_INT2 -> "Intervention 2 ongoing"
+            STUDY_STATE_INT2 -> "Intervention #2"
             STUDY_STATE_POST_INT2_SURVEY_REQUIRED -> "Post Intervention 2 - Survey responses required"
             STUDY_STATE_COMPLETE -> "Study complete"
             else -> "Unknown state"
         }
         // TODO: Add day counter
 
-        studyPhaseSlider.value = study_state.toFloat()
         studyPhaseSliderValue = when {
             study_state < STUDY_STATE_BASELINE_ONGOING -> 0f
             study_state < STUDY_STATE_INT1 -> 1f
             study_state < STUDY_STATE_INT2 -> 2f
-            study_state <= STUDY_STATE_COMPLETE -> 3f
+            study_state <= STUDY_STATE_POST_INT2_SURVEY_REQUIRED -> 3f
+            study_state <= STUDY_STATE_COMPLETE -> 4f
             else -> 0f
         }
+        studyPhaseSlider.value = studyPhaseSliderValue
         // TODO: Add daily calculation of value to show progress
 
         mainAdapter.notifyDataSetChanged()
@@ -144,6 +152,22 @@ class MainActivity : FragmentActivity() {
         study_start_ts = sharedPrefs.getInt("study_start_ts", 0)
 
     }
+
+    fun refreshUI() {
+        this.recreate()
+    }
+
+    /*
+    fun refreshFragment() {
+        val currentFragment = supportFragmentManager.findFragmentById(R.id.)
+        currentFragment?.let {
+            val newFragment = it.javaClass.newInstance() // Create a new instance of the current fragment
+            val transaction = supportFragmentManager.beginTransaction()
+            transaction.replace(R.id.fragment_container, newFragment)
+            transaction.commit()
+        }
+    }
+    */
 
     private fun requestOverlayPermission() {
         val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
@@ -188,30 +212,76 @@ class MainActivity : FragmentActivity() {
     }
 
     class InfoFragment : Fragment() {
+        private lateinit var inflaterView : View
+        private lateinit var bedTimeInput : EditText
 
         override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
             savedInstanceState: Bundle?
         ): View? {
-            val inflaterView = when (getStudyState(requireContext())) {
-                STUDY_STATE_FIRST_LAUNCH -> inflater.inflate(R.layout.first_launch_layout, container, false)
-                STUDY_STATE_CONSENT_GIVEN -> inflater.inflate(R.layout.consent_given_layout, container, false)
-                /*
-                STUDY_STATE_BASELINE_ONGOING -> inflater.inflate(R.layout.baseline_ongoing_layout, container, false)
+            var studyState = getStudyState(requireContext())
+            if (studyState == STUDY_STATE_FIRST_LAUNCH) {
+                inflaterView = inflater.inflate(R.layout.first_launch_layout, container, false)
+            }else if (studyState == STUDY_STATE_CONSENT_GIVEN) {
+                // Additional actions after consent is given
+                // e.g., prepare the app for baseline tracking, show notification prompt
+                inflaterView = inflater.inflate(R.layout.consent_given_layout, container, false)
+            } else if (studyState == STUDY_STATE_BASELINE_ONGOING) {
+                // Actions for baseline ongoing
+                // e.g., initialize baseline tracking, display tracking progress
+                inflaterView = inflater.inflate(R.layout.baseline_ongoing_layout, container, false)
+            } else if (studyState == STUDY_STATE_POST_BASELINE) {
+                // Actions for post-baseline phase
+                // e.g., gather baseline data, prepare for intervention
+                inflaterView = inflater.inflate(R.layout.post_baseline_layout, container, false)
 
-                STUDY_STATE_POST_BASELINE -> inflater.inflate(R.layout.post_baseline_layout, container, false)
-                STUDY_STATE_INT1 -> inflater.inflate(R.layout.intervention1_layout, container, false)
-                STUDY_STATE_POST_INT1 -> inflater.inflate(R.layout.post_int1_layout, container, false)
-                STUDY_STATE_INT2 -> inflater.inflate(R.layout.intervention2_layout, container, false)
-                STUDY_STATE_POST_INT2_SURVEY_REQUIRED -> inflater.inflate(R.layout.post_int2_survey_required_layout, container, false)
-                STUDY_STATE_COMPLETE -> inflater.inflate(R.layout.complete_layout, container, false)
-                */
-                else -> inflater.inflate(R.layout.fragment_info, container, false) // Optional: Default case if needed
+                bedTimeInput = inflaterView.findViewById<EditText>(R.id.bedtimeInput)
+                bedTimeInput.setOnClickListener {
+                    val calendar = Calendar.getInstance()
+                    val hour = calendar.get(Calendar.HOUR_OF_DAY)
+                    val minute = calendar.get(Calendar.MINUTE)
+
+                    val timePicker = TimePickerDialog(requireContext(), { _, selectedHour, selectedMinute ->
+                        bedTimeInput.setText(
+                            String.format(
+                                "%02d:%02d",
+                                selectedHour,
+                                selectedMinute
+                            )
+                        )
+                    }, hour, minute, true)
+                    timePicker.show()
+                }
+            } else if (studyState == STUDY_STATE_INT1) {
+                // Actions for Intervention Phase 1
+                // e.g., initiate intervention routines, set up reminders
+                inflaterView = inflater.inflate(R.layout.intervention1_layout, container, false)
+            } else if (studyState == STUDY_STATE_POST_INT1) {
+                // Actions after Intervention Phase 1
+                // e.g., prompt user feedback on phase, analyze results
+                inflaterView = inflater.inflate(R.layout.post_int1_layout, container, false)
+            } else if (studyState == STUDY_STATE_INT2) {
+                // Actions for Intervention Phase 2
+                // e.g., adjust intervention parameters, set up next steps
+                inflaterView = inflater.inflate(R.layout.intervention2_layout, container, false)
+            } else if (studyState == STUDY_STATE_POST_INT2_SURVEY_REQUIRED) {
+                // Actions for post Intervention Phase 2 survey
+                // e.g., collect survey data, prepare for final analysis
+                inflaterView = inflater.inflate(R.layout.post_int2_survey_required_layout, container, false)
+            } else if (studyState == STUDY_STATE_COMPLETE) {
+                // Actions for study completion
+                // e.g., show summary, provide exit message, share results
+                inflaterView = inflater.inflate(R.layout.complete_layout, container, false)
+            } else {
+                // Optional fallback layout and actions
+                inflaterView = inflater.inflate(R.layout.fragment_info, container, false)
             }
 
-            return inflater.inflate(R.layout.fragment_info, container, false)
+            return inflaterView
         }
     }
+
+
 
     class DataCollectedFragment : Fragment() {
         override fun onCreateView(
@@ -234,6 +304,9 @@ class MainActivity : FragmentActivity() {
     // settings fragment is always the same
     // some fields are disabled field.isEnabled = false prior to INT1
     class SettingsFragment : Fragment() {
+        private lateinit var studyStateSpinner: Spinner
+        private var isUserInteracting = false
+
         override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
             savedInstanceState: Bundle?
@@ -255,6 +328,50 @@ class MainActivity : FragmentActivity() {
                 val intent = Intent(activity, SPAIActivity::class.java)
                 startActivity(intent)
             }
+
+            studyStateSpinner = view.findViewById<Spinner>(R.id.study_state_spinner)
+
+            // Array of study states with descriptions
+            val studyStates = arrayOf(
+                "0 - Onboarding",
+                "1 - Pre-baseline",
+                "2 - Baseline",
+                "3 - Pre-INT1",
+                "4 - INT1",
+                "5 - Post-INT1",
+                "6 - INT2",
+                "7 - Post-INT2",
+                "8 - Study Complete"
+            )
+
+            // Set up the ArrayAdapter
+            val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, studyStates)
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            studyStateSpinner.adapter = adapter
+
+            studyStateSpinner.setOnTouchListener { _, _ ->
+                isUserInteracting = true
+                false // Allow the touch event to propagate
+            }
+
+            studyStateSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                    if (isUserInteracting) {
+                        var selectedState = position // Store the selected index (0-8)
+                        // Optional: Show a Toast message for demonstration
+                        setStudyState(requireContext(), selectedState)
+                        (requireActivity() as MainActivity).refreshUI()
+                        // Reset the interaction flag
+                        isUserInteracting = false
+                    }
+
+                }
+
+                override fun onNothingSelected(parent: AdapterView<*>) {
+                    // Do nothing, or handle if needed
+                }
+            }
+            studyStateSpinner.setSelection(getStudyState(requireContext()))
 
             return view
         }

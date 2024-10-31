@@ -21,4 +21,20 @@
         android:id="@+id/SPAI"
         android:text="SPAI"/>
 
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Set current study state:"
+        android:paddingTop="16dp"
+        android:textColor="@color/black"
+        android:gravity="center"/>
+
+    <Spinner
+        android:id="@+id/study_state_spinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+
+        android:padding="16dp"/>
+
 </LinearLayout>

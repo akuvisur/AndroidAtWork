@@ -42,9 +42,10 @@
         android:paddingRight="16dp"
         android:id="@+id/studyPhaseSlider"
         android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
-        app:trackColor="@color/cardview_light_background"
-        app:trackColorActive="@color/cardview_light_background"
-        app:tickColorInactive="@color/cardview_dark_background"
+        app:trackColor="@color/blue_gray_200"
+        app:trackColorActive="@color/blue_gray_200"
+        app:tickColorInactive="@color/blue_gray_500"
+        app:thumbColor="@color/blue_gray_700"
         app:tickRadiusInactive="5sp"
         />
 

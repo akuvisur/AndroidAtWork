@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <!-- Completion Message and Slider -->
+        <TextView
+            android:id="@+id/baselineCompleteText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Baseline tracking is now completed"
+            android:textSize="18sp"
+            android:textColor="@color/blue_700"
+            android:textStyle="bold"
+            android:layout_gravity="center_horizontal" />
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/completionSlider"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:valueFrom="0"
+            android:valueTo="14"
+            android:stepSize="1"
+            android:value="14"
+            android:enabled="false"
+            app:labelBehavior="gone"
+            app:trackColor="@color/blue_200"
+            app:trackColorActive="@color/blue_500"
+            android:layout_marginTop="8dp" />
+
+        <!-- Average Smartphone Usage Display -->
+        <TextView
+            android:id="@+id/averageUsageText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Your average daily smartphone usage was: 3 hours 12 minutes"
+            android:textSize="16sp"
+            android:textColor="@color/blue_700"
+            android:layout_marginTop="16dp"
+            android:layout_gravity="center_horizontal" />
+
+        <!-- Smartphone Usage Reduction Question -->
+        <TextView
+            android:id="@+id/reduceUsageQuestion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="How much do you wish to reduce your daily smartphone usage?"
+            android:textSize="16sp"
+            android:layout_marginTop="24dp" />
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/reduceUsageSlider"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:valueFrom="10"
+            android:valueTo="50"
+            android:stepSize="5"
+            app:labelBehavior="gone"
+            android:layout_marginTop="8dp"
+            app:thumbTint="@color/blue_500"
+            app:trackColor="@color/blue_200"
+            app:trackColorActive="@color/blue_500" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="New usage limit is:"
+            android:layout_gravity="left"/>
+
+
+        <!-- Bedtime Question -->
+        <TextView
+            android:id="@+id/bedtimeQuestion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="When is your usual bedtime during the week (Sunday-Thursday)?"
+            android:textSize="16sp"
+            android:textColor="@color/blue_gray_700"
+            android:layout_marginTop="24dp" />
+
+        <EditText
+            android:id="@+id/bedtimeInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter bedtime (e.g., 22:00)"
+            android:focusable="false"
+            android:inputType="time"
+            android:textColor="@color/blue_gray_700"
+            android:backgroundTint="@color/blue_gray_300"
+            android:padding="8dp"
+            android:layout_marginTop="8dp" />
+
+        <!-- Overlay Permission Button -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingTop="24dp">
+
+            <TextView
+                android:id="@+id/overlayPermissionText"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Enable overlay permission for this application"
+                android:textSize="16sp"
+                 />
+
+
+            <ImageView
+                android:id="@+id/allowOverlayIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_checkmark"
+                android:visibility="invisible"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/enableOverlayButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ENABLE"
+                android:textColor="@color/blue_50"
+                android:backgroundTint="@color/blue_500" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textStyle="italic"
+            android:textSize="12sp"
+            android:text="Overlay is required to draw the popup dialog. Click below to test what it looks like."
+            />
+
+        <Button
+            android:id="@+id/popupTestButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="TEST POPUP"
+            android:textColor="@color/blue_50"
+            android:backgroundTint="@color/blue_700"
+            android:padding="16dp"
+            android:layout_gravity="center_horizontal"/>
+
+        <!-- Start Intervention Button at the Bottom -->
+        <Button
+            android:id="@+id/startInterventionButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="START INTERVENTION PHASE 1"
+            android:textColor="@color/blue_50"
+            android:backgroundTint="@color/blue_700"
+            android:padding="16dp"
+            android:layout_gravity="bottom"
+            android:enabled="false"
+            android:layout_marginTop="24dp"/>
+
+    </LinearLayout>
+</ScrollView>

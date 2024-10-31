@@ -1,13 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp">
 
+    <!-- TextView for Title -->
     <TextView
+        android:id="@+id/titleText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="20sp"
-        android:text="FIRST LAUNCH"/>
+        android:text="WELCOME TO THE STUDY"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="@color/blue_gray_700"
+        android:layout_gravity="center_horizontal"
+        android:paddingBottom="24dp" />
+
+    <!-- START STUDY Button -->
+    <Button
+        android:id="@+id/startStudyButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="START ONBOARDING"
+        android:layout_gravity="center_horizontal"
+        android:textColor="@color/blue_gray_50"
+        android:backgroundTint="@color/blue_gray_500"
+        android:padding="16dp" />
+
+    <!-- Helper Text Below the Button -->
+    <TextView
+        android:id="@+id/helperText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Click to view informed consent and study details"
+        android:textSize="14sp"
+        android:textStyle="italic"
+        android:layout_gravity="center_horizontal"
+        android:textColor="@color/blue_gray_500" />
 
 </LinearLayout>
