@@ -28,8 +28,6 @@ import com.google.android.material.tabs.TabLayoutMediator
 
 class OnboardingActivity : AppCompatActivity() {
 
-    var onboarding_position = 0
-
     private lateinit var viewPager: ViewPager2
     private lateinit var nextButton: Button
     private lateinit var prevButton : Button
@@ -70,6 +68,8 @@ class OnboardingActivity : AppCompatActivity() {
                 viewPager.setCurrentItem(currentItem + 1, true)
             } else {
                 // This is the last page, so "Complete" action should be triggered
+                setStudyVariable(this, ONBOARDING_COMPLETED, 1)
+                setStudyState(this, STUDY_STATE_CONSENT_GIVEN)
                 finish() // or any other final action
             }
 
@@ -83,7 +83,6 @@ class OnboardingActivity : AppCompatActivity() {
             if (currentItem > 0) {
                 viewPager.setCurrentItem(currentItem - 1)
             }
-
             // Disable prevButton on the first page
             prevButton.isEnabled = viewPager.currentItem > 0
 
@@ -100,10 +99,6 @@ class OnboardingActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-
-        val sharedPrefs = getSharedPreferences("onboarding", Context.MODE_PRIVATE)
-        onboarding_position = sharedPrefs.getInt("onboarding_position", 0)
-
     }
 
     private inner class OnboardingPagerAdapter(activity: OnboardingActivity) : FragmentStateAdapter(activity) {

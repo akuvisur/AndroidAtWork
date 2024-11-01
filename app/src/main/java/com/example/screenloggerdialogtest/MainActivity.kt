@@ -17,11 +17,13 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.core.app.ActivityCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
@@ -29,6 +31,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.slider.Slider
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import androidx.core.content.ContextCompat
 import java.util.Calendar
 
 class MainActivity : FragmentActivity() {
@@ -55,13 +58,11 @@ class MainActivity : FragmentActivity() {
         study_start_ts = sharedPrefs.getInt("study_start_ts", 0)
 
         setContentView(R.layout.activity_main)
-
     }
 
-    @SuppressLint("NotifyDataSetChanged", "SetTextI18n")
+    @SuppressLint("SetTextI18n")
     override fun onResume() {
         super.onResume()
-
 
         studyPhaseSlider = findViewById(R.id.studyPhaseSlider)
         studyPhaseSlider.isEnabled = false
@@ -109,13 +110,6 @@ class MainActivity : FragmentActivity() {
             requestOverlayPermission()
         }
 
-        /*
-        if (!Settings.canDrawOverlays(this)) {
-            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
-            startActivityForResult(intent, 100)
-        }
-        */
-
         enableEdgeToEdge()
 
         study_state = getStudyState(this)
@@ -146,30 +140,16 @@ class MainActivity : FragmentActivity() {
         studyPhaseSlider.value = studyPhaseSliderValue
         // TODO: Add daily calculation of value to show progress
 
-        mainAdapter.notifyDataSetChanged()
         val sharedPrefs = getSharedPreferences("states", Context.MODE_PRIVATE)
         // always update study info values
         study_start_ts = sharedPrefs.getInt("study_start_ts", 0)
-
     }
 
     fun refreshUI() {
         this.recreate()
     }
 
-    /*
-    fun refreshFragment() {
-        val currentFragment = supportFragmentManager.findFragmentById(R.id.)
-        currentFragment?.let {
-            val newFragment = it.javaClass.newInstance() // Create a new instance of the current fragment
-            val transaction = supportFragmentManager.beginTransaction()
-            transaction.replace(R.id.fragment_container, newFragment)
-            transaction.commit()
-        }
-    }
-    */
-
-    private fun requestOverlayPermission() {
+   private fun requestOverlayPermission() {
         val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(intent)
@@ -215,6 +195,27 @@ class MainActivity : FragmentActivity() {
         private lateinit var inflaterView : View
         private lateinit var bedTimeInput : EditText
 
+        lateinit var startOnboardingButton: Button
+        lateinit var allowNotificationButton: Button
+        lateinit var disableBatteryManagementButton: Button
+        lateinit var consentSpaiButton: Button
+        lateinit var startBaselineButton: Button
+        lateinit var averageUsageText: TextView
+        lateinit var reduceUsageSlider: Slider
+        lateinit var reduceUsageText: TextView
+        lateinit var allowNotificationIcon: ImageView
+
+        lateinit var enableOverlayButton: Button
+        lateinit var popupTestButton: Button
+        lateinit var startInterventionButton: Button
+        lateinit var baselineProgressSlider: Slider
+        lateinit var intervention1ProgressSlider: Slider
+        lateinit var startIntervention2Button: Button
+        lateinit var intervention2ProgressSlider: Slider
+        lateinit var postStudyExitSurveyButton: Button
+        lateinit var postStudySpaiButton: Button
+        lateinit var completeStudyButton: Button
+
         override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
             savedInstanceState: Bundle?
@@ -222,15 +223,70 @@ class MainActivity : FragmentActivity() {
             var studyState = getStudyState(requireContext())
             if (studyState == STUDY_STATE_FIRST_LAUNCH) {
                 inflaterView = inflater.inflate(R.layout.first_launch_layout, container, false)
-            }else if (studyState == STUDY_STATE_CONSENT_GIVEN) {
+
+                startOnboardingButton = inflaterView.findViewById<Button>(R.id.startOnboardingButton)
+                startOnboardingButton.setOnClickListener {
+                    val intent = Intent(activity, OnboardingActivity::class.java)
+                    startActivity(intent)
+                }
+            }
+
+            else if (studyState == STUDY_STATE_CONSENT_GIVEN) {
                 // Additional actions after consent is given
                 // e.g., prepare the app for baseline tracking, show notification prompt
                 inflaterView = inflater.inflate(R.layout.consent_given_layout, container, false)
-            } else if (studyState == STUDY_STATE_BASELINE_ONGOING) {
+
+                allowNotificationButton = inflaterView.findViewById(R.id.allowNotificationButton)
+                disableBatteryManagementButton = inflaterView.findViewById(R.id.disableBatteryManagementButton)
+                consentSpaiButton = inflaterView.findViewById(R.id.consentSpaiButton)
+                startBaselineButton = inflaterView.findViewById(R.id.startBaselineButton)
+                allowNotificationIcon = inflaterView.findViewById(R.id.allowNotificationIcon)
+
+                var notifications_allowed : Boolean = false
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    if ((requireActivity() as MainActivity).checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                        // still false! :)
+                        notifications_allowed = false
+                        }
+                } else {
+                    notifications_allowed = true
+                    allowNotificationButton.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue_gray_200))
+                    allowNotificationButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue_gray_600))
+                }
+                allowNotificationIcon.isVisible = notifications_allowed
+                allowNotificationButton.isEnabled = !notifications_allowed
+                allowNotificationButton.setOnClickListener {
+                    ActivityCompat.requestPermissions(requireActivity(), arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), REQUEST_CODE_NOTIFICATION)
+                }
+
+                disableBatteryManagementButton.setOnClickListener {
+                    val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                    startActivity(intent)
+                    Toast.makeText(requireContext(), "Please find this application and disable battery management, then return to the application", Toast.LENGTH_LONG).show()
+                }
+
+                consentSpaiButton.setOnClickListener {
+                    val intent = Intent(activity, SPAIActivity::class.java)
+                    intent.putExtra("source", "consent_given")
+                    startActivity(intent)
+                }
+
+                startBaselineButton.setOnClickListener {
+                    setStudyState(requireContext(), STUDY_STATE_BASELINE_ONGOING)
+                    setStudyTimestamp(requireContext(), BASELINE_START_TIMESTAMP, System.currentTimeMillis().toLong())
+
+                    (requireActivity() as MainActivity).refreshUI()
+                }
+
+            }
+
+            else if (studyState == STUDY_STATE_BASELINE_ONGOING) {
                 // Actions for baseline ongoing
                 // e.g., initialize baseline tracking, display tracking progress
                 inflaterView = inflater.inflate(R.layout.baseline_ongoing_layout, container, false)
-            } else if (studyState == STUDY_STATE_POST_BASELINE) {
+            }
+
+            else if (studyState == STUDY_STATE_POST_BASELINE) {
                 // Actions for post-baseline phase
                 // e.g., gather baseline data, prepare for intervention
                 inflaterView = inflater.inflate(R.layout.post_baseline_layout, container, false)
@@ -252,23 +308,33 @@ class MainActivity : FragmentActivity() {
                     }, hour, minute, true)
                     timePicker.show()
                 }
-            } else if (studyState == STUDY_STATE_INT1) {
+            }
+
+            else if (studyState == STUDY_STATE_INT1) {
                 // Actions for Intervention Phase 1
                 // e.g., initiate intervention routines, set up reminders
                 inflaterView = inflater.inflate(R.layout.intervention1_layout, container, false)
-            } else if (studyState == STUDY_STATE_POST_INT1) {
+            }
+
+            else if (studyState == STUDY_STATE_POST_INT1) {
                 // Actions after Intervention Phase 1
                 // e.g., prompt user feedback on phase, analyze results
                 inflaterView = inflater.inflate(R.layout.post_int1_layout, container, false)
-            } else if (studyState == STUDY_STATE_INT2) {
+            }
+
+            else if (studyState == STUDY_STATE_INT2) {
                 // Actions for Intervention Phase 2
                 // e.g., adjust intervention parameters, set up next steps
                 inflaterView = inflater.inflate(R.layout.intervention2_layout, container, false)
-            } else if (studyState == STUDY_STATE_POST_INT2_SURVEY_REQUIRED) {
+            }
+
+            else if (studyState == STUDY_STATE_POST_INT2_SURVEY_REQUIRED) {
                 // Actions for post Intervention Phase 2 survey
                 // e.g., collect survey data, prepare for final analysis
                 inflaterView = inflater.inflate(R.layout.post_int2_survey_required_layout, container, false)
-            } else if (studyState == STUDY_STATE_COMPLETE) {
+            }
+
+            else if (studyState == STUDY_STATE_COMPLETE) {
                 // Actions for study completion
                 // e.g., show summary, provide exit message, share results
                 inflaterView = inflater.inflate(R.layout.complete_layout, container, false)
@@ -280,8 +346,6 @@ class MainActivity : FragmentActivity() {
             return inflaterView
         }
     }
-
-
 
     class DataCollectedFragment : Fragment() {
         override fun onCreateView(
@@ -353,7 +417,6 @@ class MainActivity : FragmentActivity() {
                 isUserInteracting = true
                 false // Allow the touch event to propagate
             }
-
             studyStateSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                     if (isUserInteracting) {

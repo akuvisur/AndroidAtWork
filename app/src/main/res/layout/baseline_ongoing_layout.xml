@@ -21,7 +21,7 @@
 
     <!-- Slider for Baseline Day -->
     <com.google.android.material.slider.Slider
-        android:id="@+id/studyPhaseSlider"
+        android:id="@+id/baselineProgressSlider"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:valueFrom="1"

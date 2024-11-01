@@ -43,10 +43,13 @@ class SPAIActivity : AppCompatActivity() {
 
     private val responses = mutableMapOf<String, Answer>()
     private lateinit var submitButton: Button
+    private lateinit var source: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_spai)
+
+        source = intent.getStringExtra("source").toString()
 
         val questionsContainer = findViewById<LinearLayout>(R.id.questions_container)
         submitButton = findViewById(R.id.submit_button)
@@ -130,6 +133,12 @@ class SPAIActivity : AppCompatActivity() {
 
             Log.d("SPAI", responses.toString())
 
+            if (source == "consent_given") {
+                setStudyVariable(this, SPAI_1_SUBMITTED, 1)
+            }
+            else {
+                setStudyVariable(this, SPAI_2_SUBMITTED, 1)
+            }
             finish()
         }
     }

@@ -1,7 +1,8 @@
 <resources>
     <string name="app_name">Android Smartphone Interventions</string>
 
-    <string name="spai_text">The Smartphone Addiction Inventory (SPAI) was developed to assess smartphone addiction. The inventory contains 26 questions on a 4-point Likert scale. \n
+    <string name="spai_text">The Smartphone Addiction Inventory (SPAI) was developed to assess smartphone addiction. \n
+        The inventory contains 26 questions on a 4-point Likert scale. \n
     1 = strongly disagree’’ 2 = ‘‘somewhat disagree’’, 3 = ‘‘somewhat agree’’ and 4 = ‘‘strongly agree‘‘ \n
     You can click SUBMIT once all questions are responded to.
     </string>
