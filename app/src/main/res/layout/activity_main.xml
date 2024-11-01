@@ -52,7 +52,7 @@
             android:paddingLeft="16dp"
             android:paddingRight="16dp"
             android:id="@+id/studyPhaseSlider"
-            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            android:theme="@style/Theme.MaterialComponents.DayNight.DarkActionBar"
             app:trackColor="@color/blue_gray_200"
             app:trackColorActive="@color/blue_gray_200"
             app:tickColorInactive="@color/blue_gray_500"

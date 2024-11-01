@@ -110,10 +110,7 @@ class MainActivity : FragmentActivity() {
             requestOverlayPermission()
         }
 
-        enableEdgeToEdge()
-
         study_state = getStudyState(this)
-        var study_day = 123
 
         studyPhaseText.text = "Study phase: " + when (study_state) {
             STUDY_STATE_FIRST_LAUNCH -> "Start"
