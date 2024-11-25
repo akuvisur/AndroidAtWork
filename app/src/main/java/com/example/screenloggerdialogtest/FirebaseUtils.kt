@@ -5,7 +5,7 @@ import com.google.firebase.database.FirebaseDatabase
 object FirebaseUtils {
 
     // Reference to the Firebase Realtime Database
-    private val database = FirebaseDatabase.getInstance()
+    val database: FirebaseDatabase by lazy { FirebaseDatabase.getInstance() }
     private val databaseReference = database.reference // Root of the database
 
     /**
