@@ -64,6 +64,29 @@ class MainActivity : FragmentActivity() {
     override fun onResume() {
         super.onResume()
 
+        // test firebase
+        val userData = hashMapOf(
+            "name" to "John Doe",
+            "age" to 30,
+            "email" to "johndoe@example.com",
+            "ts" to System.currentTimeMillis()
+        )
+
+        // Send the data to the database under the "users" node
+        FirebaseUtils.sendEntryToDatabase(
+            path = "users/user_1", // Path in the database (e.g., "users/user_1")
+            data = userData,
+            onSuccess = {
+                // Handle success
+                Toast.makeText(this, "Data sent successfully!", Toast.LENGTH_SHORT).show()
+            },
+            onFailure = { exception ->
+                // Handle failure
+                Toast.makeText(this, "Failed to send data: ${exception.message}", Toast.LENGTH_SHORT).show()
+            }
+        )
+        // end firebase test
+
         studyPhaseSlider = findViewById(R.id.studyPhaseSlider)
         studyPhaseSlider.isEnabled = false
         studyPhaseText = findViewById(R.id.studyPhaseText)
