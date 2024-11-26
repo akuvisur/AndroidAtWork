@@ -219,6 +219,7 @@ class MainActivity : FragmentActivity() {
         lateinit var allowNotificationButton: Button
         lateinit var disableBatteryManagementButton: Button
         lateinit var consentSpaiButton: Button
+        lateinit var consentSASButton: Button
         lateinit var startBaselineButton: Button
         lateinit var averageUsageText: TextView
         lateinit var reduceUsageSlider: Slider
@@ -291,10 +292,15 @@ class MainActivity : FragmentActivity() {
                     startActivity(intent)
                 }
 
+                consentSASButton.setOnClickListener {
+                    val intent = Intent(activity, SASSVActivity::class.java)
+                    intent.putExtra("source", "consent_given")
+                    startActivity(intent)
+                }
+
                 startBaselineButton.setOnClickListener {
                     setStudyState(requireContext(), STUDY_STATE_BASELINE_ONGOING)
                     setStudyTimestamp(requireContext(), BASELINE_START_TIMESTAMP, System.currentTimeMillis().toLong())
-
                     (requireActivity() as MainActivity).refreshUI()
                 }
 
@@ -412,6 +418,14 @@ class MainActivity : FragmentActivity() {
                 val intent = Intent(activity, SPAIActivity::class.java)
                 startActivity(intent)
             }
+
+            val sasButton : Button = view.findViewById(R.id.SAS_SV)
+            sasButton.setOnClickListener {
+                // Start the MainActivity for onboarding
+                val intent = Intent(activity, SASSVActivity::class.java)
+                startActivity(intent)
+            }
+
 
             studyStateSpinner = view.findViewById<Spinner>(R.id.study_state_spinner)
 

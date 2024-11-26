@@ -1,12 +1,28 @@
 <resources>
     <string name="app_name">Android Smartphone Interventions</string>
 
+    # smartphone addiction inventory (SPAI)
     <string name="spai_text">The Smartphone Addiction Inventory (SPAI) was developed to assess smartphone addiction. \n
         The inventory contains 26 questions on a 4-point Likert scale. \n
-    1 = strongly disagree’’ 2 = ‘‘somewhat disagree’’, 3 = ‘‘somewhat agree’’ and 4 = ‘‘strongly agree‘‘ \n
-    You can click SUBMIT once all questions are responded to.
+
+        You can click SUBMIT once all questions are responded to.\n
+        \n
+        Please select how much you agree or disagree with each question:\n
+        1 = strongly disagree 2 = somewhat disagree, 3 = somewhat agree and 4 = strongly agree \n
     </string>
     <string name="spai_title">Smartphone Addiction Inventory (SPAI)</string>
+
+    # sas sv
+    <string name="sassv_text">
+        The Smartphone Addiction Scale can be used to identify potential high-risk groups for smartphone addiction. It contains ten 6-point Likert scale items.\n
+        You can click SUBMIT once all questions are responded to.\n
+        \n
+        Please select how much you agree or disagree with each question.\n
+        1 = strongly disagree 2 = disagree, 3 = weakly disagree, 4 = weakly agree, 5 = agree, 6 = strongly agree
+    </string>
+    <string name="sassv_title">
+        Smartphone Addiction Scale-Short Version (SAS-SV)
+    </string>
 
     # onboarding consent
     <string name="consent_agree">Do you consent to these terms?</string>
@@ -39,5 +55,10 @@
         INT2 lasts two weeks, after which this study concludes.\n
         After INT2 you will be asked to again fill the Smartphone Addiction Survey, and will be asked to answer a brief questionnaire about the study and the intervention mechanisms.\n
         Finally, you will receive the Prolific study completion code, if you require one.
+    </string>
+
+    # addiction scales info
+    <string name="addiction_scales_text">
+        Please answer the following two questionnaires related to identifying and measuring smartphone addiction.
     </string>
 </resources>

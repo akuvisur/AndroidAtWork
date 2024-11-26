@@ -37,6 +37,10 @@
             android:exported="true"
             android:theme="@style/Theme.AppCompat.Light"/>
 
+        <activity android:name=".SASSVActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.Light"/>
+
         <service android:name=".BaselineService"
             android:foregroundServiceType="specialUse"
             android:exported="false">

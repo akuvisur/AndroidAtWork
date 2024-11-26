@@ -85,11 +85,29 @@
         android:text="This ensures that the data collection continues on its own as reliably as possible. If you are using any 3rd party battery management software, please white list this application."
         />
 
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16sp"
+        android:textSize="16sp"
+        android:textColor="@color/blue_gray_700"
+        android:text="@string/addiction_scales_text"
+        />
+
     <Button
         android:id="@+id/consentSpaiButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Smartphone Addiction Survey (SPAI)"
+        android:text="Smartphone Addiction Inventory(SPAI)"
+        android:backgroundTint="@color/blue_gray_500"
+        android:textColor="@color/blue_gray_50"/>
+
+    <Button
+        android:id="@+id/consentSASButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Smartphone Addiction Survey\n(SAS-Short Version)"
         android:backgroundTint="@color/blue_gray_500"
         android:textColor="@color/blue_gray_50"/>
 

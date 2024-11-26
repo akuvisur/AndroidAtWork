@@ -25,6 +25,11 @@
         android:id="@+id/SPAI"
         android:text="SPAI"/>
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/SAS_SV"
+        android:text="SAS-SV"/>
 
     <TextView
         android:layout_width="match_parent"
