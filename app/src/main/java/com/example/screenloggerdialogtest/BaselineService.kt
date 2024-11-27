@@ -8,38 +8,68 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.graphics.PixelFormat
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
 import android.util.Log
-import android.view.Gravity
-import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
-import android.widget.Button
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
+import android.widget.Toast
+import com.example.screenloggerdialogtest.FirebaseUtils.ScreenEvent
+import com.example.screenloggerdialogtest.FirebaseUtils.getCurrentUserUID
+import java.util.concurrent.TimeUnit
 
+/**
+ * ### Service Hierarchy Documentation
+ *
+ * This hierarchy explains how the services in the study build upon each other to address the
+ * requirements of each phase. Each service inherits functionality from the previous phase while
+ * introducing new components tailored to its specific needs.
+ */
 
-class BaselineService : Service() {
+/**
+ * **BaseTrackingService**
+ * - **Purpose**: Provides the core functionality for tracking basic smartphone usage events.
+ * - **Components**:
+ *   - Tracks `SCREEN_ON`, `SCREEN_OFF`, and `USER_PRESENT` events.
+ *   - Logs basic screen usage data.
+ *   - Forms the foundation for additional functionality in later phases.
+ */
 
+/**
+ * **INT1Service**
+ * - **Purpose**: Extends `BaseTrackingService` to include goal-oriented usage interventions.
+ * - **Components**:
+ *   - Inherits all functionality from  both `BaseTrackingService` and `INT2Service`.
+ *   - Adds **blocking dialogs** to notify the user when usage limits are exceeded.
+ *   - Encourages conscious use of the smartphone through real-time interventions.
+ */
+
+/**
+ * **INT2Service**
+ * - **Purpose**: Extends `INT1Service` by adding notifications to promote habit formation.
+ * - **Components**:
+ *   - Inherits all functionality from `BaseTrackingService.
+ *   - Introduces **notifications** about smartphone usage to help participants track their progress.
+ *   - Provides reminders and feedback to reinforce positive behavioral changes.
+ */
+
+/**
+ * **Hierarchy Summary**
+ * - `BaseTrackingService`: Tracks core events (SCREEN_ON/OFF/USER_PRESENT).
+ * - `INT1Service`: Adds **usage blocking dialogs** for goal-oriented interventions.
+ * - `INT2Service`: Adds **usage notifications** to promote habit formation.
+ *
+ * The hierarchy ensures each service logically builds on its predecessor, minimizing redundancy while
+ * enabling tailored interventions for each study phase.
+ */
+
+open class BaselineService : Service() {
     private lateinit var screenStateReceiver: ScreenStateReceiver
-
-    private lateinit var windowManager: WindowManager
-    private lateinit var dialogView: View
-
-    companion object {
-        const val REQUEST_CODE = 100 // Arbitrary value for overlay permission
-    }
+    private lateinit var heartbeat: HeartbeatBeater
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("ScreenLoggerService", "Service is running...")
-
-        // ServiceCompat.startForeground()
-        createNotificationChannel() // Create notification channel
 
         // Start as a foreground service (if necessary)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -51,15 +81,13 @@ class BaselineService : Service() {
 
             notificationManager.createNotificationChannel(channel)
             val notification: Notification = Notification.Builder(this, channelId)
-                .setContentTitle("Screen Logger")
-                .setContentText("The service is running...")
+                .setContentTitle("Smartphone Interventions")
+                .setContentText("Monitoring smartphone usage...")
                 .setSmallIcon(R.drawable.ic_launcher_foreground) // Set your app icon here
                 .build()
 
             startForeground(1, notification)
         }
-
-        // Do your screen logging logic here
 
         screenStateReceiver = ScreenStateReceiver()
         val filter = IntentFilter().apply {
@@ -68,46 +96,11 @@ class BaselineService : Service() {
             addAction(Intent.ACTION_USER_PRESENT)
         }
         registerReceiver(screenStateReceiver, filter)
-        Log.d("Service", "receiver registered")
+
+        heartbeat = HeartbeatBeater()
+        heartbeat.startHeartbeat()
 
         return START_STICKY // Or other flags depending on your use case
-    }
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelName = "Screen State Notifications"
-            val channelDescription = "Notifications for screen on events"
-            val channelId = "screen_on_channel"
-
-            val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_DEFAULT).apply {
-                description = channelDescription
-            }
-
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager.createNotificationChannel(channel)
-        }
-    }
-
-    private fun showNotification() {
-
-        val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Calendar.getInstance().time)
-
-        val notificationId = 25
-        val channelId = "screen_on_channel"
-
-        val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Replace with your notification icon
-            .setContentTitle("Screen Turned On")
-            .setContentText("The screen is now on $currentTime." )
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-
-        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        if (nm.areNotificationsEnabled()) {
-            with(NotificationManagerCompat.from(this)) {
-                notify(notificationId, notificationBuilder.build())
-            }
-        }
-
     }
 
     override fun onBind(p0: Intent?): IBinder? {
@@ -117,38 +110,124 @@ class BaselineService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         unregisterReceiver(screenStateReceiver)
-        if (::dialogView.isInitialized) {
-            windowManager.removeView(dialogView)
-        }
+        heartbeat.stopHeartbeat()
     }
 
-    inner class ScreenStateReceiver : BroadcastReceiver() {
+    open inner class ScreenStateReceiver : BroadcastReceiver() {
+        private lateinit var screenEvent : ScreenEvent
+        private var previousEventTimestamp : Long = 0L
+        private lateinit var previousEventType : String
+
         override fun onReceive(p0: Context?, p1: Intent?) {
+            if (previousEventTimestamp < 1) {
+                val (ts, type) = getPreviousEvent(p0)
+                previousEventTimestamp = ts
+                previousEventType = type
+            }
+
+            // have to skip incase we dont have a timestamp, otherwise WILL
+            // cause weird bugs with duration
+            if (previousEventTimestamp == 0L) return
+
+            val now = System.currentTimeMillis()
+
+            // something weird happening that causes double triggers with 1-10ms delay
+            // presumably the firebase process takes longer than few milliseconds
+            // which causes the delay in updating previousEventTimestamp
+            // if its updated in the updatePreviousEvent() function
+            // so done manually for now.
             when (p1?.action) {
                 Intent.ACTION_SCREEN_ON -> {
                     // Screen turned on
                     Log.d("ScreenStateReceiver", "Screen ON")
-
-                    showNotification()
-
-                    //val dialogIntent = Intent(p0, DialogService::class.java)
-                    //dialogIntent.putExtra("message", "Screen Turned On")
-                    //p0?.startService(dialogIntent)
-
+                    if (now - previousEventTimestamp > 100) uploadEvent(previousEventType, previousEventTimestamp, p0)
+                    previousEventTimestamp = now
+                    updatePreviousEvent(now, "ACTION_SCREEN_ON", p0)
                 }
 
                 Intent.ACTION_SCREEN_OFF -> {
                     // Screen turned off
                     Log.d("ScreenStateReceiver", "Screen OFF")
+                    if (now - previousEventTimestamp > 100) uploadEvent(previousEventType, previousEventTimestamp, p0)
+                    previousEventTimestamp = now
+                    updatePreviousEvent(now, "ACTION_SCREEN_OFF", p0)
                 }
+
                 Intent.ACTION_USER_PRESENT -> {
                     // User unlocked the screen
                     Log.d("ScreenStateReceiver", "User Present (Unlocked)")
-                    showDialog(p0)
+                    if (now - previousEventTimestamp > 100) uploadEvent(previousEventType, previousEventTimestamp, p0)
+                    previousEventTimestamp = now
+                    updatePreviousEvent(now, "ACTION_USER_PRESENT", p0)
                 }
+
             }
         }
 
+        private fun uploadEvent(eventType : String, time : Long, c : Context?) {
+            screenEvent = ScreenEvent(eventType, time, System.currentTimeMillis()-time)
+
+            FirebaseUtils.sendEntryToDatabase(
+                path = "users/${FirebaseUtils.getCurrentUserUID()}/screen/${time}", // Path in the database (e.g., "users/user_1")
+                data = screenEvent,
+                onSuccess = {
+                    Toast.makeText(c, "Screen event sent successfully", Toast.LENGTH_SHORT).show()
+                },
+                onFailure = { exception ->
+                    // Handle failure
+                    Toast.makeText(c, "Failed to send data: ${exception.message}", Toast.LENGTH_LONG).show()
+                }
+            )
+        }
+
+        private fun updatePreviousEvent(time : Long, type : String, c : Context?) {
+            previousEventType = type
+            putPreviousEvent(time, type, c)
+        }
     }
+
+    class HeartbeatBeater {
+
+        private val handler = Handler()
+
+        // Runnable to create a Heartbeat every hour
+        private val heartbeatRunnable = object : Runnable {
+            override fun run() {
+                storeBeat()
+                // Schedule the next heartbeat in one hour
+                handler.postDelayed(this, TimeUnit.HOURS.toMillis(1))
+            }
+        }
+
+        // Function to start the heartbeat
+        fun startHeartbeat() {
+            handler.post(heartbeatRunnable)
+        }
+
+        // Function to stop the heartbeat (if necessary)
+        fun stopHeartbeat() {
+            handler.removeCallbacks(heartbeatRunnable)
+        }
+
+        fun storeBeat() {
+            val heartbeat = Heartbeat(timestamp = System.currentTimeMillis())
+            Log.d("HEARTBEAT", "New Heartbeat: $heartbeat")
+            FirebaseUtils.sendEntryToDatabase(
+                path = "/users/${getCurrentUserUID()}/heartbeat/${heartbeat.timestamp}",
+                data = heartbeat,
+                onSuccess = {
+                    Log.d("HEARTBEAT_FIREBASE", "HB stored successfully")
+                },
+                onFailure = { exception ->
+                    // Handle failure
+                    Log.d("HEARTBEAT_FIREBASE", "Failed to send HB data: ${exception.message}")
+                }
+            )
+        }
+    }
+
+    private data class Heartbeat(
+        val timestamp: Long = 0L
+    )
 
 }

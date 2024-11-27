@@ -13,10 +13,11 @@
     <string name="spai_title">Smartphone Addiction Inventory (SPAI)</string>
 
     # sas sv
-    <string name="sassv_text">
+    <string name="sassv_text1">
         The Smartphone Addiction Scale can be used to identify potential high-risk groups for smartphone addiction. It contains ten 6-point Likert scale items.\n
-        You can click SUBMIT once all questions are responded to.\n
-        \n
+        You can click SUBMIT once all questions are responded to.
+    </string>
+    <string name="sassv_text2">
         Please select how much you agree or disagree with each question.\n
         1 = strongly disagree 2 = disagree, 3 = weakly disagree, 4 = weakly agree, 5 = agree, 6 = strongly agree
     </string>
@@ -61,4 +62,13 @@
     <string name="addiction_scales_text">
         Please answer the following two questionnaires related to identifying and measuring smartphone addiction.
     </string>
+
+    # after baseline
+    <string name="daily_usage">Your average daily smartphone usage was: %1$s</string>
+    <string name="smartphone_usage_goal">How much do you wish to reduce your daily smartphone usage?</string>
+    <string name="usage_limit_text">New usage limit is: %1$s</string>
+    <string name="bedtime_input">When is your usual bedtime during the week (Sunday-Thursday)?</string>
+    <string name="overlay_permission_and_test">Overlay permission is required to draw the popup dialog during Intervention phase #1. Click below to test what the popup looks like.</string>
+
+
 </resources>

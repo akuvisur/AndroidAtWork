@@ -21,7 +21,6 @@ import android.widget.ImageView
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.core.app.ActivityCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -32,6 +31,7 @@ import com.google.android.material.slider.Slider
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import androidx.core.content.ContextCompat
+import java.time.LocalDateTime
 import java.util.Calendar
 
 class MainActivity : FragmentActivity() {
@@ -58,6 +58,15 @@ class MainActivity : FragmentActivity() {
         study_start_ts = sharedPrefs.getInt("study_start_ts", 0)
 
         setContentView(R.layout.activity_main)
+
+        FirebaseUtils.authenticateUser(
+            onSuccess = { uid ->
+                Toast.makeText(this, "Authentication succeeded! UID: $uid", Toast.LENGTH_SHORT).show()
+            },
+            onFailure = { errorMessage ->
+                Toast.makeText(this, "Authentication failed: $errorMessage", Toast.LENGTH_LONG).show()
+            }
+        )
     }
 
     @SuppressLint("SetTextI18n")
@@ -71,21 +80,6 @@ class MainActivity : FragmentActivity() {
             "email" to "johndoe@example.com",
             "ts" to System.currentTimeMillis()
         )
-
-        // Send the data to the database under the "users" node
-        FirebaseUtils.sendEntryToDatabase(
-            path = "users/user_1", // Path in the database (e.g., "users/user_1")
-            data = userData,
-            onSuccess = {
-                // Handle success
-                Toast.makeText(this, "Data sent successfully!", Toast.LENGTH_SHORT).show()
-            },
-            onFailure = { exception ->
-                // Handle failure
-                Toast.makeText(this, "Failed to send data: ${exception.message}", Toast.LENGTH_SHORT).show()
-            }
-        )
-        // end firebase test
 
         studyPhaseSlider = findViewById(R.id.studyPhaseSlider)
         studyPhaseSlider.isEnabled = false
@@ -118,19 +112,6 @@ class MainActivity : FragmentActivity() {
             }
         } else {
             true // For Android versions below 13, permissions are granted by default
-        }
-
-        if (Settings.canDrawOverlays(this)) {
-            val intent = Intent(this, BaselineService::class.java) // Build the intent for the service
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent)
-            }
-            else {
-                Log.d("MAIN:ONCREATE", "SDK level too low")
-            }
-        } else {
-            // this prompts user to the settings screen to enable overlay
-            requestOverlayPermission()
         }
 
         study_state = getStudyState(this)
@@ -213,7 +194,6 @@ class MainActivity : FragmentActivity() {
 
     class InfoFragment : Fragment() {
         private lateinit var inflaterView : View
-        private lateinit var bedTimeInput : EditText
 
         lateinit var startOnboardingButton: Button
         lateinit var allowNotificationButton: Button
@@ -221,14 +201,18 @@ class MainActivity : FragmentActivity() {
         lateinit var consentSpaiButton: Button
         lateinit var consentSASButton: Button
         lateinit var startBaselineButton: Button
+        lateinit var allowNotificationIcon: ImageView
+        lateinit var consentSpaiIcon: ImageView
+        lateinit var consentSASIcon: ImageView
+
         lateinit var averageUsageText: TextView
         lateinit var reduceUsageSlider: Slider
         lateinit var reduceUsageText: TextView
-        lateinit var allowNotificationIcon: ImageView
-
+        lateinit var bedTimeInput : EditText
         lateinit var enableOverlayButton: Button
         lateinit var popupTestButton: Button
         lateinit var startInterventionButton: Button
+
         lateinit var baselineProgressSlider: Slider
         lateinit var intervention1ProgressSlider: Slider
         lateinit var startIntervention2Button: Button
@@ -237,10 +221,14 @@ class MainActivity : FragmentActivity() {
         lateinit var postStudySpaiButton: Button
         lateinit var completeStudyButton: Button
 
+        @SuppressLint("NewApi")
         override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
             savedInstanceState: Bundle?
         ): View? {
+
+            var studyStateVars = getStudyStateVariables(requireContext())
+
             var studyState = getStudyState(requireContext())
             if (studyState == STUDY_STATE_FIRST_LAUNCH) {
                 inflaterView = inflater.inflate(R.layout.first_launch_layout, container, false)
@@ -260,22 +248,25 @@ class MainActivity : FragmentActivity() {
                 allowNotificationButton = inflaterView.findViewById(R.id.allowNotificationButton)
                 disableBatteryManagementButton = inflaterView.findViewById(R.id.disableBatteryManagementButton)
                 consentSpaiButton = inflaterView.findViewById(R.id.consentSpaiButton)
+                consentSASButton = inflaterView.findViewById(R.id.consentSASButton)
                 startBaselineButton = inflaterView.findViewById(R.id.startBaselineButton)
                 allowNotificationIcon = inflaterView.findViewById(R.id.allowNotificationIcon)
+                consentSpaiIcon = inflaterView.findViewById(R.id.spaiIcon)
+                consentSASIcon = inflaterView.findViewById(R.id.sasIcon)
 
-                var notifications_allowed : Boolean = false
+                var notificationsAllowed : Boolean = false
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     if ((requireActivity() as MainActivity).checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                         // still false! :)
-                        notifications_allowed = false
+                        notificationsAllowed = false
                         }
                 } else {
-                    notifications_allowed = true
+                    notificationsAllowed = true
                     allowNotificationButton.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue_gray_200))
                     allowNotificationButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue_gray_600))
                 }
-                allowNotificationIcon.isVisible = notifications_allowed
-                allowNotificationButton.isEnabled = !notifications_allowed
+                allowNotificationIcon.isVisible = notificationsAllowed
+                allowNotificationButton.isEnabled = !notificationsAllowed
                 allowNotificationButton.setOnClickListener {
                     ActivityCompat.requestPermissions(requireActivity(), arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), REQUEST_CODE_NOTIFICATION)
                 }
@@ -292,10 +283,24 @@ class MainActivity : FragmentActivity() {
                     startActivity(intent)
                 }
 
+                if (studyStateVars[SPAI_1_SUBMITTED] == 1) {
+                    consentSpaiIcon.visibility = View.VISIBLE
+                    disableConsentButton(consentSpaiButton)
+                } else {
+                    consentSpaiIcon.visibility = View.GONE
+                }
+
                 consentSASButton.setOnClickListener {
                     val intent = Intent(activity, SASSVActivity::class.java)
                     intent.putExtra("source", "consent_given")
                     startActivity(intent)
+                }
+
+                if (studyStateVars[SASSV_1_SUBMITTED] == 1) {
+                    consentSASIcon.visibility = View.VISIBLE
+                    disableConsentButton(consentSASButton)
+                } else {
+                    consentSASIcon.visibility = View.GONE
                 }
 
                 startBaselineButton.setOnClickListener {
@@ -304,20 +309,46 @@ class MainActivity : FragmentActivity() {
                     (requireActivity() as MainActivity).refreshUI()
                 }
 
+                if (!((studyStateVars[SASSV_1_SUBMITTED] == 1) && (studyStateVars[SPAI_1_SUBMITTED] ==1) && notificationsAllowed)) {
+                    disableConsentButton(startBaselineButton)
+                }
+
             }
 
             else if (studyState == STUDY_STATE_BASELINE_ONGOING) {
                 // Actions for baseline ongoing
                 // e.g., initialize baseline tracking, display tracking progress
                 inflaterView = inflater.inflate(R.layout.baseline_ongoing_layout, container, false)
+
+                val intent = Intent(requireContext(), BaselineService::class.java) // Build the intent for the service
+                (requireActivity() as MainActivity).startForegroundService(intent)
+
+                FirebaseUtils.fetchUsageTotal(LocalDateTime.now()) { usage ->
+                    Log.d("FIREBASE", "Total Usage All Days: ${usage?.get("totalUsageAllDays")}")
+                    Log.d("FIREBASE", "Total Usage for Selected Day: ${usage?.get("totalUsageSelectedDay")}")
+                }
             }
 
             else if (studyState == STUDY_STATE_POST_BASELINE) {
+                // stop previous service
+
+                val baselineServiceIntent = Intent(requireContext(), BaselineService::class.java)
+                (requireActivity() as MainActivity).stopService(baselineServiceIntent)
+
                 // Actions for post-baseline phase
                 // e.g., gather baseline data, prepare for intervention
                 inflaterView = inflater.inflate(R.layout.post_baseline_layout, container, false)
 
-                bedTimeInput = inflaterView.findViewById<EditText>(R.id.bedtimeInput)
+                averageUsageText = inflaterView.findViewById(R.id.averageUsageText)
+                reduceUsageSlider = inflaterView.findViewById(R.id.reduceUsageSlider)
+                reduceUsageText = inflaterView.findViewById(R.id.reduceUsageText)
+                enableOverlayButton = inflaterView.findViewById(R.id.enableOverlayButton)
+                popupTestButton = inflaterView.findViewById(R.id.popupTestButton)
+                startInterventionButton = inflaterView.findViewById(R.id.startInterventionButton)
+                bedTimeInput = inflaterView.findViewById(R.id.bedtimeInput)
+
+                averageUsageText
+
                 bedTimeInput.setOnClickListener {
                     val calendar = Calendar.getInstance()
                     val hour = calendar.get(Calendar.HOUR_OF_DAY)
@@ -334,12 +365,48 @@ class MainActivity : FragmentActivity() {
                     }, hour, minute, true)
                     timePicker.show()
                 }
+
+                enableOverlayButton = inflaterView.findViewById(R.id.enableOverlayButton)
+                enableOverlayButton.setOnClickListener {
+                    (requireActivity() as MainActivity).requestOverlayPermission()
+                }
+
+                var overlaysAllowed = false
+                if (Settings.canDrawOverlays(requireContext())) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        overlaysAllowed = true
+                        // button disabled if already enabled
+                        disableINT1Button(enableOverlayButton)
+                    }
+                    else {
+                        Log.d("MAIN:ONCREATE", "SDK level too low")
+                    }
+                }
+
             }
 
             else if (studyState == STUDY_STATE_INT1) {
                 // Actions for Intervention Phase 1
+
+                // INT1 requires overlay permission
+                if (Settings.canDrawOverlays(requireContext())) {
+                    //TODO change baseline to INT1 service?
+                    val intent = Intent(requireContext(), BaselineService::class.java) // Build the intent for the service
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        (requireActivity() as MainActivity).startForegroundService(intent)
+                    }
+                    else {
+                        Log.d("MAIN:ONCREATE", "SDK level too low")
+                    }
+                } else {
+                    // this prompts user to the settings screen to enable overlay
+                    (requireActivity() as MainActivity).requestOverlayPermission()
+                }
+
                 // e.g., initiate intervention routines, set up reminders
                 inflaterView = inflater.inflate(R.layout.intervention1_layout, container, false)
+
+
             }
 
             else if (studyState == STUDY_STATE_POST_INT1) {
@@ -371,6 +438,19 @@ class MainActivity : FragmentActivity() {
 
             return inflaterView
         }
+
+        private fun disableConsentButton(b : Button) {
+            b.isEnabled = false
+            b.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue_gray_200))
+            b.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue_gray_600))
+        }
+
+        private fun disableINT1Button(b : Button) {
+            b.isEnabled = false
+            b.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue_200))
+            b.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue_600))
+        }
+
     }
 
     class DataCollectedFragment : Fragment() {

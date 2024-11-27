@@ -2,6 +2,7 @@ package com.example.screenloggerdialogtest
 
 import android.app.Service.WINDOW_SERVICE
 import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.PixelFormat
 import android.os.Handler
 import android.os.Looper
@@ -13,6 +14,7 @@ import android.widget.Toast
 
 // variable name for Shared Preferences filename
 const val STUDY_STATE_SHAREDPREFS : String = "STUDY_STATE_SHAREDPREFS"
+const val SCREEN_EVENTS_SHAREDPREFS : String = "SCREEN_EVENTS_SHAREDPREFS"
 
 // variable names for STUDY_STATE sharedPrefs objects
 const val CONSENT_GIVEN: String = "CONSENT_GIVEN"
@@ -30,9 +32,13 @@ const val SPAI_2_SUBMITTED: String = "SPAI_2_SUBMITTED"
 const val SASSV_2_SUBMITTED: String = "SASSV_2_SUBMITTED"
 const val STUDY_COMPLETE_TIMESTAMP: String = "STUDY_COMPLETE_TIMESTAMP"
 
+private fun getStudyStateSharedPreferences(c: Context?): SharedPreferences? {
+    return c?.applicationContext?.getSharedPreferences(STUDY_STATE_SHAREDPREFS, Context.MODE_PRIVATE)
+}
+
 fun setStudyVariable(c : Context?, variable : String, value : Int) {
-    var sharedPrefs = c?.getSharedPreferences(STUDY_STATE_SHAREDPREFS, Context.MODE_PRIVATE)
-    var editor = sharedPrefs?.edit()
+    val sharedPrefs = getStudyStateSharedPreferences(c)
+    val editor = sharedPrefs?.edit()
     if (editor != null) {
         editor.putInt(variable, value)
         editor.apply()
@@ -41,7 +47,7 @@ fun setStudyVariable(c : Context?, variable : String, value : Int) {
 }
 
 fun setStudyTimestamp(c: Context?, variable: String, value: Long) {
-    val sharedPrefs = c?.getSharedPreferences(STUDY_STATE_SHAREDPREFS, Context.MODE_PRIVATE)
+    val sharedPrefs = getStudyStateSharedPreferences(c)
     val editor = sharedPrefs?.edit()
     if (editor != null) {
         editor.putLong(variable, value)
@@ -53,22 +59,24 @@ fun setStudyTimestamp(c: Context?, variable: String, value: Long) {
 }
 
 fun getStudyStateVariables(c: Context?): Map<String, Int?> {
-    val sharedPrefs = c?.getSharedPreferences(STUDY_STATE_SHAREDPREFS, Context.MODE_PRIVATE)
+    val sharedPrefs = getStudyStateSharedPreferences(c)
     val studyVariables = mapOf(
         CONSENT_GIVEN to sharedPrefs?.getInt(CONSENT_GIVEN, 0),
         SPAI_1_SUBMITTED to sharedPrefs?.getInt(SPAI_1_SUBMITTED, 0),
+        SASSV_1_SUBMITTED to sharedPrefs?.getInt(SASSV_1_SUBMITTED, 0),
         ONBOARDING_COMPLETED to sharedPrefs?.getInt(ONBOARDING_COMPLETED, 0),
         BASELINE_COMPLETED to sharedPrefs?.getInt(BASELINE_COMPLETED, 0),
         INT_SMARTPHONE_USAGE_LIMIT_GOAL to sharedPrefs?.getInt(INT_SMARTPHONE_USAGE_LIMIT_GOAL, 0),
         INT_BEDTIME to sharedPrefs?.getInt(INT_BEDTIME, 0),
         EXIT_SURVEY_COMPLETED to sharedPrefs?.getInt(EXIT_SURVEY_COMPLETED, 0),
         SPAI_2_SUBMITTED to sharedPrefs?.getInt(SPAI_2_SUBMITTED, 0),
+        SASSV_2_SUBMITTED to sharedPrefs?.getInt(SASSV_2_SUBMITTED, 0)
     )
     return studyVariables
 }
 
 fun getStudyStateTimestamps(c: Context?): Map<String, Long?> {
-    val sharedPrefs = c?.getSharedPreferences(STUDY_STATE_SHAREDPREFS, Context.MODE_PRIVATE)
+    val sharedPrefs = getStudyStateSharedPreferences(c)
     val studyVariables = mapOf(
         BASELINE_START_TIMESTAMP to sharedPrefs?.getLong(BASELINE_START_TIMESTAMP, 0L),
         INT1_START_TIMESTAMP to sharedPrefs?.getLong(INT1_START_TIMESTAMP, 0L),
@@ -107,7 +115,7 @@ const val STUDY_STATE_POST_INT2_SURVEY_REQUIRED = 7
 const val STUDY_STATE_COMPLETE = 8
 
 fun setStudyState(c : Context?, state : Int) {
-    var sharedPrefs = c?.getSharedPreferences(STUDY_STATE_SHAREDPREFS, Context.MODE_PRIVATE)
+    var sharedPrefs = getStudyStateSharedPreferences(c)
     var editor = sharedPrefs?.edit()
     if (editor != null) {
         editor.putInt(STUDY_STATE, state)
@@ -117,12 +125,18 @@ fun setStudyState(c : Context?, state : Int) {
 }
 
 fun getStudyState(c : Context?): Int {
-    var sharedPrefs = c?.getSharedPreferences(STUDY_STATE_SHAREDPREFS, Context.MODE_PRIVATE)
+    var sharedPrefs = getStudyStateSharedPreferences(c)
     if (sharedPrefs != null) {
         return sharedPrefs.getInt(STUDY_STATE, 0)
     }
     else return 0
 }
+
+/*
+
+Dialog generation for INT1 phase
+
+ */
 
 fun showDialog(c : Context?) {
     if (c == null) {
@@ -155,5 +169,34 @@ fun showDialog(c : Context?) {
     Handler(Looper.getMainLooper()).postDelayed({
        wm.removeView(dialogView)
    }, 10000)
+}
+
+/*
+
+Screen event tracking
+
+ */
+private fun getScreenSharedPreferences(c: Context?): SharedPreferences? {
+    return c?.applicationContext?.getSharedPreferences(SCREEN_EVENTS_SHAREDPREFS, Context.MODE_PRIVATE)
+}
+
+private const val PREVIOUS_SCREEN_EVENT_TS = "PREVIOUS_SCREEN_EVENT_TS" //when
+private const val PREVIOUS_SCREEN_EVENT_TYPE = "PREVIOUS_SCREEN_EVENT_TYPE" //what
+
+// Function to save the previous event time in SharedPreferences
+fun putPreviousEvent(time: Long, type: String, c: Context?) {
+    val sharedPreferences = getScreenSharedPreferences(c)
+    sharedPreferences?.edit()?.putLong(PREVIOUS_SCREEN_EVENT_TS, time)?.apply()
+    sharedPreferences?.edit()?.putString(PREVIOUS_SCREEN_EVENT_TYPE, type)?.apply()
+}
+
+// Function to retrieve the previous event time from SharedPreferences
+fun getPreviousEvent(c: Context?): Pair<Long, String> {
+    val sharedPreferences = getScreenSharedPreferences(c)
+
+    val previousTime = sharedPreferences?.getLong(PREVIOUS_SCREEN_EVENT_TS, System.currentTimeMillis()) ?: System.currentTimeMillis()
+    val previousType = sharedPreferences?.getString(PREVIOUS_SCREEN_EVENT_TYPE, "") ?: ""
+
+    return Pair(previousTime, previousType)
 }
 

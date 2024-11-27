@@ -29,7 +29,7 @@
             android:id="@+id/averageUsageText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Your average daily smartphone usage was: 3 hours 12 minutes"
+            android:text="@string/daily_usage"
             android:textSize="16sp"
             android:textColor="@color/blue_700"
             android:layout_marginTop="16dp"
@@ -40,7 +40,7 @@
             android:id="@+id/reduceUsageQuestion"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="How much do you wish to reduce your daily smartphone usage?"
+            android:text="@string/smartphone_usage_goal"
             android:textSize="16sp"
             android:layout_marginTop="24dp" />
 
@@ -62,7 +62,7 @@
             android:id="@+id/reduceUsageText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="New usage limit is:"
+            android:text="@string/usage_limit_text"
             android:layout_gravity="left"/>
 
 
@@ -71,7 +71,7 @@
             android:id="@+id/bedtimeQuestion"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="When is your usual bedtime during the week (Sunday-Thursday)?"
+            android:text="@string/bedtime_input"
             android:textSize="16sp"
             android:textColor="@color/blue_gray_700"
             android:layout_marginTop="24dp" />
@@ -128,7 +128,7 @@
             android:layout_height="wrap_content"
             android:textStyle="italic"
             android:textSize="12sp"
-            android:text="Overlay is required to draw the popup dialog. Click below to test what it looks like."
+            android:text="@string/overlay_permission_and_test"
             />
 
         <Button

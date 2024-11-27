@@ -46,7 +46,12 @@
             android:exported="false">
         </service>
 
-        <service android:name=".DialogService"
+        <service android:name=".INT1Service"
+            android:foregroundServiceType="specialUse"
+            android:exported="false"/>
+
+        <service android:name=".INT2Service"
+            android:foregroundServiceType="specialUse"
             android:exported="false"/>
 
     </application>

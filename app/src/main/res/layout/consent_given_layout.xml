@@ -94,22 +94,66 @@
         android:textColor="@color/blue_gray_700"
         android:text="@string/addiction_scales_text"
         />
-
-    <Button
-        android:id="@+id/consentSpaiButton"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Smartphone Addiction Inventory(SPAI)"
-        android:backgroundTint="@color/blue_gray_500"
-        android:textColor="@color/blue_gray_50"/>
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:gravity="center_vertical">
 
-    <Button
-        android:id="@+id/consentSASButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Smartphone Addiction Survey\n(SAS-Short Version)"
-        android:backgroundTint="@color/blue_gray_500"
-        android:textColor="@color/blue_gray_50"/>
+        <!-- SPAI Button with Icon -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingBottom="8dp">
+
+            <ImageView
+                android:id="@+id/spaiIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_checkmark"
+                android:visibility="gone"
+                android:contentDescription="SPAI Status" />
+
+            <Button
+                android:id="@+id/consentSpaiButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Smartphone Addiction Inventory(SPAI)"
+                android:layout_marginStart="8dp"
+                android:backgroundTint="@color/blue_gray_500"
+                android:textColor="@color/blue_gray_50" />
+        </LinearLayout>
+
+        <!-- SAS Button with Icon -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingBottom="8dp">
+
+            <ImageView
+                android:id="@+id/sasIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_checkmark"
+                android:visibility="gone"
+                android:contentDescription="SAS Status" />
+
+            <Button
+                android:id="@+id/consentSASButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Smartphone Addiction Survey\n(SAS-Short Version)"
+                android:layout_marginStart="8dp"
+                android:backgroundTint="@color/blue_gray_500"
+                android:textColor="@color/blue_gray_50" />
+        </LinearLayout>
+
+    </LinearLayout>
 
     <!-- Start Baseline Button at the Bottom -->
     <Button
