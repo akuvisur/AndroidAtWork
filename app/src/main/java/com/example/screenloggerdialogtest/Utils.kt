@@ -6,11 +6,17 @@ import android.content.SharedPreferences
 import android.graphics.PixelFormat
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.Toast
+import java.time.LocalTime
+
+const val BASELINE_DURATION = 14
+const val INT1_DURATION = 7
+const val INT2_DURATION = 21
 
 // variable name for Shared Preferences filename
 const val STUDY_STATE_SHAREDPREFS : String = "STUDY_STATE_SHAREDPREFS"
@@ -46,6 +52,17 @@ fun setStudyVariable(c : Context?, variable : String, value : Int) {
     if (c != null) Toast.makeText(c, "Study variable $variable changed to $value", Toast.LENGTH_SHORT).show()
 }
 
+// overloaded function to store Long values (INT_SMARTPHONE_USAGE_LIMIT_GOAL, INT_BEDTIME)
+fun setStudyVariable(c : Context?, variable : String, value : Long) {
+    val sharedPrefs = getStudyStateSharedPreferences(c)
+    val editor = sharedPrefs?.edit()
+    if (editor != null) {
+        editor.putLong(variable, value)
+        editor.apply()
+    }
+    if (c != null) Toast.makeText(c, "Study variable $variable changed to $value", Toast.LENGTH_SHORT).show()
+}
+
 fun setStudyTimestamp(c: Context?, variable: String, value: Long) {
     val sharedPrefs = getStudyStateSharedPreferences(c)
     val editor = sharedPrefs?.edit()
@@ -58,7 +75,7 @@ fun setStudyTimestamp(c: Context?, variable: String, value: Long) {
     }
 }
 
-fun getStudyStateVariables(c: Context?): Map<String, Int?> {
+fun getStudyStateVariables(c: Context?): Map<String, Number?> {
     val sharedPrefs = getStudyStateSharedPreferences(c)
     val studyVariables = mapOf(
         CONSENT_GIVEN to sharedPrefs?.getInt(CONSENT_GIVEN, 0),
@@ -66,7 +83,7 @@ fun getStudyStateVariables(c: Context?): Map<String, Int?> {
         SASSV_1_SUBMITTED to sharedPrefs?.getInt(SASSV_1_SUBMITTED, 0),
         ONBOARDING_COMPLETED to sharedPrefs?.getInt(ONBOARDING_COMPLETED, 0),
         BASELINE_COMPLETED to sharedPrefs?.getInt(BASELINE_COMPLETED, 0),
-        INT_SMARTPHONE_USAGE_LIMIT_GOAL to sharedPrefs?.getInt(INT_SMARTPHONE_USAGE_LIMIT_GOAL, 0),
+        INT_SMARTPHONE_USAGE_LIMIT_GOAL to sharedPrefs?.getLong(INT_SMARTPHONE_USAGE_LIMIT_GOAL, 0),
         INT_BEDTIME to sharedPrefs?.getInt(INT_BEDTIME, 0),
         EXIT_SURVEY_COMPLETED to sharedPrefs?.getInt(EXIT_SURVEY_COMPLETED, 0),
         SPAI_2_SUBMITTED to sharedPrefs?.getInt(SPAI_2_SUBMITTED, 0),
@@ -86,9 +103,33 @@ fun getStudyStateTimestamps(c: Context?): Map<String, Long?> {
     return studyVariables
 }
 
-fun dayDifference(timestamp1: Long, timestamp2: Long): Int {
-    return (kotlin.math.abs(timestamp1 - timestamp2) / (1000 * 60 * 60 * 24)).toInt()
+fun calculateStudyPeriodDay(type: String, c: Context?): Int {
+    // Retrieve the study state timestamps
+    val studyTimestamps = getStudyStateTimestamps(c)
+
+    // Determine the start timestamp for the given type
+    val periodStartTimestamp = when (type) {
+        "BASELINE_START_TIMESTAMP" -> studyTimestamps[BASELINE_START_TIMESTAMP]
+        "INT1_START_TIMESTAMP" -> studyTimestamps[INT1_START_TIMESTAMP]
+        "INT2_START_TIMESTAMP" -> studyTimestamps[INT2_START_TIMESTAMP]
+        else -> null
+    }
+
+    // If the period start timestamp is null or not set, return -1
+    if (periodStartTimestamp == null || periodStartTimestamp == 0L) {
+        return -1
+    }
+
+    // Calculate the elapsed days for the selected period
+    val now = System.currentTimeMillis()
+    val elapsedMillis = now - periodStartTimestamp
+    val elapsedDays = (elapsedMillis / (1000 * 60 * 60 * 24)).toInt()
+
+    Log.d("UTILS", "${type} studyday: ${elapsedDays+1}")
+
+    return elapsedDays + 1 // Adding 1 as the first day is "Day 1"
 }
+
 
 /*
     0 = installed, no consent
@@ -151,8 +192,8 @@ fun showDialog(c : Context?) {
     val closeButton = dialogView.findViewById<Button>(R.id.close_button)
     // Set up the layout parameters for the WindowManager
     val layoutParams = WindowManager.LayoutParams(
-        WindowManager.LayoutParams.WRAP_CONTENT,
-        WindowManager.LayoutParams.WRAP_CONTENT,
+        WindowManager.LayoutParams.MATCH_PARENT,
+        WindowManager.LayoutParams.MATCH_PARENT,
         WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
         WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
         PixelFormat.TRANSLUCENT
@@ -166,10 +207,15 @@ fun showDialog(c : Context?) {
     // Add the view to the window
     wm.addView(dialogView, layoutParams)
 
+    /*
     Handler(Looper.getMainLooper()).postDelayed({
        wm.removeView(dialogView)
    }, 10000)
+     */
 }
+
+
+
 
 /*
 
@@ -200,3 +246,38 @@ fun getPreviousEvent(c: Context?): Pair<Long, String> {
     return Pair(previousTime, previousType)
 }
 
+/*
+    random utils
+ */
+
+fun formatMinutesToTime(minutes: Int): String {
+    val hours = minutes / 60
+    val mins = minutes % 60
+    return String.format("%02d:%02d", hours, mins)
+}
+
+fun calculateMinutesUntilBedtime(bedtimeInMinutes: Int): Int {
+    val now = LocalTime.now()
+    val currentMinutes = (now.hour * 60) + now.minute
+    val minutesUntilBedtime = if (currentMinutes <= bedtimeInMinutes) {
+        bedtimeInMinutes - currentMinutes
+    } else {
+        // If bedtime is on the next day
+        (1440 - currentMinutes) + bedtimeInMinutes
+    }
+    return minutesUntilBedtime
+}
+
+fun parseBedtimeToMinutes(input : String): Int {
+    val regex = Regex("(\\d+)h\\s*(\\d+)m")
+    val matchResult = regex.find(input)
+
+    if (matchResult != null) {
+        val (hours, minutes) = matchResult.destructured
+        val bedtimeHours = hours.toInt()
+        val bedtimeMinutes = minutes.toInt()
+        val bedtimeInMinutes = (bedtimeHours * 60) + bedtimeMinutes
+        return (bedtimeInMinutes)
+    }
+    return(0)
+}

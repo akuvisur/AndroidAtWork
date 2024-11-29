@@ -52,7 +52,7 @@
             android:valueFrom="10"
             android:valueTo="50"
             android:stepSize="5"
-            app:labelBehavior="gone"
+            app:labelBehavior="visible"
             android:layout_marginTop="8dp"
             app:thumbTint="@color/blue_500"
             app:trackColor="@color/blue_200"
@@ -132,10 +132,10 @@
             />
 
         <Button
-            android:id="@+id/popupTestButton"
+            android:id="@+id/intervention1TestButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="TEST POPUP"
+            android:text="TEST INTERVENTION UNLOCK SCREEN"
             android:textColor="@color/blue_50"
             android:backgroundTint="@color/blue_700"
             android:padding="16dp"
@@ -146,12 +146,11 @@
             android:id="@+id/startInterventionButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="START INTERVENTION PHASE 1"
+            android:text="START INTERVENTION PHASE #1"
             android:textColor="@color/blue_50"
             android:backgroundTint="@color/blue_700"
             android:padding="16dp"
             android:layout_gravity="bottom"
-            android:enabled="false"
             android:layout_marginTop="24dp"/>
 
     </LinearLayout>

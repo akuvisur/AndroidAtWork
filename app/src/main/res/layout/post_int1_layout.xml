@@ -22,7 +22,7 @@
         android:id="@+id/intervention_info_message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="During Intervention #2, you will no longer receive pop-ups when you exceed your smartphone usage limit goal."
+        android:text="@string/post_int1_information"
         android:textSize="18sp"
         android:textColor="@color/blue_600"
         android:layout_marginBottom="32dp"/>
@@ -31,13 +31,13 @@
         android:id="@+id/intervention_duration_message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="This phase lasts 14 days."
+        android:text="This phase lasts 21 days."
         android:textSize="16sp"
         android:textColor="@color/blue_600"
         android:layout_marginBottom="32dp"/>
 
     <Button
-        android:id="@+id/start_intervention_2_button"
+        android:id="@+id/startIntervention2Button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="START INTERVENTION #2"

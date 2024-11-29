@@ -9,6 +9,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 
@@ -52,15 +53,13 @@ object FirebaseUtils {
         return auth.currentUser?.uid
     }
 
-    fun calculateUsage(
+    fun calculateUsagePerDay(
         userId: String,
-        data: Map<String, Any>,
-        selectedDay: LocalDateTime? = null
-    ): Map<String, Long> {
-        var totalUsageAllDays: Long = 0
-        var totalUsageSelectedDay: Long = 0
+        data: Map<String, Any>
+    ): Map<LocalDate, Long> {
+        val dailyUsage = mutableMapOf<LocalDate, Long>()
 
-        // Loop through all events and calculate total usage
+        // Loop through all events and calculate total usage per day
         val screenEvents = data["screen"] as Map<String, Map<String, Any>>
 
         for (eventEntry in screenEvents.values) {
@@ -70,26 +69,21 @@ object FirebaseUtils {
             val eventType = event["type"] as String
             val eventTime = convertTimestampToLocalDateTime(timestamp)
 
-            // Add to total usage for all days
+            // Only consider "ACTION_USER_PRESENT" events for usage
             if (eventType == "ACTION_USER_PRESENT") {
-                totalUsageAllDays += duration
-
-                // If selected day is provided, check if event falls within the selected day's range
-                selectedDay?.let {
-                    val dayStart = selectedDay.withHour(4).withMinute(0).withSecond(0).withNano(0)
-                    val dayEnd = dayStart.plusDays(1) // Next day at 4 AM
-
-                    if (eventTime.isAfter(dayStart) && eventTime.isBefore(dayEnd)) {
-                        totalUsageSelectedDay += duration
-                    }
+                // Use a 4 AM cutoff for each day
+                val adjustedDate = if (eventTime.hour < 4) {
+                    eventTime.toLocalDate().minusDays(1) // Consider it part of the previous day
+                } else {
+                    eventTime.toLocalDate()
                 }
+
+                // Add the duration to the respective day
+                dailyUsage[adjustedDate] = dailyUsage.getOrDefault(adjustedDate, 0L) + duration
             }
         }
 
-        return mapOf(
-            "totalUsageAllDays" to totalUsageAllDays,
-            "totalUsageSelectedDay" to totalUsageSelectedDay
-        )
+        return dailyUsage
     }
 
     fun convertTimestampToLocalDateTime(timestamp: Long): LocalDateTime {
@@ -102,29 +96,23 @@ object FirebaseUtils {
 
         myRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                // Assuming that the data is fetched from Firebase
                 val data = snapshot.value as? Map<String, Any> ?: run {
-                    // Handle the case where snapshot.value is null or not of the expected type
                     Log.e("FIREBASE", "Snapshot value is null or not a Map")
-                    return@run null  // Return null or an empty map or whatever is appropriate
+                    return  // Stop further execution
                 }
 
-                // Only proceed if data is valid
-                data?.let {
-                    val usage = getCurrentUserUID()?.let { userId ->
-                        calculateUsage(userId, data, selectedDay)
-                    }
-                    usage?.let {
-                        callback(it)
-                    } ?: Log.e("FIREBASE", "Failed to calculate usage.")
+                val usage = getCurrentUserUID()?.let { userId ->
+                    calculateUsagePerDay(userId, data).mapKeys { it.key.toString() }
                 }
 
+                usage?.let {
+                    callback(it)
+                } ?: Log.e("FIREBASE", "Failed to calculate usage.")
             }
 
             override fun onCancelled(error: DatabaseError) {
                 println("Failed to read value: ${error.toException()}")
             }
-
         })
 
     }

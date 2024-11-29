@@ -2,7 +2,6 @@ package com.example.screenloggerdialogtest
 
 import android.annotation.SuppressLint
 import android.app.TimePickerDialog
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -33,10 +32,10 @@ import com.google.android.material.tabs.TabLayoutMediator
 import androidx.core.content.ContextCompat
 import java.time.LocalDateTime
 import java.util.Calendar
+import kotlin.math.min
 
 class MainActivity : FragmentActivity() {
 
-    private var study_start_ts = 0
     private var study_state : Int = 0
 
     private lateinit var mainAdapter : ViewPagerAdapter
@@ -54,9 +53,6 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val sharedPrefs = getSharedPreferences("states", Context.MODE_PRIVATE)
-        study_start_ts = sharedPrefs.getInt("study_start_ts", 0)
-
         setContentView(R.layout.activity_main)
 
         FirebaseUtils.authenticateUser(
@@ -72,14 +68,6 @@ class MainActivity : FragmentActivity() {
     @SuppressLint("SetTextI18n")
     override fun onResume() {
         super.onResume()
-
-        // test firebase
-        val userData = hashMapOf(
-            "name" to "John Doe",
-            "age" to 30,
-            "email" to "johndoe@example.com",
-            "ts" to System.currentTimeMillis()
-        )
 
         studyPhaseSlider = findViewById(R.id.studyPhaseSlider)
         studyPhaseSlider.isEnabled = false
@@ -130,6 +118,7 @@ class MainActivity : FragmentActivity() {
         }
         // TODO: Add day counter
 
+
         studyPhaseSliderValue = when {
             study_state < STUDY_STATE_BASELINE_ONGOING -> 0f
             study_state < STUDY_STATE_INT1 -> 1f
@@ -139,11 +128,7 @@ class MainActivity : FragmentActivity() {
             else -> 0f
         }
         studyPhaseSlider.value = studyPhaseSliderValue
-        // TODO: Add daily calculation of value to show progress
 
-        val sharedPrefs = getSharedPreferences("states", Context.MODE_PRIVATE)
-        // always update study info values
-        study_start_ts = sharedPrefs.getInt("study_start_ts", 0)
     }
 
     fun refreshUI() {
@@ -205,15 +190,17 @@ class MainActivity : FragmentActivity() {
         lateinit var consentSpaiIcon: ImageView
         lateinit var consentSASIcon: ImageView
 
+        lateinit var baselineProgressSlider: Slider
+
         lateinit var averageUsageText: TextView
         lateinit var reduceUsageSlider: Slider
         lateinit var reduceUsageText: TextView
         lateinit var bedTimeInput : EditText
         lateinit var enableOverlayButton: Button
-        lateinit var popupTestButton: Button
+        lateinit var intervention1TestButton: Button
         lateinit var startInterventionButton: Button
 
-        lateinit var baselineProgressSlider: Slider
+
         lateinit var intervention1ProgressSlider: Slider
         lateinit var startIntervention2Button: Button
         lateinit var intervention2ProgressSlider: Slider
@@ -221,7 +208,7 @@ class MainActivity : FragmentActivity() {
         lateinit var postStudySpaiButton: Button
         lateinit var completeStudyButton: Button
 
-        @SuppressLint("NewApi")
+        @SuppressLint("NewApi", "DefaultLocale")
         override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
             savedInstanceState: Bundle?
@@ -305,8 +292,25 @@ class MainActivity : FragmentActivity() {
 
                 startBaselineButton.setOnClickListener {
                     setStudyState(requireContext(), STUDY_STATE_BASELINE_ONGOING)
-                    setStudyTimestamp(requireContext(), BASELINE_START_TIMESTAMP, System.currentTimeMillis().toLong())
+                    setStudyTimestamp(requireContext(), BASELINE_START_TIMESTAMP, System.currentTimeMillis())
                     (requireActivity() as MainActivity).refreshUI()
+
+                    val baselineData = hashMapOf(
+                        BASELINE_START_TIMESTAMP to System.currentTimeMillis(),
+                        "ts" to System.currentTimeMillis()
+                    )
+
+                    FirebaseUtils.sendEntryToDatabase(
+                        path = "users/{FirebaseUtils.getCurrentUserUID()}/study_state_info",
+                        data = baselineData,
+                        onSuccess = {
+                            //Toast.makeText(requireContext(), "Screen event sent successfully", Toast.LENGTH_SHORT).show()
+                        },
+                        onFailure = { exception ->
+                            // Handle failure
+                            //Toast.makeText(requireContext(), "Failed to send data: ${exception.message}", Toast.LENGTH_LONG).show()
+                        }
+                    )
                 }
 
                 if (!((studyStateVars[SASSV_1_SUBMITTED] == 1) && (studyStateVars[SPAI_1_SUBMITTED] ==1) && notificationsAllowed)) {
@@ -320,21 +324,29 @@ class MainActivity : FragmentActivity() {
                 // e.g., initialize baseline tracking, display tracking progress
                 inflaterView = inflater.inflate(R.layout.baseline_ongoing_layout, container, false)
 
+                val baselineDay = calculateStudyPeriodDay(BASELINE_START_TIMESTAMP, requireContext())
+                if (baselineDay > BASELINE_DURATION) {
+                    setStudyState(requireContext(), STUDY_STATE_POST_BASELINE)
+                    (requireActivity() as MainActivity).refreshUI()
+                }
+
                 val intent = Intent(requireContext(), BaselineService::class.java) // Build the intent for the service
                 (requireActivity() as MainActivity).startForegroundService(intent)
 
                 FirebaseUtils.fetchUsageTotal(LocalDateTime.now()) { usage ->
-                    Log.d("FIREBASE", "Total Usage All Days: ${usage?.get("totalUsageAllDays")}")
-                    Log.d("FIREBASE", "Total Usage for Selected Day: ${usage?.get("totalUsageSelectedDay")}")
+                    Log.d("FIREBASE", "Total Usage All Days: $usage")
                 }
+
+                baselineProgressSlider = inflaterView.findViewById(R.id.baselineProgressSlider)
+                baselineProgressSlider.value = min(baselineDay.toFloat(), BASELINE_DURATION.toFloat())
             }
 
             else if (studyState == STUDY_STATE_POST_BASELINE) {
                 // stop previous service
-
                 val baselineServiceIntent = Intent(requireContext(), BaselineService::class.java)
                 (requireActivity() as MainActivity).stopService(baselineServiceIntent)
 
+                var usageAverage = 0L
                 // Actions for post-baseline phase
                 // e.g., gather baseline data, prepare for intervention
                 inflaterView = inflater.inflate(R.layout.post_baseline_layout, container, false)
@@ -342,12 +354,53 @@ class MainActivity : FragmentActivity() {
                 averageUsageText = inflaterView.findViewById(R.id.averageUsageText)
                 reduceUsageSlider = inflaterView.findViewById(R.id.reduceUsageSlider)
                 reduceUsageText = inflaterView.findViewById(R.id.reduceUsageText)
-                enableOverlayButton = inflaterView.findViewById(R.id.enableOverlayButton)
-                popupTestButton = inflaterView.findViewById(R.id.popupTestButton)
-                startInterventionButton = inflaterView.findViewById(R.id.startInterventionButton)
                 bedTimeInput = inflaterView.findViewById(R.id.bedtimeInput)
+                enableOverlayButton = inflaterView.findViewById(R.id.enableOverlayButton)
+                intervention1TestButton = inflaterView.findViewById(R.id.intervention1TestButton)
+                startInterventionButton = inflaterView.findViewById(R.id.startInterventionButton)
 
-                averageUsageText
+                FirebaseUtils.fetchUsageTotal(LocalDateTime.now()) { usage ->
+                    val totalUsageAllDays = usage.values.sum()
+                    val averageUsageMillis = if (usage.isNotEmpty()) totalUsageAllDays / usage.size else 0L
+
+                    val hours = averageUsageMillis / (1000 * 60 * 60)
+                    val minutes = (averageUsageMillis / (1000 * 60)) % 60
+
+                    val usageFormatted = String.format("%02d:%02d", hours, minutes)
+                    val usageText = String.format(
+                        averageUsageText.context.getString(R.string.daily_usage),
+                        usageFormatted
+                    )
+                    averageUsageText.text = usageText
+                    usageAverage = averageUsageMillis
+                }
+
+                reduceUsageSlider.setLabelFormatter {
+                    value -> "-${value.toInt()}%"
+                }
+
+                var reduceUsageTouched = false
+                var reducedUsageMillis = 0L
+                reduceUsageSlider.addOnChangeListener { slider, value, _ ->
+                    // Convert the slider value to a percentage (negative)
+                    val percentageReduction = -value.toInt()
+
+                    // Calculate the reduced usage in milliseconds
+                    reducedUsageMillis = usageAverage * (100 + percentageReduction) / 100
+
+                    // Convert reduced usage to HH:mm format
+                    val hours = reducedUsageMillis / (1000 * 60 * 60)
+                    val minutes = (reducedUsageMillis / (1000 * 60)) % 60
+                    val reducedUsageFormatted = String.format("%02dh %02dm", hours, minutes)
+
+                    // Update the TextView with the reduced usage
+                    reduceUsageText.text = String.format(
+                        reduceUsageText.context.getString(R.string.usage_limit_text),
+                        reducedUsageFormatted
+                    )
+                    reduceUsageTouched = true
+                }
+                reduceUsageText.text = "Move the slider to select between 10% and 50% goal in reduction of smartphone use"
 
                 bedTimeInput.setOnClickListener {
                     val calendar = Calendar.getInstance()
@@ -357,7 +410,7 @@ class MainActivity : FragmentActivity() {
                     val timePicker = TimePickerDialog(requireContext(), { _, selectedHour, selectedMinute ->
                         bedTimeInput.setText(
                             String.format(
-                                "%02d:%02d",
+                                "%02dh %02dm",
                                 selectedHour,
                                 selectedMinute
                             )
@@ -383,15 +436,71 @@ class MainActivity : FragmentActivity() {
                     }
                 }
 
+                var interventionTested = false
+                intervention1TestButton.setOnClickListener {
+                    showDialog(requireContext())
+                    interventionTested = true
+                }
+                intervention1TestButton.isEnabled = overlaysAllowed
+
+                startInterventionButton.setOnClickListener {
+                    // TODO send setup data to firebase
+                    // TODO and store to local vars
+                    Log.d("MAIN", bedTimeInput.text.toString())
+                    if (overlaysAllowed && bedTimeInput.text.isNotEmpty() && reduceUsageTouched && interventionTested) {
+                        setStudyState(requireContext(), STUDY_STATE_INT1)
+                        setStudyVariable(requireContext(), INT_SMARTPHONE_USAGE_LIMIT_GOAL, reducedUsageMillis)
+                        setStudyVariable(requireContext(), INT_BEDTIME, parseBedtimeToMinutes(bedTimeInput.text.toString()))
+                        setStudyTimestamp(requireContext(), INT1_START_TIMESTAMP, System.currentTimeMillis())
+
+                        val goalData = hashMapOf(
+                            INT1_START_TIMESTAMP to System.currentTimeMillis(),
+                            INT_SMARTPHONE_USAGE_LIMIT_GOAL to reducedUsageMillis,
+                            INT_BEDTIME to parseBedtimeToMinutes(bedTimeInput.text.toString()),
+                            "ts" to System.currentTimeMillis()
+                        )
+
+                        FirebaseUtils.sendEntryToDatabase(
+                            path = "users/{FirebaseUtils.getCurrentUserUID()}/study_state_info",
+                            data = goalData,
+                            onSuccess = {
+                                //Toast.makeText(requireContext(), "Screen event sent successfully", Toast.LENGTH_SHORT).show()
+                            },
+                            onFailure = { exception ->
+                                // Handle failure
+                                //Toast.makeText(requireContext(), "Failed to send data: ${exception.message}", Toast.LENGTH_LONG).show()
+                            }
+                        )
+
+                        (requireActivity() as MainActivity).refreshUI()
+                    }
+                    // prompt user to do the missing thing!
+                    else {
+                        if (!overlaysAllowed) {
+                            Toast.makeText(requireContext(), "Please allow overlays before starting Intervention Phase #1", Toast.LENGTH_SHORT).show()
+                        }
+                        else if (bedTimeInput.text.isEmpty()) {
+                            Toast.makeText(requireContext(), "Please give your preferred bedtime before starting Intervention Phase #1", Toast.LENGTH_SHORT).show()
+                        }
+                        else if (!reduceUsageTouched) {
+                            Toast.makeText(requireContext(), "Please set a smartphone usage goal before starting Intervention Phase #1", Toast.LENGTH_SHORT).show()
+                        }
+                        else if (!interventionTested) {
+                            Toast.makeText(requireContext(), "Please test the intervention screen before starting Intervention Phase #1", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+
             }
 
             else if (studyState == STUDY_STATE_INT1) {
-                // Actions for Intervention Phase 1
+                // e.g., initiate intervention routines, set up reminders
+                inflaterView = inflater.inflate(R.layout.intervention1_layout, container, false)
 
                 // INT1 requires overlay permission
                 if (Settings.canDrawOverlays(requireContext())) {
                     //TODO change baseline to INT1 service?
-                    val intent = Intent(requireContext(), BaselineService::class.java) // Build the intent for the service
+                    val intent = Intent(requireContext(), INT1Service::class.java) // Build the intent for the service
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         (requireActivity() as MainActivity).startForegroundService(intent)
                     }
@@ -400,12 +509,21 @@ class MainActivity : FragmentActivity() {
                     }
                 } else {
                     // this prompts user to the settings screen to enable overlay
+                    Toast.makeText(requireContext(), "Please enable overlay permission", Toast.LENGTH_LONG).show()
                     (requireActivity() as MainActivity).requestOverlayPermission()
                 }
 
-                // e.g., initiate intervention routines, set up reminders
-                inflaterView = inflater.inflate(R.layout.intervention1_layout, container, false)
+                val int1Day = calculateStudyPeriodDay(INT1_START_TIMESTAMP, requireContext())
+                if (int1Day > INT1_DURATION) {
+                    setStudyState(requireContext(), STUDY_STATE_POST_INT1)
+                    (requireActivity() as MainActivity).refreshUI()
+                }
 
+                val intent = Intent(requireContext(), BaselineService::class.java) // Build the intent for the service
+                (requireActivity() as MainActivity).startForegroundService(intent)
+
+                intervention1ProgressSlider = inflaterView.findViewById(R.id.intervention1ProgressSlider)
+                intervention1ProgressSlider.value = min(int1Day.toFloat(), INT1_DURATION.toFloat())
 
             }
 
@@ -413,12 +531,50 @@ class MainActivity : FragmentActivity() {
                 // Actions after Intervention Phase 1
                 // e.g., prompt user feedback on phase, analyze results
                 inflaterView = inflater.inflate(R.layout.post_int1_layout, container, false)
+
+                startIntervention2Button = inflaterView.findViewById(R.id.startIntervention2Button)
+                startIntervention2Button.setOnClickListener {
+                    setStudyState(requireContext(), STUDY_STATE_INT2)
+                    setStudyTimestamp(requireContext(), INT2_START_TIMESTAMP, System.currentTimeMillis())
+
+                    val goalData = hashMapOf(
+                        INT2_START_TIMESTAMP to System.currentTimeMillis(),
+                        "ts" to System.currentTimeMillis()
+                    )
+
+                    FirebaseUtils.sendEntryToDatabase(
+                        path = "users/{FirebaseUtils.getCurrentUserUID()}/study_state_info",
+                        data = goalData,
+                        onSuccess = {
+                            //Toast.makeText(requireContext(), "Screen event sent successfully", Toast.LENGTH_SHORT).show()
+                        },
+                        onFailure = { exception ->
+                            // Handle failure
+                            //Toast.makeText(requireContext(), "Failed to send data: ${exception.message}", Toast.LENGTH_LONG).show()
+                        }
+                    )
+
+                    (requireActivity() as MainActivity).refreshUI()
+                }
             }
 
             else if (studyState == STUDY_STATE_INT2) {
                 // Actions for Intervention Phase 2
                 // e.g., adjust intervention parameters, set up next steps
                 inflaterView = inflater.inflate(R.layout.intervention2_layout, container, false)
+
+                val int2Day = calculateStudyPeriodDay(INT2_START_TIMESTAMP, requireContext())
+                if (int2Day > INT2_DURATION) {
+                    setStudyState(requireContext(), STUDY_STATE_POST_INT2_SURVEY_REQUIRED)
+                    (requireActivity() as MainActivity).refreshUI()
+                }
+
+                val intent = Intent(requireContext(), INT2Service::class.java) // Build the intent for the service
+                (requireActivity() as MainActivity).startForegroundService(intent)
+
+                intervention2ProgressSlider = inflaterView.findViewById(R.id.intervention2ProgressSlider)
+                intervention2ProgressSlider.value = min(int2Day.toFloat(), INT2_DURATION.toFloat())
+
             }
 
             else if (studyState == STUDY_STATE_POST_INT2_SURVEY_REQUIRED) {
@@ -505,7 +661,6 @@ class MainActivity : FragmentActivity() {
                 val intent = Intent(activity, SASSVActivity::class.java)
                 startActivity(intent)
             }
-
 
             studyStateSpinner = view.findViewById<Spinner>(R.id.study_state_spinner)
 

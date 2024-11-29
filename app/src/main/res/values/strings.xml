@@ -64,11 +64,12 @@
     </string>
 
     # after baseline
-    <string name="daily_usage">Your average daily smartphone usage was: %1$s</string>
-    <string name="smartphone_usage_goal">How much do you wish to reduce your daily smartphone usage?</string>
+    <string name="daily_usage">Your average daily smartphone usage during baseline tracking was: %1$s</string>
+    <string name="smartphone_usage_goal">GOAL: How much do you wish to reduce your daily smartphone usage?</string>
     <string name="usage_limit_text">New usage limit is: %1$s</string>
-    <string name="bedtime_input">When is your usual bedtime during the week (Sunday-Thursday)?</string>
-    <string name="overlay_permission_and_test">Overlay permission is required to draw the popup dialog during Intervention phase #1. Click below to test what the popup looks like.</string>
+    <string name="bedtime_input">When is your usual bedtime during the week (Sunday-Thursday)? If you dont have a typical bedtime, input a time when you would wish to go to bed normally.</string>
+    <string name="overlay_permission_and_test">Overlay permission is required to draw the the UI after phone unlock during Intervention phase #1. Click below to test what the screen looks like.</string>
+    <string name="post_int1_information">During Intervention #2, you will no longer receive screens after unlocking your phone when you exceed your smartphone usage limit goal.</string>
 
 
 </resources>
