@@ -764,6 +764,7 @@ class MainActivity : FragmentActivity() {
 
             settingsLayout.visibility = View.GONE
 
+            passkeyEditText.setText("")
             passkeyEditText.addTextChangedListener(object : TextWatcher {
                 override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
                 }
@@ -772,10 +773,14 @@ class MainActivity : FragmentActivity() {
                 }
 
                 override fun afterTextChanged(s: Editable?) {
-                    if (s.toString() == "7621") {
+                    if (s.toString() == SETTINGS_PASSKEY) {
                         // Passkey is correct
                         settingsLayout.visibility = View.VISIBLE
                         passkeyText.text = "Passkey correct!"
+                    }
+                    else {
+                        settingsLayout.visibility = View.GONE
+                        passkeyText.text = "Enter passkey:"
                     }
                 }
             })

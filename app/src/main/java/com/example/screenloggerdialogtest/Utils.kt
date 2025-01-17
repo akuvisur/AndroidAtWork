@@ -22,6 +22,8 @@ const val INT2_DURATION = 21
 
 const val DEBUG = true
 
+const val SETTINGS_PASSKEY = "7621"
+
 // variable name for Shared Preferences filename
 const val STUDY_STATE_SHAREDPREFS : String = "STUDY_STATE_SHAREDPREFS"
 const val SCREEN_EVENTS_SHAREDPREFS : String = "SCREEN_EVENTS_SHAREDPREFS"
