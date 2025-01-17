@@ -438,7 +438,8 @@ class MainActivity : FragmentActivity() {
 
                 var interventionTested = false
                 intervention1TestButton.setOnClickListener {
-                    showDialog(requireContext())
+                    UnlockDialog().showBedtimeClosingDialog(requireContext(), 0,0,0,0)
+                    //
                     interventionTested = true
                 }
                 intervention1TestButton.isEnabled = overlaysAllowed
@@ -450,13 +451,13 @@ class MainActivity : FragmentActivity() {
                     if (overlaysAllowed && bedTimeInput.text.isNotEmpty() && reduceUsageTouched && interventionTested) {
                         setStudyState(requireContext(), STUDY_STATE_INT1)
                         setStudyVariable(requireContext(), INT_SMARTPHONE_USAGE_LIMIT_GOAL, reducedUsageMillis)
-                        setStudyVariable(requireContext(), INT_BEDTIME, parseBedtimeToMinutes(bedTimeInput.text.toString()))
+                        setStudyVariable(requireContext(), BEDTIME_GOAL, parseBedtimeToMinutes(bedTimeInput.text.toString()))
                         setStudyTimestamp(requireContext(), INT1_START_TIMESTAMP, System.currentTimeMillis())
 
                         val goalData = hashMapOf(
                             INT1_START_TIMESTAMP to System.currentTimeMillis(),
                             INT_SMARTPHONE_USAGE_LIMIT_GOAL to reducedUsageMillis,
-                            INT_BEDTIME to parseBedtimeToMinutes(bedTimeInput.text.toString()),
+                            BEDTIME_GOAL to parseBedtimeToMinutes(bedTimeInput.text.toString()),
                             "ts" to System.currentTimeMillis()
                         )
 
@@ -543,7 +544,7 @@ class MainActivity : FragmentActivity() {
                     )
 
                     FirebaseUtils.sendEntryToDatabase(
-                        path = "users/{FirebaseUtils.getCurrentUserUID()}/study_state_info",
+                        path = "users/${FirebaseUtils.getCurrentUserUID()}/study_state_info",
                         data = goalData,
                         onSuccess = {
                             //Toast.makeText(requireContext(), "Screen event sent successfully", Toast.LENGTH_SHORT).show()

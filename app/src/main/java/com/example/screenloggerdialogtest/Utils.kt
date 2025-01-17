@@ -4,19 +4,23 @@ import android.app.Service.WINDOW_SERVICE
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.PixelFormat
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
+import android.view.View
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.EditText
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import java.time.LocalTime
+
 
 const val BASELINE_DURATION = 14
 const val INT1_DURATION = 7
 const val INT2_DURATION = 21
+
+const val DEBUG = true
 
 // variable name for Shared Preferences filename
 const val STUDY_STATE_SHAREDPREFS : String = "STUDY_STATE_SHAREDPREFS"
@@ -30,7 +34,7 @@ const val ONBOARDING_COMPLETED: String = "ONBOARDING_COMPLETED"
 const val BASELINE_START_TIMESTAMP: String = "BASELINE_START_TIMESTAMP"
 const val BASELINE_COMPLETED: String = "BASELINE_COMPLETED"
 const val INT_SMARTPHONE_USAGE_LIMIT_GOAL: String = "INT_SMARTPHONE_USAGE_LIMIT_GOAL"
-const val INT_BEDTIME: String = "INT_BEDTIME"
+const val BEDTIME_GOAL: String = "BEDTIME_GOAL"
 const val INT1_START_TIMESTAMP: String = "INT1_START_TIMESTAMP"
 const val INT2_START_TIMESTAMP: String = "INT2_START_TIMESTAMP"
 const val EXIT_SURVEY_COMPLETED: String = "EXIT_SURVEY_COMPLETED"
@@ -63,6 +67,19 @@ fun setStudyVariable(c : Context?, variable : String, value : Long) {
     if (c != null) Toast.makeText(c, "Study variable $variable changed to $value", Toast.LENGTH_SHORT).show()
 }
 
+// Getter for Int values
+fun getStudyVariable(c: Context?, variable: String, defaultValue: Int = 0): Int {
+    val sharedPrefs = getStudyStateSharedPreferences(c)
+    return sharedPrefs?.getInt(variable, defaultValue) ?: defaultValue
+}
+
+// Overloaded getter for Long values
+fun getStudyVariable(c: Context?, variable: String, defaultValue: Long = 0L): Long {
+    val sharedPrefs = getStudyStateSharedPreferences(c)
+    return sharedPrefs?.getLong(variable, defaultValue) ?: defaultValue
+}
+
+
 fun setStudyTimestamp(c: Context?, variable: String, value: Long) {
     val sharedPrefs = getStudyStateSharedPreferences(c)
     val editor = sharedPrefs?.edit()
@@ -84,7 +101,7 @@ fun getStudyStateVariables(c: Context?): Map<String, Number?> {
         ONBOARDING_COMPLETED to sharedPrefs?.getInt(ONBOARDING_COMPLETED, 0),
         BASELINE_COMPLETED to sharedPrefs?.getInt(BASELINE_COMPLETED, 0),
         INT_SMARTPHONE_USAGE_LIMIT_GOAL to sharedPrefs?.getLong(INT_SMARTPHONE_USAGE_LIMIT_GOAL, 0),
-        INT_BEDTIME to sharedPrefs?.getInt(INT_BEDTIME, 0),
+        BEDTIME_GOAL to sharedPrefs?.getInt(BEDTIME_GOAL, 0),
         EXIT_SURVEY_COMPLETED to sharedPrefs?.getInt(EXIT_SURVEY_COMPLETED, 0),
         SPAI_2_SUBMITTED to sharedPrefs?.getInt(SPAI_2_SUBMITTED, 0),
         SASSV_2_SUBMITTED to sharedPrefs?.getInt(SASSV_2_SUBMITTED, 0)
@@ -179,42 +196,179 @@ Dialog generation for INT1 phase
 
  */
 
-fun showDialog(c : Context?) {
-    if (c == null) {
-        return // Exit the function if context is null
+class UnlockDialog() {
+
+    lateinit var dialogView: View
+
+    private lateinit var closeButton : Button
+    private lateinit var submitButton : Button
+
+    private lateinit var contextHomeButton: Button
+    private lateinit var contextWorkButton: Button
+    private lateinit var contextCommuteButton: Button
+    private lateinit var contextOtherButton: Button
+    private lateinit var workSchoolButton: Button
+    private lateinit var leisureButton: Button
+    private lateinit var otherButton: Button
+    private lateinit var selfInitiatedButton: Button
+    private lateinit var notificationInitiatedButton: Button
+
+    private val row1 by lazy {
+        listOf(contextHomeButton, contextWorkButton, contextCommuteButton, contextOtherButton)
+    }
+    private val row2 by lazy {
+        listOf(workSchoolButton, leisureButton, otherButton)
+    }
+    private val row3 by lazy {
+        listOf(selfInitiatedButton, notificationInitiatedButton)
     }
 
-    val wm = c.getSystemService(WINDOW_SERVICE) as WindowManager
-        ?: return // Exit the function if WindowManager is null
+    private lateinit var extraInfo : EditText
 
-    val inflater = LayoutInflater.from(c)
-    val dialogView = inflater.inflate(R.layout.dialog_layout_unlocked, null)
-    val closeButton = dialogView.findViewById<Button>(R.id.close_button)
-    // Set up the layout parameters for the WindowManager
-    val layoutParams = WindowManager.LayoutParams(
-        WindowManager.LayoutParams.MATCH_PARENT,
-        WindowManager.LayoutParams.MATCH_PARENT,
-        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
-        PixelFormat.TRANSLUCENT
+    fun showGoalSurpassedDialog(
+        c: Context?,
+        curTime: Long,
+        bedTime: Int,
+        usage: Long,
+        goal: Long
+    ) {
+        // copy from after
+    }
+
+    fun showBedtimeClosingDialog(
+        c: Context?,
+        curTime: Long,
+        bedTime: Int,
+        usage: Long,
+        goal: Long
+    ) {
+        if (c == null) {
+            return // Exit the function if context is null
+        }
+
+        val wm = c.getSystemService(WINDOW_SERVICE) as WindowManager
+        val inflater = LayoutInflater.from(c)
+        val dialogView = inflater.inflate(R.layout.dialog_layout_unlocked_bedtime, null)
+        closeButton = dialogView.findViewById(R.id.closeButton)
+        submitButton = dialogView.findViewById(R.id.submitButton)
+        extraInfo = dialogView.findViewById(R.id.extraInfoEditText)
+
+        // First row
+        contextHomeButton = dialogView.findViewById(R.id.contextHomeButton)
+        contextWorkButton = dialogView.findViewById(R.id.contextWorkButton)
+        contextCommuteButton = dialogView.findViewById(R.id.contextCommuteButton)
+        contextOtherButton = dialogView.findViewById(R.id.contextOtherButton)
+
+        // Second row
+        workSchoolButton = dialogView.findViewById(R.id.workSchoolButton)
+        leisureButton = dialogView.findViewById(R.id.leisureButton)
+        otherButton = dialogView.findViewById(R.id.otherButton)
+
+        // Third row
+        selfInitiatedButton = dialogView.findViewById(R.id.selfInitiatedButton)
+        notificationInitiatedButton = dialogView.findViewById(R.id.notificationInitiatedButton)
+
+        setupButtonGroups(c)
+
+        // Set up the layout parameters for the WindowManager
+        val layoutParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+            PixelFormat.TRANSLUCENT
+        )
+
+        layoutParams.gravity = Gravity.CENTER // Center the view on the screen
+
+        closeButton.setOnClickListener {
+            close(c)
+        }
+
+        submitButton.setOnClickListener {
+            val row1Selection = getSelectedButtonText(c, row1)
+            val row2Selection = getSelectedButtonText(c, row2)
+            val row3Selection = getSelectedButtonText(c, row3)
+
+            // Collect additional text from EditText
+            val extraInfo = extraInfo.text.toString()
+
+            // Create a Response object
+            val data = Response(
+                contextSelection = row1Selection,
+                purposeSelection = row2Selection,
+                initiationSelection = row3Selection,
+                extraInfo = extraInfo
+            )
+
+            FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses/",data) // does this need onSuccesss?
+
+            close(c)
+        }
+
+        // Add the view to the window
+        show(dialogView, wm, layoutParams, c)
+    }
+
+    fun showTestDialogScreen(
+        c: Context?
+    ) {
+        // show a test dialog but dont store anything
+        // override submit button behaviour
+        // TODO the UnlockDialog class needs separate build() and show() functions that are called externally
+        // TODO or just a hacky code duplication method to show a test view.
+    }
+
+    private fun show(dialogView : View, wm : WindowManager, layoutParams : WindowManager.LayoutParams, c : Context) {
+        wm.addView(dialogView, layoutParams)
+        // TODO add note to database that a dialog was created
+    }
+
+    fun close(c: Context?) {
+        if (c == null) return
+        val wm = c.getSystemService(WINDOW_SERVICE) as WindowManager
+        wm.removeView(dialogView)
+
+
+    }
+
+    // Function to initialize button click listeners
+    private fun setupButtonGroups(c : Context) {
+        setupRowButtons(c, row1)
+        setupRowButtons(c, row2)
+        setupRowButtons(c, row3)
+    }
+
+    // Function to set up selection logic for a row of buttons
+    private fun setupRowButtons(c : Context, buttons: List<Button>) {
+        // Store original background for each button in this row
+        val originalBackgrounds = buttons.associateWith { it.background }
+
+        buttons.forEach { button ->
+            button.setOnClickListener {
+                // Reset all buttons in the row to their original background
+                buttons.forEach { btn ->
+                    btn.background = originalBackgrounds[btn]
+                }
+
+                // Highlight the selected button
+                button.setBackgroundColor(ContextCompat.getColor(c, R.color.white)) // Replace with desired highlight color
+            }
+        }
+    }
+
+    private fun getSelectedButtonText(c: Context, buttons: List<Button>): String? {
+        return buttons.find { it.background.constantState == ContextCompat.getDrawable(c, R.color.white)?.constantState }?.text?.toString()
+    }
+
+    data class Response(
+        val contextSelection: String?,
+        val purposeSelection: String?,
+        val initiationSelection: String?,
+        val extraInfo: String
     )
 
-    layoutParams.gravity = Gravity.CENTER // Center the view on the screen
-
-    closeButton.setOnClickListener {
-        wm.removeView(dialogView)
-    }
-    // Add the view to the window
-    wm.addView(dialogView, layoutParams)
-
-    /*
-    Handler(Looper.getMainLooper()).postDelayed({
-       wm.removeView(dialogView)
-   }, 10000)
-     */
 }
-
-
 
 
 /*
@@ -244,6 +398,31 @@ fun getPreviousEvent(c: Context?): Pair<Long, String> {
     val previousType = sharedPreferences?.getString(PREVIOUS_SCREEN_EVENT_TYPE, "") ?: ""
 
     return Pair(previousTime, previousType)
+}
+
+
+private const val DAILY_USAGE = "DAILY_USAGE"
+fun storeDailyUsage(duration : Long, c: Context?) {
+    val sharedPreferences = getScreenSharedPreferences(c)
+    sharedPreferences?.edit()?.putLong(DAILY_USAGE, duration)?.apply()
+}
+
+fun getDailyUsage(c : Context?) : Long {
+    val sharedPreferences = getScreenSharedPreferences(c)
+    val previousUsage = sharedPreferences?.getLong(DAILY_USAGE, 0L)
+    return(previousUsage!!)
+}
+
+private const val LAST_USAGE_SESSION_TS = "LAST_USAGE_SESSION_TS"
+fun storeLastDailyUsageTime(time : Long, c: Context?) {
+    val sharedPreferences = getScreenSharedPreferences(c)
+    sharedPreferences?.edit()?.putLong(LAST_USAGE_SESSION_TS, time)?.apply()
+}
+
+fun getLastDailyUsageTime(c : Context?) : Long {
+    val sharedPreferences = getScreenSharedPreferences(c)
+    val previousUsage = sharedPreferences?.getLong(LAST_USAGE_SESSION_TS, 0L)
+    return(previousUsage!!)
 }
 
 /*

@@ -71,5 +71,8 @@
     <string name="overlay_permission_and_test">Overlay permission is required to draw the the UI after phone unlock during Intervention phase #1. Click below to test what the screen looks like.</string>
     <string name="post_int1_information">During Intervention #2, you will no longer receive screens after unlocking your phone when you exceed your smartphone usage limit goal.</string>
 
+    # popup screen (int1)
+    <string name="dialog_bedtime_info">Your bedtime is nearing. If you think using your phone is really important, please tell us why and how you are using it.?</string>
+
 
 </resources>

@@ -5,13 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
-import android.os.Build
-import android.util.Log
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
+import android.content.IntentFilter
 
 /**
  * ### Service Hierarchy Documentation
@@ -60,78 +54,114 @@ import java.util.Locale
 
 open class INT2Service : BaselineService() {
 
+    lateinit var notificationManager : NotificationManager
+    lateinit var notificationChannel : NotificationChannel
+
+    private val usageNotificationId = 876
+    private val bedtimeNotificationId = 654
+
+    private lateinit var INT2Receiver : ScreenStateReceiver
+    var dailyUsage : Long = 0L
+    var lastUsageTimestamp : Long = 0L
+    var dailyUsageGoal : Long = 0L
+    var bedtimeGoal : Int = 0
+
+    val channelIdInt2 = "ScreenLoggerServiceChannelInt2"
+    val channelNameint2 = "Int2ChannelName"
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
-        createNotificationChannel() // Create notification channel
+        dailyUsageGoal = getStudyVariable(this, INT_SMARTPHONE_USAGE_LIMIT_GOAL, 0L)
+        bedtimeGoal = getStudyVariable(this, BEDTIME_GOAL, 0)
+        lastUsageTimestamp = getLastDailyUsageTime(this)
 
-        // Start as a foreground service (if necessary)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelId = "ScreenLoggerServiceChannel"
-            val channelName = "Screen Logger Service"
-
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
-
-            notificationManager.createNotificationChannel(channel)
-            val notification: Notification = Notification.Builder(this, channelId)
-                .setContentTitle("Screen Logger")
-                .setContentText("The service is running...")
-                .setSmallIcon(R.drawable.ic_launcher_foreground) // Set your app icon here
-                .build()
-
-            startForeground(1, notification)
+        // no need to start service here if we are in INT1 phase (studyPhase == 1)
+        // we start the receiver already in INT1Service.kt
+        if (studyPhase != 1) {
+            INT2Receiver = INT2ScreenReceiver()
+            val filter = IntentFilter().apply {
+                addAction(Intent.ACTION_SCREEN_ON)
+                addAction(Intent.ACTION_SCREEN_OFF)
+                addAction(Intent.ACTION_USER_PRESENT)
+            }
+            registerReceiver(INT2Receiver, filter)
         }
+
+        dailyUsage = getDailyUsage(this)
+
+        notificationManager = getSystemService(NotificationManager::class.java)
+        notificationChannel = NotificationChannel(channelIdInt2, channelNameint2, NotificationManager.IMPORTANCE_HIGH)
+        notificationManager.createNotificationChannel(notificationChannel)
+
+        studyPhase = 2
 
         return super.onStartCommand(intent, flags, startId)
     }
 
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelName = "Screen State Notifications"
-            val channelDescription = "Notifications for screen on events"
-            val channelId = "screen_on_channel"
-
-            val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_DEFAULT).apply {
-                description = channelDescription
-            }
-
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager.createNotificationChannel(channel)
-        }
-    }
-
-    private fun showNotification() {
-
-        val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Calendar.getInstance().time)
-
-        val notificationId = 25
-        val channelId = "screen_on_channel"
-
-        val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Replace with your notification icon
-            .setContentTitle("Screen Turned On")
-            .setContentText("The screen is now on $currentTime." )
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-
-        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        if (nm.areNotificationsEnabled()) {
-            with(NotificationManagerCompat.from(this)) {
-                notify(notificationId, notificationBuilder.build())
-            }
-        }
-
-    }
-
     open inner class INT2ScreenReceiver : ScreenStateReceiver() {
+        var now : Long = 0L
         override fun onReceive(p0: Context?, p1: Intent?) {
-            super.onReceive(p0, p1) // Retain functionality from Service A
-
             // Additional functionality for Service B
-            if (p1?.action == Intent.ACTION_SCREEN_ON) {
-                // Do something additional when the screen is turned on
-                Log.d("AugmentedScreenStateReceiver", "Additional functionality in Service INT2")
-                // e.g., start a new service or send a broadcast, etc.
+            now = System.currentTimeMillis()
+
+            if (previousEventTimestamp < 1) {
+                val (ts, type) = getPreviousEvent(p0)
+                previousEventTimestamp = ts
+                previousEventType = type
             }
+
+            if (p1?.action == Intent.ACTION_SCREEN_ON) {
+                if (previousEventType == "ACTION_USER_PRESENT") {
+                    val notification: Notification = Notification.Builder(p0, channelId)
+                        .setContentTitle("Smartphone Interventions")
+                        .setContentText("Today you have used... ${dailyUsage}")
+                        .setSmallIcon(R.drawable.ic_launcher_foreground) // Set your app icon here
+                        .build()
+                    notificationManager.notify(usageNotificationId, notification)
+
+                    dailyUsage += (previousEventTimestamp + now)
+                    lastUsageTimestamp = now
+                    storeDailyUsage(dailyUsage, p0)
+                    storeLastDailyUsageTime(now, p0)
+                }
+            }
+            else if (p1?.action == Intent.ACTION_SCREEN_OFF) {
+                if (previousEventType == "ACTION_USER_PRESENT") {
+                    dailyUsage += (previousEventTimestamp + now)
+                    lastUsageTimestamp = now
+                    storeDailyUsage(dailyUsage, p0)
+                    storeLastDailyUsageTime(now, p0)
+                }
+            }
+            else if (p1?.action == Intent.ACTION_USER_PRESENT) {
+                // show notification if above usage goal
+                if (dailyUsage > dailyUsageGoal && !usageWithin45Seconds(now)) {
+                    val notification: Notification = Notification.Builder(p0, channelId)
+                        .setContentTitle("Smartphone Interventions")
+                        .setContentText("You have exceeded your daily goal of ${dailyUsageGoal} by X minutes..")
+                        .setSmallIcon(R.drawable.ic_launcher_foreground) // Set your app icon here
+                        .build()
+                    notificationManager.notify(usageNotificationId, notification)
+                }
+                // within an hour of bedtime goal
+                // show a notification
+                else if (calculateMinutesUntilBedtime(bedtimeGoal) <= 60 && !usageWithin45Seconds(now)) {
+                    val notification: Notification = Notification.Builder(p0, channelId)
+                        .setContentTitle("Smartphone Interventions")
+                        .setContentText("Bedtime nearing, you should consider putting your phone away!")
+                        .setSmallIcon(R.drawable.ic_launcher_foreground) // Set your app icon here
+                        .build()
+                    notificationManager.notify(bedtimeNotificationId, notification)
+                }
+            }
+
+            // this has to occur last because it updates timestamps etc.
+            super.onReceive(p0, p1) // Retain functionality from Service A
         }
+    }
+
+    // within 45 seconds continues previous use, no further disruptions after unlock
+    fun usageWithin45Seconds(time : Long) : Boolean {
+        return((time - lastUsageTimestamp) < 45000)
     }
 }

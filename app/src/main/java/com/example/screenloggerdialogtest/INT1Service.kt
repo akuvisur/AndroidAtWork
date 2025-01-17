@@ -2,7 +2,7 @@ package com.example.screenloggerdialogtest
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
+import android.content.IntentFilter
 
 /**
  * ### Service Hierarchy Documentation
@@ -51,25 +51,46 @@ import android.util.Log
 
 class INT1Service : INT2Service() {
 
+    private lateinit var INT1Receiver : INT1ScreenReceiver
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
+        // this is largely irrelevant since its reset in INT2Service (super.onStart...)
+        studyPhase = 1
 
+        INT1Receiver = INT1ScreenReceiver()
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_USER_PRESENT)
+            addAction(Intent.ACTION_SCREEN_OFF)
+        }
+        registerReceiver(INT1Receiver, filter)
 
         return super.onStartCommand(intent, flags, startId)
     }
 
     inner class INT1ScreenReceiver : INT2Service.INT2ScreenReceiver() {
+        private lateinit var dialog : UnlockDialog
+
         override fun onReceive(p0: Context?, p1: Intent?) {
-            super.onReceive(p0, p1) // Retain functionality from Service A
 
             // Additional functionality for Service B
-            if (p1?.action == Intent.ACTION_SCREEN_ON) {
-                // Do something additional when the screen is turned on
-                Log.d("AugmentedScreenStateReceiver", "Additional functionality in Service INT1")
-                // e.g., start a new service or send a broadcast, etc.
-
-                showDialog(p0)
+            if (p1?.action == Intent.ACTION_USER_PRESENT) {
+                if (dailyUsage > dailyUsageGoal && !usageWithin45Seconds(now)) {
+                    dialog = UnlockDialog()
+                    dialog.showGoalSurpassedDialog(p0, now, bedtimeGoal, dailyUsage, dailyUsageGoal)
+                } else if (calculateMinutesUntilBedtime(bedtimeGoal) <= 60 && !usageWithin45Seconds(now)) {
+                    dialog = UnlockDialog()
+                    dialog.showBedtimeClosingDialog(p0, now, bedtimeGoal, dailyUsage, dailyUsageGoal)
+                }
             }
+            else if (p1?.action == Intent.ACTION_SCREEN_OFF || p1?.action == Intent.ACTION_SCREEN_ON) {
+                if (System.currentTimeMillis() - previousEventTimestamp <= 10000) {
+                    // TODO adherence
+                }
+                dialog.close(p0)
+            }
+
+            super.onReceive(p0, p1) // Retain functionality from Service A
         }
     }
 }

@@ -68,13 +68,15 @@ open class BaselineService : Service() {
     private lateinit var screenStateReceiver: ScreenStateReceiver
     private lateinit var heartbeat: HeartbeatBeater
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d("ScreenLoggerService", "Service is running...")
+    // 0 = baseline, 1=int1, 2=int2
+    var studyPhase = 0;
 
+    val channelId = "ScreenLoggerServiceChannel"
+    val channelName = "BaselineService"
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Start as a foreground service (if necessary)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelId = "ScreenLoggerServiceChannel"
-            val channelName = "Screen Logger Service"
 
             val notificationManager = getSystemService(NotificationManager::class.java)
             val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
@@ -89,13 +91,16 @@ open class BaselineService : Service() {
             startForeground(1, notification)
         }
 
-        screenStateReceiver = ScreenStateReceiver()
-        val filter = IntentFilter().apply {
-            addAction(Intent.ACTION_SCREEN_ON)
-            addAction(Intent.ACTION_SCREEN_OFF)
-            addAction(Intent.ACTION_USER_PRESENT)
+        // Run this only in baseline mode == 0
+        if (studyPhase == 0) {
+            screenStateReceiver = ScreenStateReceiver()
+            val filter = IntentFilter().apply {
+                addAction(Intent.ACTION_SCREEN_ON)
+                addAction(Intent.ACTION_SCREEN_OFF)
+                addAction(Intent.ACTION_USER_PRESENT)
+            }
+            registerReceiver(screenStateReceiver, filter)
         }
-        registerReceiver(screenStateReceiver, filter)
 
         heartbeat = HeartbeatBeater()
         heartbeat.startHeartbeat()
@@ -114,9 +119,9 @@ open class BaselineService : Service() {
     }
 
     open inner class ScreenStateReceiver : BroadcastReceiver() {
-        private lateinit var screenEvent : ScreenEvent
-        private var previousEventTimestamp : Long = 0L
-        private lateinit var previousEventType : String
+        lateinit var screenEvent : ScreenEvent
+        var previousEventTimestamp : Long = 0L
+        lateinit var previousEventType : String
 
         override fun onReceive(p0: Context?, p1: Intent?) {
             if (previousEventTimestamp < 1) {

@@ -23,7 +23,7 @@
         android:id="@+id/intervention_duration_message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Duration: 14 Days"
+        android:text="Duration: 21 Days"
         android:textSize="18sp"
         android:textColor="@color/deep_purple_700"
         android:layout_marginBottom="16dp"/>
@@ -33,7 +33,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:valueFrom="1"
-        android:valueTo="14"
+        android:valueTo="21"
         android:stepSize="1"
         android:value="1"
         app:labelBehavior="gone"
@@ -53,7 +53,7 @@
         android:id="@+id/information_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="This phase lasts fourteen days."
+        android:text="This phase lasts twenty one days."
         android:textSize="16sp"
         android:textColor="@color/deep_purple_600"/>
 
