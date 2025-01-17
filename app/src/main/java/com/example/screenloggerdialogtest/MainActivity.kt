@@ -8,6 +8,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -17,6 +19,7 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
@@ -301,7 +304,7 @@ class MainActivity : FragmentActivity() {
                     )
 
                     FirebaseUtils.sendEntryToDatabase(
-                        path = "users/{FirebaseUtils.getCurrentUserUID()}/study_state_info",
+                        path = "users/${FirebaseUtils.getCurrentUserUID()}/study_state_info",
                         data = baselineData,
                         onSuccess = {
                             //Toast.makeText(requireContext(), "Screen event sent successfully", Toast.LENGTH_SHORT).show()
@@ -352,7 +355,7 @@ class MainActivity : FragmentActivity() {
                 inflaterView = inflater.inflate(R.layout.post_baseline_layout, container, false)
 
                 averageUsageText = inflaterView.findViewById(R.id.averageUsageText)
-                reduceUsageSlider = inflaterView.findViewById(R.id.reduceUsageSlider)
+                reduceUsageSlider = inflaterView.findViewById(R.id.settingsReduceUsageSlider)
                 reduceUsageText = inflaterView.findViewById(R.id.reduceUsageText)
                 bedTimeInput = inflaterView.findViewById(R.id.bedtimeInput)
                 enableOverlayButton = inflaterView.findViewById(R.id.enableOverlayButton)
@@ -449,10 +452,13 @@ class MainActivity : FragmentActivity() {
                     // TODO and store to local vars
                     Log.d("MAIN", bedTimeInput.text.toString())
                     if (overlaysAllowed && bedTimeInput.text.isNotEmpty() && reduceUsageTouched && interventionTested) {
-                        setStudyState(requireContext(), STUDY_STATE_INT1)
-                        setStudyVariable(requireContext(), INT_SMARTPHONE_USAGE_LIMIT_GOAL, reducedUsageMillis)
-                        setStudyVariable(requireContext(), BEDTIME_GOAL, parseBedtimeToMinutes(bedTimeInput.text.toString()))
-                        setStudyTimestamp(requireContext(), INT1_START_TIMESTAMP, System.currentTimeMillis())
+                        val c = requireContext()
+                        setStudyState(c, STUDY_STATE_INT1)
+                        setStudyVariable(c, BASELINE_USAGE_AVERAGE, usageAverage)
+                        setStudyVariable(c, INT_SMARTPHONE_USAGE_LIMIT_GOAL, reducedUsageMillis)
+                        setStudyVariable(c, INT_SMARTPHONE_USAGE_LIMIT_PERCENTAGE, reduceUsageSlider.value.toInt())
+                        setStudyVariable(c, BEDTIME_GOAL, parseBedtimeToMinutes(bedTimeInput.text.toString()))
+                        setStudyTimestamp(c, INT1_START_TIMESTAMP, System.currentTimeMillis())
 
                         val goalData = hashMapOf(
                             INT1_START_TIMESTAMP to System.currentTimeMillis(),
@@ -462,7 +468,7 @@ class MainActivity : FragmentActivity() {
                         )
 
                         FirebaseUtils.sendEntryToDatabase(
-                            path = "users/{FirebaseUtils.getCurrentUserUID()}/study_state_info",
+                            path = "users/${FirebaseUtils.getCurrentUserUID()}/study_state_info",
                             data = goalData,
                             onSuccess = {
                                 //Toast.makeText(requireContext(), "Screen event sent successfully", Toast.LENGTH_SHORT).show()
@@ -632,7 +638,15 @@ class MainActivity : FragmentActivity() {
     // some fields are disabled field.isEnabled = false prior to INT1
     class SettingsFragment : Fragment() {
         private lateinit var studyStateSpinner: Spinner
+        private lateinit var settingsReduceUsageSlider: Slider
+        private lateinit var settingsReduceUsageText : TextView
+        private lateinit var settingsLayout : LinearLayout
+        private lateinit var passkeyEditText : EditText
+        private lateinit var passkeyText : TextView
+        private lateinit var settingsGoalLayout : LinearLayout
+
         private var isUserInteracting = false
+        private var usageAverage = 0L
 
         override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
@@ -640,6 +654,48 @@ class MainActivity : FragmentActivity() {
         ): View? {
             // Inflate the layout for this fragment
             val view = inflater.inflate(R.layout.fragment_settings, container, false)
+
+            settingsReduceUsageSlider = view.findViewById(R.id.settingsReduceUsageSlider)
+            settingsReduceUsageText = view.findViewById(R.id.settingsReduceUsageText)
+            settingsLayout = view.findViewById(R.id.settingsHiddenLayout)
+            passkeyEditText = view.findViewById<EditText>(R.id.passkeyEditText)
+            passkeyText = view.findViewById(R.id.passkeyText)
+            settingsGoalLayout = view.findViewById(R.id.settingsGoalLayout)
+
+            usageAverage = getStudyVariable(requireContext(), BASELINE_USAGE_AVERAGE, 0L)
+
+            settingsReduceUsageSlider.setLabelFormatter {
+                    value -> "-${value.toInt()}%"
+            }
+
+            var reducedUsageMillis = 0L
+            settingsReduceUsageSlider.addOnChangeListener { slider, value, _ ->
+                // Convert the slider value to a percentage (negative)
+                val percentageReduction = -value.toInt()
+
+                // Calculate the reduced usage in milliseconds
+                reducedUsageMillis = usageAverage * (100 + percentageReduction) / 100
+
+                // Convert reduced usage to HH:mm format
+                val hours = reducedUsageMillis / (1000 * 60 * 60)
+                val minutes = (reducedUsageMillis / (1000 * 60)) % 60
+                val reducedUsageFormatted = String.format("%02dh %02dm", hours, minutes)
+
+                settingsReduceUsageText.text = String.format(
+                    settingsReduceUsageText.context.getString(R.string.usage_limit_text),
+                    reducedUsageFormatted
+                )
+
+                // update values here automatically
+                setStudyVariable(requireContext(), INT_SMARTPHONE_USAGE_LIMIT_GOAL, reducedUsageMillis)
+                setStudyVariable(requireContext(), INT_SMARTPHONE_USAGE_LIMIT_PERCENTAGE, value.toInt())
+            }
+
+            val usageGoal = getStudyVariable(requireContext(), INT_SMARTPHONE_USAGE_LIMIT_PERCENTAGE, 10)
+            settingsReduceUsageSlider.value = usageGoal.toFloat()
+            settingsReduceUsageSlider.setLabelFormatter {
+                    value -> "-${value.toInt()}%"
+            }
 
             // Find the button using the inflated view
             val startOnboardingButton: Button = view.findViewById(R.id.startOnBoardingButton)
@@ -705,6 +761,28 @@ class MainActivity : FragmentActivity() {
                 }
             }
             studyStateSpinner.setSelection(getStudyState(requireContext()))
+
+            settingsLayout.visibility = View.GONE
+
+            passkeyEditText.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+                }
+
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                }
+
+                override fun afterTextChanged(s: Editable?) {
+                    if (s.toString() == "7621") {
+                        // Passkey is correct
+                        settingsLayout.visibility = View.VISIBLE
+                        passkeyText.text = "Passkey correct!"
+                    }
+                }
+            })
+
+            if (getStudyState(requireContext()) < 3) {
+                settingsGoalLayout.visibility = View.GONE
+            }
 
             return view
         }

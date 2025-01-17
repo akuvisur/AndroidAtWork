@@ -33,7 +33,9 @@ const val SASSV_1_SUBMITTED: String = "SASSV_1_SUBMITTED"
 const val ONBOARDING_COMPLETED: String = "ONBOARDING_COMPLETED"
 const val BASELINE_START_TIMESTAMP: String = "BASELINE_START_TIMESTAMP"
 const val BASELINE_COMPLETED: String = "BASELINE_COMPLETED"
+const val BASELINE_USAGE_AVERAGE : String = "BASELINE_USAGE_AVERAGE"
 const val INT_SMARTPHONE_USAGE_LIMIT_GOAL: String = "INT_SMARTPHONE_USAGE_LIMIT_GOAL"
+const val INT_SMARTPHONE_USAGE_LIMIT_PERCENTAGE : String = "INT_SMARTPHONE_USAGE_LIMIT_PERCENTAGE"
 const val BEDTIME_GOAL: String = "BEDTIME_GOAL"
 const val INT1_START_TIMESTAMP: String = "INT1_START_TIMESTAMP"
 const val INT2_START_TIMESTAMP: String = "INT2_START_TIMESTAMP"
@@ -251,6 +253,7 @@ class UnlockDialog() {
         val dialogView = inflater.inflate(R.layout.dialog_layout_unlocked_bedtime, null)
         closeButton = dialogView.findViewById(R.id.closeButton)
         submitButton = dialogView.findViewById(R.id.submitButton)
+
         extraInfo = dialogView.findViewById(R.id.extraInfoEditText)
 
         // First row
@@ -280,6 +283,7 @@ class UnlockDialog() {
         )
 
         layoutParams.gravity = Gravity.CENTER // Center the view on the screen
+
 
         closeButton.setOnClickListener {
             close(c)
