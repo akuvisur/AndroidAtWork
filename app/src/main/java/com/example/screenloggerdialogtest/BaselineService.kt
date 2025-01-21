@@ -114,7 +114,7 @@ open class BaselineService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        unregisterReceiver(screenStateReceiver)
+        if (screenStateReceiver != null) unregisterReceiver(screenStateReceiver)
         heartbeat.stopHeartbeat()
     }
 

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.TimePickerDialog
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Paint
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -33,6 +34,14 @@ import com.google.android.material.slider.Slider
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import androidx.core.content.ContextCompat
+import com.github.mikephil.charting.charts.BarChart
+import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.components.YAxis
+import com.github.mikephil.charting.data.BarData
+import com.github.mikephil.charting.data.BarDataSet
+import com.github.mikephil.charting.data.BarEntry
+import com.github.mikephil.charting.formatter.ValueFormatter
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Calendar
 import kotlin.math.min
@@ -441,7 +450,7 @@ class MainActivity : FragmentActivity() {
 
                 var interventionTested = false
                 intervention1TestButton.setOnClickListener {
-                    UnlockDialog().showBedtimeClosingDialog(requireContext(), 0,0,0,0)
+                    UnlockDialog().showDialog(requireContext(), 0,0,0,0, DIALOG_TYPE_GOAL_EXCEEDED, true)
                     //
                     interventionTested = true
                 }
@@ -617,19 +626,88 @@ class MainActivity : FragmentActivity() {
     }
 
     class DataCollectedFragment : Fragment() {
+        private lateinit var inflaterView : View
+
+        private lateinit var usageBarChart : BarChart
+
         override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
             savedInstanceState: Bundle?
-        ): View? {
-            var inflaterView = if (getStudyState(requireContext()) < STUDY_STATE_INT1) {
-                // no data shown before intervention 1
-                inflater.inflate(R.layout.fragment_data_collected, container, false)
+        ): View {
+            inflaterView = inflater.inflate(R.layout.fragment_data_collected, container, false)
+
+            usageBarChart = inflaterView.findViewById(R.id.dailyUsageBarChart)
+
+            FirebaseUtils.fetchUsageTotal(LocalDateTime.now()) { usage ->
+                val entries = mutableListOf<BarEntry>()
+                val today = LocalDate.now()
+                val startDate = today.minusDays(1)  // Yesterday
+                val endDate = today.minusWeeks(2)    // Two weeks behind
+                val dates = mutableListOf<Pair<LocalDate, Float>>()  // To store dates and corresponding usage in minutes
+
+                var currentDate = startDate
+                while (!currentDate.isBefore(endDate)) {
+                    val usageInMillis = usage[currentDate.toString()]
+
+                    // If there is usage data for this date, create a BarEntry
+                    if (usageInMillis != null) {
+                        Log.d("DATE_DEBUG_DUMP", "Usage on $currentDate: $usageInMillis")
+                        // Convert the usage from milliseconds to minutes
+                        val minutes = (usageInMillis / 60000).toFloat() // Convert to minutes
+                        val p = Pair(currentDate, minutes)
+                        dates.add(p)
+                    } else {
+                        dates.add(Pair(currentDate, 0F))
+                        //Log.d("DATE_DEBUG_DUMP", "No usage found for $currentDate")
+                    }
+                    // Move to the next date
+                    currentDate = currentDate.minusDays(1)
+                }
+                val sortedDates = dates.sortedBy { it.first }  // Sorting by the LocalDate
+
+                // Create BarEntry from sorted data
+                for (entry in sortedDates) {
+                    val date = entry.first
+                    val minutes = entry.second
+                    val barEntry = BarEntry(date.dayOfMonth.toFloat(), minutes)
+                    entries.add(barEntry)
+                }
+
+                // Create a BarDataSet
+                val barDataSet = BarDataSet(entries, "")
+                barDataSet.color = resources.getColor(R.color.deep_purple_500, null)
+
+                // Set up BarData
+                val barData = BarData(barDataSet)
+                barData.barWidth = 0.8f // Set bar width
+
+                // Configure the chart
+                usageBarChart.data = barData
+                usageBarChart.description.text = "Smartphone usage data from past two weeks (in minutes)"
+                usageBarChart.description.textSize = 14f // Optional: Adjust text size
+                usageBarChart.description.setPosition(usageBarChart.width / 2f, 30f) // Adjust X and Y position (pixels)
+                usageBarChart.description.textAlign = Paint.Align.CENTER // Align the text to the center
+                usageBarChart.setFitBars(true) // Make the bars fit into the chart view
+
+                // Customize the X-Axis
+                val xAxis: XAxis = usageBarChart.xAxis
+                xAxis.position = XAxis.XAxisPosition.BOTTOM
+                xAxis.granularity = 1f // One interval per bar
+                xAxis.setDrawGridLines(false)
+
+                // Customize the Y-Axis (optional)
+                val yAxis = usageBarChart.axisLeft
+                yAxis.axisMinimum = 0f // Optional: Set minimum value for the axis
+                yAxis.granularity = 1f // Optional: Set the interval between labels
+                yAxis.textSize = 12f // Optional: Adjust text size
+
+                val yAxisRight: YAxis = usageBarChart.axisRight
+                yAxisRight.isEnabled = false // Disable right Y-Axis
+
+                // Refresh the chart
+                usageBarChart.invalidate() // Refresh chart with new data
             }
-            else {
-                // data visualisation after intervention 1
-                inflater.inflate(R.layout.fragment_data_collected, container, false)
-            }
-            // Inflate the layout for this fragment
+
             return inflaterView
         }
     }
@@ -644,10 +722,15 @@ class MainActivity : FragmentActivity() {
         private lateinit var passkeyEditText : EditText
         private lateinit var passkeyText : TextView
         private lateinit var settingsGoalLayout : LinearLayout
+        private lateinit var settingsDeviceidText : TextView
+
+        private lateinit var testDialogButtonGoal : Button
+        private lateinit var testDialogButtonBed : Button
 
         private var isUserInteracting = false
         private var usageAverage = 0L
 
+        @SuppressLint("StringFormatInvalid")
         override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
             savedInstanceState: Bundle?
@@ -661,6 +744,9 @@ class MainActivity : FragmentActivity() {
             passkeyEditText = view.findViewById<EditText>(R.id.passkeyEditText)
             passkeyText = view.findViewById(R.id.passkeyText)
             settingsGoalLayout = view.findViewById(R.id.settingsGoalLayout)
+            testDialogButtonGoal = view.findViewById(R.id.settingsTestDialogGoal)
+            testDialogButtonBed = view.findViewById(R.id.settingsTestDialogBed)
+            settingsDeviceidText = view.findViewById(R.id.settingsDeviceId)
 
             usageAverage = getStudyVariable(requireContext(), BASELINE_USAGE_AVERAGE, 0L)
 
@@ -696,6 +782,11 @@ class MainActivity : FragmentActivity() {
             settingsReduceUsageSlider.setLabelFormatter {
                     value -> "-${value.toInt()}%"
             }
+
+            settingsDeviceidText.text = String.format(
+                settingsDeviceidText.context.getString(R.string.settings_deviceid_text),
+                FirebaseUtils.getCurrentUserUID().toString()
+            )
 
             // Find the button using the inflated view
             val startOnboardingButton: Button = view.findViewById(R.id.startOnBoardingButton)
@@ -762,6 +853,31 @@ class MainActivity : FragmentActivity() {
             }
             studyStateSpinner.setSelection(getStudyState(requireContext()))
 
+            testDialogButtonGoal.setOnClickListener {
+                UnlockDialog().showDialog(
+                    requireContext(),
+                    0,
+                    0,
+                    0,
+                    0,
+                    DIALOG_TYPE_GOAL_EXCEEDED,
+                    true
+                )
+            }
+
+            testDialogButtonBed.setOnClickListener {
+                UnlockDialog().showDialog(
+                    requireContext(),
+                    0,
+                    0,
+                    0,
+                    0,
+                    DIALOG_TYPE_BEDTIME,
+                    true
+                )
+            }
+
+            // Set settings content to hidden unless passkey is entered
             settingsLayout.visibility = View.GONE
 
             passkeyEditText.setText("")

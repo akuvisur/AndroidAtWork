@@ -77,10 +77,10 @@ class INT1Service : INT2Service() {
             if (p1?.action == Intent.ACTION_USER_PRESENT) {
                 if (dailyUsage > dailyUsageGoal && !usageWithin45Seconds(now)) {
                     dialog = UnlockDialog()
-                    dialog.showGoalSurpassedDialog(p0, now, bedtimeGoal, dailyUsage, dailyUsageGoal)
+                    dialog.showDialog(p0, now, bedtimeGoal, dailyUsage, dailyUsageGoal, DIALOG_TYPE_GOAL_EXCEEDED, false)
                 } else if (calculateMinutesUntilBedtime(bedtimeGoal) <= 60 && !usageWithin45Seconds(now)) {
                     dialog = UnlockDialog()
-                    dialog.showBedtimeClosingDialog(p0, now, bedtimeGoal, dailyUsage, dailyUsageGoal)
+                    dialog.showDialog(p0, now, bedtimeGoal, dailyUsage, dailyUsageGoal, DIALOG_TYPE_BEDTIME, false)
                 }
             }
             else if (p1?.action == Intent.ACTION_SCREEN_OFF || p1?.action == Intent.ACTION_SCREEN_ON) {

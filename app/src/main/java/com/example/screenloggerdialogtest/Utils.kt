@@ -4,6 +4,8 @@ import android.app.Service.WINDOW_SERVICE
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.PixelFormat
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -198,11 +200,30 @@ fun getStudyState(c : Context?): Int {
 
 Dialog generation for INT1 phase
 
+- Dialog functionality:
+    - Create a timestamp as ID (99.9% unique) when dialog is created
+    - Show either bedtime closing or goal exceeded according to constructor variable
+        - Both have same functionality, just minor layout differences
+    - Dialog is automatically closed after five minutes
+    - When user clicks either 'close' or 'submit', entry is sent to Firebase with data
+        - no input data is submitted even if selected when clicking 'close'
+        - see Response and IgnoredResponse data classes at the bottom
+
  */
+
+const val DIALOG_TYPE_BEDTIME : String = "DIALOG_TYPE_BEDTIME"
+const val DIALOG_TYPE_GOAL_EXCEEDED : String = "DIALOG_TYPE_GOAL_EXCEEDED"
+
+const val DIALOG_RESPONSE_SUBMITTED : String = "DIALOG_RESPONSE_SUBMITTED"
+const val DIALOG_RESPONSE_IGNORED : String = "DIALOG_RESPONSE_IGNORED"
+const val DIALOG_RESPONSE_AUTOMATICALLY_CLOSED : String = "DIALOG_RESPONSE_AUTOMATICALLY_CLOSED"
+
 
 class UnlockDialog() {
 
     lateinit var dialogView: View
+    private var dialogCreatedTimestamp : Long = 0L
+    private var localTestDialogVariable : Boolean = false
 
     private lateinit var closeButton : Button
     private lateinit var submitButton : Button
@@ -229,30 +250,36 @@ class UnlockDialog() {
 
     private lateinit var extraInfo : EditText
 
-    fun showGoalSurpassedDialog(
+    fun showDialog(
         c: Context?,
         curTime: Long,
         bedTime: Int,
         usage: Long,
-        goal: Long
-    ) {
-        // copy from after
-    }
-
-    fun showBedtimeClosingDialog(
-        c: Context?,
-        curTime: Long,
-        bedTime: Int,
-        usage: Long,
-        goal: Long
+        goal: Long,
+        type: String,
+        testDialog : Boolean
     ) {
         if (c == null) {
             return // Exit the function if context is null
         }
 
+        dialogCreatedTimestamp = System.currentTimeMillis()
+        localTestDialogVariable = testDialog
+
         val wm = c.getSystemService(WINDOW_SERVICE) as WindowManager
         val inflater = LayoutInflater.from(c)
-        val dialogView = inflater.inflate(R.layout.dialog_layout_unlocked_bedtime, null)
+        dialogView = when (type) {
+            DIALOG_TYPE_BEDTIME -> {
+                inflater.inflate(R.layout.dialog_layout_unlocked_bedtime, null)
+            }
+            DIALOG_TYPE_GOAL_EXCEEDED -> {
+                inflater.inflate(R.layout.dialog_layout_unlocked, null)
+            }
+            else -> {
+                return // ignore creating dialog if you somehow end up here.
+            }
+        }
+
         closeButton = dialogView.findViewById(R.id.closeButton)
         submitButton = dialogView.findViewById(R.id.submitButton)
 
@@ -280,14 +307,22 @@ class UnlockDialog() {
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+            WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM or WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
             PixelFormat.TRANSLUCENT
         )
 
         layoutParams.gravity = Gravity.CENTER // Center the view on the screen
 
-
         closeButton.setOnClickListener {
+            if (!localTestDialogVariable) {
+                val data = IgnoredResponse(
+                    dialogType = type,
+                    dialogClosedTimestamp = System.currentTimeMillis(),
+                    dialogCreatedTimestamp = dialogCreatedTimestamp,
+                    response = DIALOG_RESPONSE_IGNORED
+                )
+                FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses/",data) // does this need onSuccesss?
+            }
             close(c)
         }
 
@@ -304,38 +339,44 @@ class UnlockDialog() {
                 contextSelection = row1Selection,
                 purposeSelection = row2Selection,
                 initiationSelection = row3Selection,
-                extraInfo = extraInfo
+                extraInfo = extraInfo,
+                dialogType = type,
+                dialogClosedTimestamp = System.currentTimeMillis(),
+                dialogCreatedTimestamp = dialogCreatedTimestamp,
+                response = DIALOG_RESPONSE_SUBMITTED
             )
 
-            FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses/",data) // does this need onSuccesss?
+            if (!localTestDialogVariable) FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses/",data) // does this need onSuccesss?
 
             close(c)
+
+            // Set up a timer to close the dialog automatically after 5 minutes
+            Handler(Looper.getMainLooper()).postDelayed({
+                if (!localTestDialogVariable) {
+                    val data = IgnoredResponse(
+                        dialogType = type,
+                        dialogClosedTimestamp = System.currentTimeMillis(),
+                        dialogCreatedTimestamp = dialogCreatedTimestamp,
+                        response = DIALOG_RESPONSE_AUTOMATICALLY_CLOSED
+                    )
+                    FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses/",data) // does this need onSuccesss?
+                }
+                close(c)
+            }, 300000L) // 300000 ms = 5 minutes
         }
 
         // Add the view to the window
         show(dialogView, wm, layoutParams, c)
     }
 
-    fun showTestDialogScreen(
-        c: Context?
-    ) {
-        // show a test dialog but dont store anything
-        // override submit button behaviour
-        // TODO the UnlockDialog class needs separate build() and show() functions that are called externally
-        // TODO or just a hacky code duplication method to show a test view.
-    }
-
     private fun show(dialogView : View, wm : WindowManager, layoutParams : WindowManager.LayoutParams, c : Context) {
         wm.addView(dialogView, layoutParams)
-        // TODO add note to database that a dialog was created
     }
 
     fun close(c: Context?) {
         if (c == null) return
         val wm = c.getSystemService(WINDOW_SERVICE) as WindowManager
         wm.removeView(dialogView)
-
-
     }
 
     // Function to initialize button click listeners
@@ -356,7 +397,6 @@ class UnlockDialog() {
                 buttons.forEach { btn ->
                     btn.background = originalBackgrounds[btn]
                 }
-
                 // Highlight the selected button
                 button.setBackgroundColor(ContextCompat.getColor(c, R.color.white)) // Replace with desired highlight color
             }
@@ -371,7 +411,18 @@ class UnlockDialog() {
         val contextSelection: String?,
         val purposeSelection: String?,
         val initiationSelection: String?,
-        val extraInfo: String
+        val extraInfo: String,
+        val dialogType: String,
+        val dialogClosedTimestamp: Long,
+        val dialogCreatedTimestamp: Long,
+        val response : String
+    )
+
+    data class IgnoredResponse(
+        val dialogType: String,
+        val dialogClosedTimestamp: Long,
+        val dialogCreatedTimestamp: Long,
+        val response : String
     )
 
 }

@@ -56,8 +56,8 @@ object FirebaseUtils {
     fun calculateUsagePerDay(
         userId: String,
         data: Map<String, Any>
-    ): Map<LocalDate, Long> {
-        val dailyUsage = mutableMapOf<LocalDate, Long>()
+    ): Map<String, Long> {
+        val dailyUsage = mutableMapOf<String, Long>()
 
         // Loop through all events and calculate total usage per day
         val screenEvents = data["screen"] as Map<String, Map<String, Any>>
@@ -79,7 +79,7 @@ object FirebaseUtils {
                 }
 
                 // Add the duration to the respective day
-                dailyUsage[adjustedDate] = dailyUsage.getOrDefault(adjustedDate, 0L) + duration
+                dailyUsage[adjustedDate.toString()] = dailyUsage.getOrDefault(adjustedDate.toString(), 0L) + duration
             }
         }
 

@@ -76,5 +76,7 @@
     # popup screen (int1) - Unlocked due to overuse
     <string name="dialog_unlocked_info">Usage goal exceeded! If you still consider using it important, please tell us the purpose of why you are using it.</string>
 
+    <string name="settings_deviceid_text">Device id: %s</string>
+
 
 </resources>
