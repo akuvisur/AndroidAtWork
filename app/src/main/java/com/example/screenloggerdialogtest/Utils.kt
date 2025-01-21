@@ -265,7 +265,7 @@ class UnlockDialog() {
         contextOtherButton = dialogView.findViewById(R.id.contextOtherButton)
 
         // Second row
-        workSchoolButton = dialogView.findViewById(R.id.workSchoolButton)
+        workSchoolButton = dialogView.findViewById(R.id.productiveButton)
         leisureButton = dialogView.findViewById(R.id.leisureButton)
         otherButton = dialogView.findViewById(R.id.otherButton)
 

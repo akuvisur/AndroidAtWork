@@ -103,11 +103,11 @@
             android:orientation="horizontal">
 
             <Button
-                android:id="@+id/workSchoolButton"
+                android:id="@+id/productiveButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"
-                android:text="Work/School"
+                android:text="Productive"
                 android:textSize="12sp"
                 android:backgroundTint="@color/deep_purple_700"
                 android:textColor="@android:color/white"
@@ -136,6 +136,15 @@
                 android:background="@drawable/dialog_corners" />
 
         </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Did you receive a notification that prompted you to use your phone?"
+            android:textColor="@color/black"
+            android:textSize="16sp"
+            android:paddingLeft="12dp"
+            />
 
         <!-- Third row with 2 buttons -->
         <LinearLayout
@@ -174,7 +183,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/buttonLayout"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="4dp"
         android:layout_marginHorizontal="16dp"
         android:hint="Could you tell us more? (optional)"
         android:backgroundTint="@color/black" />
@@ -185,7 +194,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/extraInfoEditText"
         android:layout_marginTop="12dp"
-        android:textSize="22sp"
+        android:textSize="18sp"
         android:padding="8dp"
         android:textColor="@color/black"
         android:text="Please select one option from each row, then click submit to continue phone use"
