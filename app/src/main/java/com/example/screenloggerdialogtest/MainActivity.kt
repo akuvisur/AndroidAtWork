@@ -730,7 +730,7 @@ class MainActivity : FragmentActivity() {
         private var isUserInteracting = false
         private var usageAverage = 0L
 
-        @SuppressLint("StringFormatInvalid")
+        @SuppressLint("StringFormatInvalid", "DefaultLocale")
         override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
             savedInstanceState: Bundle?
@@ -755,7 +755,7 @@ class MainActivity : FragmentActivity() {
             }
 
             var reducedUsageMillis = 0L
-            settingsReduceUsageSlider.addOnChangeListener { slider, value, _ ->
+            settingsReduceUsageSlider.addOnChangeListener { _, value, _ ->
                 // Convert the slider value to a percentage (negative)
                 val percentageReduction = -value.toInt()
 
@@ -837,7 +837,7 @@ class MainActivity : FragmentActivity() {
             studyStateSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                     if (isUserInteracting) {
-                        var selectedState = position // Store the selected index (0-8)
+                        val selectedState = position // Store the selected index (0-8)
                         // Optional: Show a Toast message for demonstration
                         setStudyState(requireContext(), selectedState)
                         (requireActivity() as MainActivity).refreshUI()

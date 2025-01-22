@@ -86,6 +86,13 @@ class INT1Service : INT2Service() {
             else if (p1?.action == Intent.ACTION_SCREEN_OFF || p1?.action == Intent.ACTION_SCREEN_ON) {
                 if (System.currentTimeMillis() - previousEventTimestamp <= 10000) {
                     // TODO adherence
+                    val data = UnlockDialog.AdheredResponse(
+                        dialogType = dialog.dialogType,
+                        dialogClosedTimestamp = System.currentTimeMillis(),
+                        dialogCreatedTimestamp = dialog.dialogCreatedTimestamp,
+                        response = DIALOG_RESPONSE_ADHERED
+                    )
+                    FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses/", data)
                 }
                 dialog.close(p0)
             }

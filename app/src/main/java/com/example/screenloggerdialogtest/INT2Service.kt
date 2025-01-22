@@ -55,7 +55,7 @@ import android.content.IntentFilter
 open class INT2Service : BaselineService() {
 
     lateinit var notificationManager : NotificationManager
-    lateinit var notificationChannel : NotificationChannel
+    private lateinit var notificationChannel : NotificationChannel
 
     private val usageNotificationId = 876
     private val bedtimeNotificationId = 654
@@ -66,13 +66,13 @@ open class INT2Service : BaselineService() {
     var dailyUsageGoal : Long = 0L
     var bedtimeGoal : Int = 0
 
-    val channelIdInt2 = "ScreenLoggerServiceChannelInt2"
-    val channelNameint2 = "Int2ChannelName"
+    private val channelIdInt2 = "ScreenLoggerServiceChannelInt2"
+    private val channelNameInt2 = "Int2ChannelName"
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         dailyUsageGoal = getStudyVariable(this, INT_SMARTPHONE_USAGE_LIMIT_GOAL, 0L)
-        bedtimeGoal = getStudyVariable(this, BEDTIME_GOAL, 0)
+        bedtimeGoal = getStudyVariable(this, BEDTIME_GOAL, BEDTIME_GOAL_DEFAULT_VALUE)
         lastUsageTimestamp = getLastDailyUsageTime(this)
 
         // no need to start service here if we are in INT1 phase (studyPhase == 1)
@@ -90,7 +90,7 @@ open class INT2Service : BaselineService() {
         dailyUsage = getDailyUsage(this)
 
         notificationManager = getSystemService(NotificationManager::class.java)
-        notificationChannel = NotificationChannel(channelIdInt2, channelNameint2, NotificationManager.IMPORTANCE_HIGH)
+        notificationChannel = NotificationChannel(channelIdInt2, channelNameInt2, NotificationManager.IMPORTANCE_HIGH)
         notificationManager.createNotificationChannel(notificationChannel)
 
         studyPhase = 2

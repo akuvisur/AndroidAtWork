@@ -48,6 +48,8 @@ const val SPAI_2_SUBMITTED: String = "SPAI_2_SUBMITTED"
 const val SASSV_2_SUBMITTED: String = "SASSV_2_SUBMITTED"
 const val STUDY_COMPLETE_TIMESTAMP: String = "STUDY_COMPLETE_TIMESTAMP"
 
+const val BEDTIME_GOAL_DEFAULT_VALUE: Int = 22
+
 private fun getStudyStateSharedPreferences(c: Context?): SharedPreferences? {
     return c?.applicationContext?.getSharedPreferences(STUDY_STATE_SHAREDPREFS, Context.MODE_PRIVATE)
 }
@@ -217,12 +219,14 @@ const val DIALOG_TYPE_GOAL_EXCEEDED : String = "DIALOG_TYPE_GOAL_EXCEEDED"
 const val DIALOG_RESPONSE_SUBMITTED : String = "DIALOG_RESPONSE_SUBMITTED"
 const val DIALOG_RESPONSE_IGNORED : String = "DIALOG_RESPONSE_IGNORED"
 const val DIALOG_RESPONSE_AUTOMATICALLY_CLOSED : String = "DIALOG_RESPONSE_AUTOMATICALLY_CLOSED"
-
+const val DIALOG_RESPONSE_ADHERED : String = "DIALOG_RESPONSE_ADHERED"
 
 class UnlockDialog() {
 
-    lateinit var dialogView: View
-    private var dialogCreatedTimestamp : Long = 0L
+    private lateinit var dialogView: View
+    var dialogCreatedTimestamp : Long = 0L
+    var dialogType : String = ""
+
     private var localTestDialogVariable : Boolean = false
 
     private lateinit var closeButton : Button
@@ -353,13 +357,13 @@ class UnlockDialog() {
             // Set up a timer to close the dialog automatically after 5 minutes
             Handler(Looper.getMainLooper()).postDelayed({
                 if (!localTestDialogVariable) {
-                    val data = IgnoredResponse(
+                    val sentData = IgnoredResponse(
                         dialogType = type,
                         dialogClosedTimestamp = System.currentTimeMillis(),
                         dialogCreatedTimestamp = dialogCreatedTimestamp,
                         response = DIALOG_RESPONSE_AUTOMATICALLY_CLOSED
                     )
-                    FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses/",data) // does this need onSuccesss?
+                    FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses/",sentData) // does this need onSuccesss?
                 }
                 close(c)
             }, 300000L) // 300000 ms = 5 minutes
@@ -419,6 +423,13 @@ class UnlockDialog() {
     )
 
     data class IgnoredResponse(
+        val dialogType: String,
+        val dialogClosedTimestamp: Long,
+        val dialogCreatedTimestamp: Long,
+        val response : String
+    )
+
+    data class AdheredResponse(
         val dialogType: String,
         val dialogClosedTimestamp: Long,
         val dialogCreatedTimestamp: Long,
