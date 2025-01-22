@@ -130,11 +130,6 @@
             android:layout_margin="4dp"
             android:background="@drawable/linear_layout_background">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                text="Test and fill questionnaires"/>
-
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
