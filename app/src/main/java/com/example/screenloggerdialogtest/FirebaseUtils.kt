@@ -57,7 +57,9 @@ object FirebaseUtils {
         userId: String,
         data: Map<String, Any>
     ): Map<String, Long> {
+
         val dailyUsage = mutableMapOf<String, Long>()
+        if (data == null) return dailyUsage
 
         // Loop through all events and calculate total usage per day
         val screenEvents = data["screen"] as Map<String, Map<String, Any>>
@@ -101,8 +103,13 @@ object FirebaseUtils {
                     return  // Stop further execution
                 }
 
-                val usage = getCurrentUserUID()?.let { userId ->
-                    calculateUsagePerDay(userId, data).mapKeys { it.key.toString() }
+                val usage = try {
+                    getCurrentUserUID()?.let { userId ->
+                        calculateUsagePerDay(userId, data).mapKeys { it.key.toString() }
+                    }
+                } catch (e: Exception) {
+                    Log.e("FIREBASE", "Error during usage calculation: ${e.message}")
+                    null
                 }
 
                 usage?.let {

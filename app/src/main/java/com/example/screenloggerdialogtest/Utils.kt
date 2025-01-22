@@ -1,5 +1,6 @@
 package com.example.screenloggerdialogtest
 
+import android.app.AlertDialog
 import android.app.Service.WINDOW_SERVICE
 import android.content.Context
 import android.content.SharedPreferences
@@ -49,6 +50,30 @@ const val SASSV_2_SUBMITTED: String = "SASSV_2_SUBMITTED"
 const val STUDY_COMPLETE_TIMESTAMP: String = "STUDY_COMPLETE_TIMESTAMP"
 
 const val BEDTIME_GOAL_DEFAULT_VALUE: Int = 22
+
+fun showClearConfirmationDialog(context: Context?) {
+    context?.let {
+        val builder = AlertDialog.Builder(it)
+        builder.setTitle("Confirmation")
+            .setMessage("Are you sure you want to clear all saved data?")
+            .setPositiveButton("Yes") { _, _ ->
+                clearStudyStateSharedPreferences(context)
+                Toast.makeText(context, "Data cleared.", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .create()
+            .show()
+    }
+}
+
+private fun clearStudyStateSharedPreferences(context: Context?) {
+    context?.applicationContext?.getSharedPreferences(STUDY_STATE_SHAREDPREFS, Context.MODE_PRIVATE)
+        ?.edit()
+        ?.clear()
+        ?.apply()
+}
 
 private fun getStudyStateSharedPreferences(c: Context?): SharedPreferences? {
     return c?.applicationContext?.getSharedPreferences(STUDY_STATE_SHAREDPREFS, Context.MODE_PRIVATE)

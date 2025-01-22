@@ -25,21 +25,22 @@ import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
-import com.google.android.material.slider.Slider
-import com.google.android.material.tabs.TabLayout
-import com.google.android.material.tabs.TabLayoutMediator
-import androidx.core.content.ContextCompat
 import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.components.YAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
+import com.google.android.material.slider.Slider
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayoutMediator
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Calendar
@@ -218,6 +219,8 @@ class MainActivity : FragmentActivity() {
         private lateinit var postStudySpaiButton: Button
         private lateinit var completeStudyButton: Button
 
+        private val POST_NOTIFICATIONS_PERMISSION : String = "android.permission.POST_NOTIFICATIONS"
+
         @SuppressLint("NewApi", "DefaultLocale")
         override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
@@ -226,7 +229,7 @@ class MainActivity : FragmentActivity() {
 
             val studyStateVars = getStudyStateVariables(requireContext())
 
-            var studyState = getStudyState(requireContext())
+            val studyState = getStudyState(requireContext())
             if (studyState == STUDY_STATE_FIRST_LAUNCH) {
                 inflaterView = inflater.inflate(R.layout.first_launch_layout, container, false)
 
@@ -253,22 +256,48 @@ class MainActivity : FragmentActivity() {
 
                 var notificationsAllowed : Boolean = false
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    if ((requireActivity() as MainActivity).checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                        // still false! :)
-                        notificationsAllowed = false
-                        }
-                } else {
-                    notificationsAllowed = true
-                    allowNotificationIcon.isVisible = true
-                    allowNotificationButton.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue_gray_200))
-                    allowNotificationButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue_gray_600))
-                    checkEnableConsentButton(studyStateVars, notificationsAllowed)
+                    if (ContextCompat.checkSelfPermission(
+                            requireContext(),
+                            POST_NOTIFICATIONS_PERMISSION
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        ActivityCompat.requestPermissions(
+                            requireActivity(),
+                            arrayOf(POST_NOTIFICATIONS_PERMISSION),
+                            100
+                        )
+                    } else {
+                        notificationsAllowed = true
+                        allowNotificationIcon.isVisible = true
+                        allowNotificationButton.setBackgroundColor(
+                            ContextCompat.getColor(
+                                requireContext(),
+                                R.color.blue_gray_200
+                            )
+                        )
+                        allowNotificationButton.setTextColor(
+                            ContextCompat.getColor(
+                                requireContext(),
+                                R.color.blue_gray_600
+                            )
+                        )
+                        checkEnableConsentButton(studyStateVars, notificationsAllowed)
+                    }
+                    allowNotificationButton.setOnClickListener {
+                        ActivityCompat.requestPermissions(requireActivity(), arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), REQUEST_CODE_NOTIFICATION)
+                    }
+                }
+                else {
+                    notificationsAllowed = NotificationManagerCompat.from(requireContext()).areNotificationsEnabled();
+                    allowNotificationButton.setOnClickListener {
+                        val intent = Intent()
+                        intent.setAction(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        intent.putExtra(Settings.EXTRA_APP_PACKAGE, requireContext().packageName)
+                        requireContext().startActivity(intent)
+                    }
                 }
                 allowNotificationIcon.isVisible = notificationsAllowed
                 allowNotificationButton.isEnabled = !notificationsAllowed
-                allowNotificationButton.setOnClickListener {
-                    ActivityCompat.requestPermissions(requireActivity(), arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), REQUEST_CODE_NOTIFICATION)
-                }
 
                 disableBatteryManagementButton.setOnClickListener {
                     val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
@@ -630,81 +659,96 @@ class MainActivity : FragmentActivity() {
             inflater: LayoutInflater, container: ViewGroup?,
             savedInstanceState: Bundle?
         ): View {
-            inflaterView = inflater.inflate(R.layout.fragment_data_collected, container, false)
 
-            usageBarChart = inflaterView.findViewById(R.id.dailyUsageBarChart)
+            val baselineDay = calculateStudyPeriodDay(BASELINE_START_TIMESTAMP, requireContext())
 
-            FirebaseUtils.fetchUsageTotal(LocalDateTime.now()) { usage ->
-                val entries = mutableListOf<BarEntry>()
-                val today = LocalDate.now()
-                val startDate = today.minusDays(1)  // Yesterday
-                val endDate = today.minusWeeks(2)    // Two weeks behind
-                val dates = mutableListOf<Pair<LocalDate, Float>>()  // To store dates and corresponding usage in minutes
-
-                var currentDate = startDate
-                while (!currentDate.isBefore(endDate)) {
-                    val usageInMillis = usage[currentDate.toString()]
-
-                    // If there is usage data for this date, create a BarEntry
-                    if (usageInMillis != null) {
-                        Log.d("DATE_DEBUG_DUMP", "Usage on $currentDate: $usageInMillis")
-                        // Convert the usage from milliseconds to minutes
-                        val minutes = (usageInMillis / 60000).toFloat() // Convert to minutes
-                        val p = Pair(currentDate, minutes)
-                        dates.add(p)
-                    } else {
-                        dates.add(Pair(currentDate, 0F))
-                        //Log.d("DATE_DEBUG_DUMP", "No usage found for $currentDate")
-                    }
-                    // Move to the next date
-                    currentDate = currentDate.minusDays(1)
-                }
-                val sortedDates = dates.sortedBy { it.first }  // Sorting by the LocalDate
-
-                // Create BarEntry from sorted data
-                for (entry in sortedDates) {
-                    val date = entry.first
-                    val minutes = entry.second
-                    val barEntry = BarEntry(date.dayOfMonth.toFloat(), minutes)
-                    entries.add(barEntry)
-                }
-
-                // Create a BarDataSet
-                val barDataSet = BarDataSet(entries, "")
-                barDataSet.color = resources.getColor(R.color.deep_purple_500, null)
-
-                // Set up BarData
-                val barData = BarData(barDataSet)
-                barData.barWidth = 0.8f // Set bar width
-
-                // Configure the chart
-                usageBarChart.data = barData
-                usageBarChart.description.text = "Smartphone usage data from past two weeks (in minutes)"
-                usageBarChart.description.textSize = 14f // Optional: Adjust text size
-                usageBarChart.description.setPosition(usageBarChart.width / 2f, 30f) // Adjust X and Y position (pixels)
-                usageBarChart.description.textAlign = Paint.Align.CENTER // Align the text to the center
-                usageBarChart.setFitBars(true) // Make the bars fit into the chart view
-
-                // Customize the X-Axis
-                val xAxis: XAxis = usageBarChart.xAxis
-                xAxis.position = XAxis.XAxisPosition.BOTTOM
-                xAxis.granularity = 1f // One interval per bar
-                xAxis.setDrawGridLines(false)
-
-                // Customize the Y-Axis (optional)
-                val yAxis = usageBarChart.axisLeft
-                yAxis.axisMinimum = 0f // Optional: Set minimum value for the axis
-                yAxis.granularity = 1f // Optional: Set the interval between labels
-                yAxis.textSize = 12f // Optional: Adjust text size
-
-                val yAxisRight: YAxis = usageBarChart.axisRight
-                yAxisRight.isEnabled = false // Disable right Y-Axis
-
-                // Refresh the chart
-                usageBarChart.invalidate() // Refresh chart with new data
+            if (baselineDay < 2) {
+                inflaterView = inflater.inflate(R.layout.fragment_data_collected_empty, container, false)
+                return inflaterView
             }
+            else {
+                inflaterView = inflater.inflate(R.layout.fragment_data_collected, container, false)
 
-            return inflaterView
+                usageBarChart = inflaterView.findViewById(R.id.dailyUsageBarChart)
+
+                FirebaseUtils.fetchUsageTotal(LocalDateTime.now()) { usage ->
+                    val entries = mutableListOf<BarEntry>()
+                    val today = LocalDate.now()
+                    val startDate = today.minusDays(1)  // Yesterday
+                    val endDate = today.minusWeeks(2)    // Two weeks behind
+                    val dates =
+                        mutableListOf<Pair<LocalDate, Float>>()  // To store dates and corresponding usage in minutes
+
+                    var currentDate = startDate
+                    while (!currentDate.isBefore(endDate)) {
+                        val usageInMillis = usage[currentDate.toString()]
+
+                        // If there is usage data for this date, create a BarEntry
+                        if (usageInMillis != null) {
+                            Log.d("DATE_DEBUG_DUMP", "Usage on $currentDate: $usageInMillis")
+                            // Convert the usage from milliseconds to minutes
+                            val minutes = (usageInMillis / 60000).toFloat() // Convert to minutes
+                            val p = Pair(currentDate, minutes)
+                            dates.add(p)
+                        } else {
+                            dates.add(Pair(currentDate, 0F))
+                            //Log.d("DATE_DEBUG_DUMP", "No usage found for $currentDate")
+                        }
+                        // Move to the next date
+                        currentDate = currentDate.minusDays(1)
+                    }
+                    val sortedDates = dates.sortedBy { it.first }  // Sorting by the LocalDate
+
+                    // Create BarEntry from sorted data
+                    for (entry in sortedDates) {
+                        val date = entry.first
+                        val minutes = entry.second
+                        val barEntry = BarEntry(date.dayOfMonth.toFloat(), minutes)
+                        entries.add(barEntry)
+                    }
+
+                    // Create a BarDataSet
+                    val barDataSet = BarDataSet(entries, "")
+                    barDataSet.color = resources.getColor(R.color.deep_purple_500, null)
+
+                    // Set up BarData
+                    val barData = BarData(barDataSet)
+                    barData.barWidth = 0.8f // Set bar width
+
+                    // Configure the chart
+                    usageBarChart.data = barData
+                    usageBarChart.description.text =
+                        "Smartphone usage data from past two weeks (in minutes)"
+                    usageBarChart.description.textSize = 14f // Optional: Adjust text size
+                    usageBarChart.description.setPosition(
+                        usageBarChart.width / 2f,
+                        30f
+                    ) // Adjust X and Y position (pixels)
+                    usageBarChart.description.textAlign =
+                        Paint.Align.CENTER // Align the text to the center
+                    usageBarChart.setFitBars(true) // Make the bars fit into the chart view
+
+                    // Customize the X-Axis
+                    val xAxis: XAxis = usageBarChart.xAxis
+                    xAxis.position = XAxis.XAxisPosition.BOTTOM
+                    xAxis.granularity = 1f // One interval per bar
+                    xAxis.setDrawGridLines(false)
+
+                    // Customize the Y-Axis (optional)
+                    val yAxis = usageBarChart.axisLeft
+                    yAxis.axisMinimum = 0f // Optional: Set minimum value for the axis
+                    yAxis.granularity = 1f // Optional: Set the interval between labels
+                    yAxis.textSize = 12f // Optional: Adjust text size
+
+                    val yAxisRight: YAxis = usageBarChart.axisRight
+                    yAxisRight.isEnabled = false // Disable right Y-Axis
+
+                    // Refresh the chart
+                    usageBarChart.invalidate() // Refresh chart with new data
+                }
+
+                return inflaterView
+            }
         }
     }
 
@@ -722,6 +766,8 @@ class MainActivity : FragmentActivity() {
 
         private lateinit var testDialogButtonGoal : Button
         private lateinit var testDialogButtonBed : Button
+
+        private lateinit var clearSharedPreferencesButton : Button
 
         private var isUserInteracting = false
         private var usageAverage = 0L
@@ -743,6 +789,7 @@ class MainActivity : FragmentActivity() {
             testDialogButtonGoal = view.findViewById(R.id.settingsTestDialogGoal)
             testDialogButtonBed = view.findViewById(R.id.settingsTestDialogBed)
             settingsDeviceidText = view.findViewById(R.id.settingsDeviceId)
+            clearSharedPreferencesButton = view.findViewById(R.id.clearSharedPreferences)
 
             usageAverage = getStudyVariable(requireContext(), BASELINE_USAGE_AVERAGE, 0L)
 
@@ -871,6 +918,10 @@ class MainActivity : FragmentActivity() {
                     DIALOG_TYPE_BEDTIME,
                     true
                 )
+            }
+
+            clearSharedPreferencesButton.setOnClickListener {
+                showClearConfirmationDialog(requireContext())
             }
 
             // Set settings content to hidden unless passkey is entered
