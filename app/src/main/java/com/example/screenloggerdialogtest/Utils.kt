@@ -62,6 +62,7 @@ fun setStudyVariable(c : Context?, variable : String, value : Int) {
         editor.apply()
     }
     if (c != null) Toast.makeText(c, "Study variable $variable changed to $value", Toast.LENGTH_SHORT).show()
+    uploadStudyVariable(c, variable, value)
 }
 
 // overloaded function to store Long values (INT_SMARTPHONE_USAGE_LIMIT_GOAL, INT_BEDTIME)
@@ -73,6 +74,27 @@ fun setStudyVariable(c : Context?, variable : String, value : Long) {
         editor.apply()
     }
     if (c != null) Toast.makeText(c, "Study variable $variable changed to $value", Toast.LENGTH_SHORT).show()
+    uploadStudyVariable(c, variable, value)
+}
+
+fun uploadStudyVariable(c : Context?, variable : String, value : Number) {
+    val studyVariableData = hashMapOf(
+        "variable" to variable,
+        "value" to value,
+        "timestamp" to System.currentTimeMillis()
+    )
+
+    FirebaseUtils.sendEntryToDatabase(
+        path = "users/${FirebaseUtils.getCurrentUserUID()}/study_state_info",
+        data = studyVariableData,
+        onSuccess = {
+            //Toast.makeText(requireContext(), "Screen event sent successfully", Toast.LENGTH_SHORT).show()
+        },
+        onFailure = { exception ->
+            // Handle failure
+            //Toast.makeText(requireContext(), "Failed to send data: ${exception.message}", Toast.LENGTH_LONG).show()
+        }
+    )
 }
 
 // Getter for Int values
@@ -181,17 +203,34 @@ const val STUDY_STATE_POST_INT2_SURVEY_REQUIRED = 7
 const val STUDY_STATE_COMPLETE = 8
 
 fun setStudyState(c : Context?, state : Int) {
-    var sharedPrefs = getStudyStateSharedPreferences(c)
-    var editor = sharedPrefs?.edit()
+    val sharedPrefs = getStudyStateSharedPreferences(c)
+    val editor = sharedPrefs?.edit()
     if (editor != null) {
         editor.putInt(STUDY_STATE, state)
         editor.apply()
     }
     if (c != null) Toast.makeText(c, "Study state changed to $state", Toast.LENGTH_SHORT).show()
+
+    val stateData = hashMapOf(
+        "study_state" to state,
+        "timestamp" to System.currentTimeMillis()
+    )
+
+    FirebaseUtils.sendEntryToDatabase(
+        path = "users/${FirebaseUtils.getCurrentUserUID()}/study_state_info",
+        data = stateData,
+        onSuccess = {
+            //Toast.makeText(requireContext(), "Screen event sent successfully", Toast.LENGTH_SHORT).show()
+        },
+        onFailure = { exception ->
+            // Handle failure
+            //Toast.makeText(requireContext(), "Failed to send data: ${exception.message}", Toast.LENGTH_LONG).show()
+        }
+    )
 }
 
 fun getStudyState(c : Context?): Int {
-    var sharedPrefs = getStudyStateSharedPreferences(c)
+    val sharedPrefs = getStudyStateSharedPreferences(c)
     if (sharedPrefs != null) {
         return sharedPrefs.getInt(STUDY_STATE, 0)
     }

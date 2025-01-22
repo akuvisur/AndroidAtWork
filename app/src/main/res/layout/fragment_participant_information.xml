@@ -27,7 +27,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Prolific ID"
+            android:text="Prolific ID (if applicable)"
             android:textSize="16sp" />
         <EditText
             android:id="@+id/infoProlific"

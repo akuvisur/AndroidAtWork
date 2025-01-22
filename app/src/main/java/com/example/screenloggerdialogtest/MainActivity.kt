@@ -40,7 +40,6 @@ import com.github.mikephil.charting.components.YAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
-import com.github.mikephil.charting.formatter.ValueFormatter
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Calendar
@@ -105,6 +104,7 @@ class MainActivity : FragmentActivity() {
             }
         }.attach()
 
+        /*
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 // this launches the permission request
@@ -113,6 +113,7 @@ class MainActivity : FragmentActivity() {
         } else {
             true // For Android versions below 13, permissions are granted by default
         }
+        */
 
         study_state = getStudyState(this)
 
@@ -128,8 +129,6 @@ class MainActivity : FragmentActivity() {
             STUDY_STATE_COMPLETE -> "Study complete"
             else -> "Unknown state"
         }
-        // TODO: Add day counter
-
 
         studyPhaseSliderValue = when {
             study_state < STUDY_STATE_BASELINE_ONGOING -> 0f
@@ -192,41 +191,40 @@ class MainActivity : FragmentActivity() {
     class InfoFragment : Fragment() {
         private lateinit var inflaterView : View
 
-        lateinit var startOnboardingButton: Button
-        lateinit var allowNotificationButton: Button
-        lateinit var disableBatteryManagementButton: Button
-        lateinit var consentSpaiButton: Button
-        lateinit var consentSASButton: Button
-        lateinit var startBaselineButton: Button
-        lateinit var allowNotificationIcon: ImageView
-        lateinit var consentSpaiIcon: ImageView
-        lateinit var consentSASIcon: ImageView
+        private lateinit var startOnboardingButton: Button
+        private lateinit var allowNotificationButton: Button
+        private lateinit var disableBatteryManagementButton: Button
+        private lateinit var consentSpaiButton: Button
+        private lateinit var consentSASButton: Button
+        private lateinit var startBaselineButton: Button
+        private lateinit var allowNotificationIcon: ImageView
+        private lateinit var consentSpaiIcon: ImageView
+        private lateinit var consentSASIcon: ImageView
 
-        lateinit var baselineProgressSlider: Slider
+        private lateinit var baselineProgressSlider: Slider
 
-        lateinit var averageUsageText: TextView
-        lateinit var reduceUsageSlider: Slider
-        lateinit var reduceUsageText: TextView
-        lateinit var bedTimeInput : EditText
-        lateinit var enableOverlayButton: Button
-        lateinit var intervention1TestButton: Button
-        lateinit var startInterventionButton: Button
+        private lateinit var averageUsageText: TextView
+        private lateinit var reduceUsageSlider: Slider
+        private lateinit var reduceUsageText: TextView
+        private lateinit var bedTimeInput : EditText
+        private lateinit var enableOverlayButton: Button
+        private  lateinit var intervention1TestButton: Button
+        private lateinit var startInterventionButton: Button
 
-
-        lateinit var intervention1ProgressSlider: Slider
-        lateinit var startIntervention2Button: Button
-        lateinit var intervention2ProgressSlider: Slider
-        lateinit var postStudyExitSurveyButton: Button
-        lateinit var postStudySpaiButton: Button
-        lateinit var completeStudyButton: Button
+        private lateinit var intervention1ProgressSlider: Slider
+        private lateinit var startIntervention2Button: Button
+        private lateinit var intervention2ProgressSlider: Slider
+        private lateinit var postStudyExitSurveyButton: Button
+        private lateinit var postStudySpaiButton: Button
+        private lateinit var completeStudyButton: Button
 
         @SuppressLint("NewApi", "DefaultLocale")
         override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
             savedInstanceState: Bundle?
-        ): View? {
+        ): View {
 
-            var studyStateVars = getStudyStateVariables(requireContext())
+            val studyStateVars = getStudyStateVariables(requireContext())
 
             var studyState = getStudyState(requireContext())
             if (studyState == STUDY_STATE_FIRST_LAUNCH) {
@@ -261,8 +259,10 @@ class MainActivity : FragmentActivity() {
                         }
                 } else {
                     notificationsAllowed = true
+                    allowNotificationIcon.isVisible = true
                     allowNotificationButton.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue_gray_200))
                     allowNotificationButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue_gray_600))
+                    checkEnableConsentButton(studyStateVars, notificationsAllowed)
                 }
                 allowNotificationIcon.isVisible = notificationsAllowed
                 allowNotificationButton.isEnabled = !notificationsAllowed
@@ -273,7 +273,7 @@ class MainActivity : FragmentActivity() {
                 disableBatteryManagementButton.setOnClickListener {
                     val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
                     startActivity(intent)
-                    Toast.makeText(requireContext(), "Please find this application and disable battery management, then return to the application", Toast.LENGTH_LONG).show()
+                    Toast.makeText(requireContext(), "Please find Android Smartphone Interventions and disable battery management. Select 'all applications' if have trouble finding it!", Toast.LENGTH_LONG).show()
                 }
 
                 consentSpaiButton.setOnClickListener {
@@ -306,28 +306,9 @@ class MainActivity : FragmentActivity() {
                     setStudyState(requireContext(), STUDY_STATE_BASELINE_ONGOING)
                     setStudyTimestamp(requireContext(), BASELINE_START_TIMESTAMP, System.currentTimeMillis())
                     (requireActivity() as MainActivity).refreshUI()
-
-                    val baselineData = hashMapOf(
-                        BASELINE_START_TIMESTAMP to System.currentTimeMillis(),
-                        "ts" to System.currentTimeMillis()
-                    )
-
-                    FirebaseUtils.sendEntryToDatabase(
-                        path = "users/${FirebaseUtils.getCurrentUserUID()}/study_state_info",
-                        data = baselineData,
-                        onSuccess = {
-                            //Toast.makeText(requireContext(), "Screen event sent successfully", Toast.LENGTH_SHORT).show()
-                        },
-                        onFailure = { exception ->
-                            // Handle failure
-                            //Toast.makeText(requireContext(), "Failed to send data: ${exception.message}", Toast.LENGTH_LONG).show()
-                        }
-                    )
                 }
 
-                if (!((studyStateVars[SASSV_1_SUBMITTED] == 1) && (studyStateVars[SPAI_1_SUBMITTED] ==1) && notificationsAllowed)) {
-                    disableConsentButton(startBaselineButton)
-                }
+                checkEnableConsentButton(studyStateVars, notificationsAllowed)
 
             }
 
@@ -611,10 +592,25 @@ class MainActivity : FragmentActivity() {
             return inflaterView
         }
 
+        private fun checkEnableConsentButton(studyStateVars : Map<String, Number?>, notificationsAllowed : Boolean) {
+            if (!((studyStateVars[SASSV_1_SUBMITTED] == 1) && (studyStateVars[SPAI_1_SUBMITTED] ==1) && notificationsAllowed)) {
+                disableConsentButton(startBaselineButton)
+            }
+            else {
+                enableConsentButton(startBaselineButton)
+            }
+        }
+
         private fun disableConsentButton(b : Button) {
             b.isEnabled = false
             b.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue_gray_200))
             b.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue_gray_600))
+        }
+
+        private fun enableConsentButton(b : Button) {
+            b.isEnabled = true
+            b.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue_gray_700))
+            b.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue_gray_50))
         }
 
         private fun disableINT1Button(b : Button) {
