@@ -352,8 +352,7 @@ class MainActivity : FragmentActivity() {
                     (requireActivity() as MainActivity).refreshUI()
                 }
 
-                val intent = Intent(requireContext(), BaselineService::class.java) // Build the intent for the service
-                (requireActivity() as MainActivity).startForegroundService(intent)
+                checkAndStartBaselineService()
 
                 FirebaseUtils.fetchUsageTotal(LocalDateTime.now()) { usage ->
                     Log.d("FIREBASE", "Total Usage All Days: $usage")
@@ -364,9 +363,7 @@ class MainActivity : FragmentActivity() {
             }
 
             else if (studyState == STUDY_STATE_POST_BASELINE) {
-                // stop previous service
-                val baselineServiceIntent = Intent(requireContext(), BaselineService::class.java)
-                (requireActivity() as MainActivity).stopService(baselineServiceIntent)
+                checkAndStartBaselineService()
 
                 var usageAverage = 0L
                 // Actions for post-baseline phase
@@ -525,10 +522,11 @@ class MainActivity : FragmentActivity() {
 
                 // INT1 requires overlay permission
                 if (Settings.canDrawOverlays(requireContext())) {
-                    //TODO change baseline to INT1 service?
-                    val intent = Intent(requireContext(), INT1Service::class.java) // Build the intent for the service
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        (requireActivity() as MainActivity).startForegroundService(intent)
+                        if (!isServiceRunning(requireContext(), INT1Service::class.java)) {
+                            val intent = Intent(requireContext(), INT1Service::class.java) // Build the intent for the service
+                            (requireActivity() as MainActivity).startForegroundService(intent)
+                        }
                     }
                     else {
                         Log.d("MAIN:ONCREATE", "SDK level too low")
@@ -545,8 +543,7 @@ class MainActivity : FragmentActivity() {
                     (requireActivity() as MainActivity).refreshUI()
                 }
 
-                val intent = Intent(requireContext(), BaselineService::class.java) // Build the intent for the service
-                (requireActivity() as MainActivity).startForegroundService(intent)
+                checkAndStartBaselineService()
 
                 intervention1ProgressSlider = inflaterView.findViewById(R.id.intervention1ProgressSlider)
                 intervention1ProgressSlider.value = min(int1Day.toFloat(), INT1_DURATION.toFloat())
@@ -580,6 +577,8 @@ class MainActivity : FragmentActivity() {
                         }
                     )
 
+                    checkAndStartBaselineService()
+
                     (requireActivity() as MainActivity).refreshUI()
                 }
             }
@@ -595,11 +594,20 @@ class MainActivity : FragmentActivity() {
                     (requireActivity() as MainActivity).refreshUI()
                 }
 
-                val intent = Intent(requireContext(), INT2Service::class.java) // Build the intent for the service
-                (requireActivity() as MainActivity).startForegroundService(intent)
+                checkAndStartBaselineService()
+
+                if (!isServiceRunning(requireContext(), INT2Service::class.java)) {
+                    val intent = Intent(
+                        requireContext(),
+                        INT2Service::class.java
+                    ) // Build the intent for the service
+                    (requireActivity() as MainActivity).startForegroundService(intent)
+                }
 
                 intervention2ProgressSlider = inflaterView.findViewById(R.id.intervention2ProgressSlider)
-                intervention2ProgressSlider.value = min(int2Day.toFloat(), INT2_DURATION.toFloat())
+
+                val safeInt2Day = if (int2Day < 1) 1 else int2Day
+                intervention2ProgressSlider.value = min(safeInt2Day.toFloat(), INT2_DURATION.toFloat())
 
             }
 
@@ -619,6 +627,16 @@ class MainActivity : FragmentActivity() {
             }
 
             return inflaterView
+        }
+
+        private fun checkAndStartBaselineService() {
+            if (!isServiceRunning(requireContext(), BaselineService::class.java)) {
+                val intent = Intent(
+                    requireContext(),
+                    BaselineService::class.java
+                ) // Build the intent for the service
+                (requireActivity() as MainActivity).startForegroundService(intent)
+            }
         }
 
         private fun checkEnableConsentButton(studyStateVars : Map<String, Number?>, notificationsAllowed : Boolean) {
@@ -768,6 +786,7 @@ class MainActivity : FragmentActivity() {
         private lateinit var testDialogButtonBed : Button
 
         private lateinit var clearSharedPreferencesButton : Button
+        private lateinit var clearDailyUsageButton : Button
 
         private var isUserInteracting = false
         private var usageAverage = 0L
@@ -790,6 +809,7 @@ class MainActivity : FragmentActivity() {
             testDialogButtonBed = view.findViewById(R.id.settingsTestDialogBed)
             settingsDeviceidText = view.findViewById(R.id.settingsDeviceId)
             clearSharedPreferencesButton = view.findViewById(R.id.clearSharedPreferences)
+            clearDailyUsageButton = view.findViewById(R.id.clearDailyUsage)
 
             usageAverage = getStudyVariable(requireContext(), BASELINE_USAGE_AVERAGE, 0L)
 
@@ -922,6 +942,10 @@ class MainActivity : FragmentActivity() {
 
             clearSharedPreferencesButton.setOnClickListener {
                 showClearConfirmationDialog(requireContext())
+            }
+
+            clearDailyUsageButton.setOnClickListener {
+                resetDailyUsage(requireContext())
             }
 
             // Set settings content to hidden unless passkey is entered

@@ -64,6 +64,8 @@ import java.util.concurrent.TimeUnit
  * enabling tailored interventions for each study phase.
  */
 
+const val MULTIPLE_SCREEN_EVENT_DELAY : Int = 1000
+
 open class BaselineService : Service() {
     private lateinit var screenStateReceiver: ScreenStateReceiver
     private lateinit var heartbeat: HeartbeatBeater
@@ -95,7 +97,7 @@ open class BaselineService : Service() {
         if (studyPhase == 0) {
             screenStateReceiver = ScreenStateReceiver()
             val filter = IntentFilter().apply {
-                addAction(Intent.ACTION_SCREEN_ON)
+                //addAction(Intent.ACTION_SCREEN_ON)
                 addAction(Intent.ACTION_SCREEN_OFF)
                 addAction(Intent.ACTION_USER_PRESENT)
             }
@@ -114,7 +116,9 @@ open class BaselineService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        if (screenStateReceiver != null) unregisterReceiver(screenStateReceiver)
+        if (::screenStateReceiver.isInitialized) {
+            unregisterReceiver(screenStateReceiver)
+        }
         heartbeat.stopHeartbeat()
     }
 
@@ -124,11 +128,9 @@ open class BaselineService : Service() {
         lateinit var previousEventType : String
 
         override fun onReceive(p0: Context?, p1: Intent?) {
-            if (previousEventTimestamp < 1) {
-                val (ts, type) = getPreviousEvent(p0)
-                previousEventTimestamp = ts
-                previousEventType = type
-            }
+            val (ts, type) = getPreviousEvent(p0)
+            previousEventTimestamp = ts
+            previousEventType = type
 
             // have to skip incase we dont have a timestamp, otherwise WILL
             // cause weird bugs with duration
@@ -136,24 +138,33 @@ open class BaselineService : Service() {
 
             val now = System.currentTimeMillis()
 
+            /*
             // something weird happening that causes double triggers with 1-10ms delay
             // presumably the firebase process takes longer than few milliseconds
             // which causes the delay in updating previousEventTimestamp
             // if its updated in the updatePreviousEvent() function
             // so done manually for now.
+             29.01.2025 updated the value from 100 milliseconds to 1000 due to odd bugs?
+                - perhaps connected to multiple services running and each service having its own previousEventTimestamp
+                - this should be fixed by only using the variables from sharedPreferences with getPreviousEvent()
+            */
             when (p1?.action) {
+                // if the phone is unlocked with thumb id the order is sometimes Off -> Present -> On
+                // so lets just ignore all screen on events, since you cant go from present -> on
+                /*
                 Intent.ACTION_SCREEN_ON -> {
                     // Screen turned on
                     Log.d("ScreenStateReceiver", "Screen ON")
-                    if (now - previousEventTimestamp > 100) uploadEvent(previousEventType, previousEventTimestamp, p0)
+                    if (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY) uploadEvent(previousEventType, previousEventTimestamp, p0)
                     previousEventTimestamp = now
                     updatePreviousEvent(now, "ACTION_SCREEN_ON", p0)
                 }
+                */
 
                 Intent.ACTION_SCREEN_OFF -> {
                     // Screen turned off
                     Log.d("ScreenStateReceiver", "Screen OFF")
-                    if (now - previousEventTimestamp > 100) uploadEvent(previousEventType, previousEventTimestamp, p0)
+                    if (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY) uploadEvent(previousEventType, previousEventTimestamp, p0)
                     previousEventTimestamp = now
                     updatePreviousEvent(now, "ACTION_SCREEN_OFF", p0)
                 }
@@ -161,7 +172,7 @@ open class BaselineService : Service() {
                 Intent.ACTION_USER_PRESENT -> {
                     // User unlocked the screen
                     Log.d("ScreenStateReceiver", "User Present (Unlocked)")
-                    if (now - previousEventTimestamp > 100) uploadEvent(previousEventType, previousEventTimestamp, p0)
+                    if (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY) uploadEvent(previousEventType, previousEventTimestamp, p0)
                     previousEventTimestamp = now
                     updatePreviousEvent(now, "ACTION_USER_PRESENT", p0)
                 }

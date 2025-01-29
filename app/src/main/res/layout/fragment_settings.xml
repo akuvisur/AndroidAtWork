@@ -215,6 +215,12 @@
                     android:id="@+id/clearSharedPreferences"
                     android:text="Clear settings"/>
 
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/clearDailyUsage"
+                    android:text="Clear daily use"/>
+
             </LinearLayout>
 
         </LinearLayout>

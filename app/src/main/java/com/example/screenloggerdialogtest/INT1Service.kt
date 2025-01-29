@@ -83,9 +83,8 @@ class INT1Service : INT2Service() {
                     dialog.showDialog(p0, now, bedtimeGoal, dailyUsage, dailyUsageGoal, DIALOG_TYPE_BEDTIME, false)
                 }
             }
-            else if (p1?.action == Intent.ACTION_SCREEN_OFF || p1?.action == Intent.ACTION_SCREEN_ON) {
+            else if (p1?.action == Intent.ACTION_SCREEN_OFF) {
                 if (System.currentTimeMillis() - previousEventTimestamp <= 10000) {
-                    // TODO adherence
                     val data = UnlockDialog.AdheredResponse(
                         dialogType = dialog.dialogType,
                         dialogClosedTimestamp = System.currentTimeMillis(),

@@ -1,5 +1,7 @@
 package com.example.screenloggerdialogtest
 
+import android.annotation.SuppressLint
+import android.app.ActivityManager
 import android.app.AlertDialog
 import android.app.Service.WINDOW_SERVICE
 import android.content.Context
@@ -17,6 +19,7 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import java.time.LocalTime
+import java.util.Calendar
 
 
 const val BASELINE_DURATION = 14
@@ -534,16 +537,60 @@ fun getPreviousEvent(c: Context?): Pair<Long, String> {
 
 
 private const val DAILY_USAGE = "DAILY_USAGE"
-fun storeDailyUsage(duration : Long, c: Context?) {
+private const val LAST_LOGGED_DAY = "LAST_LOGGED_DAY"
+
+fun resetDailyUsage(c: Context?) {
     val sharedPreferences = getScreenSharedPreferences(c)
-    sharedPreferences?.edit()?.putLong(DAILY_USAGE, duration)?.apply()
+    val editor = sharedPreferences?.edit()
+    editor?.putLong(DAILY_USAGE, 0L)
+    val currentDay = getCurrentDay()
+    editor?.putInt(LAST_LOGGED_DAY, currentDay)
+    editor?.apply()
 }
 
-fun getDailyUsage(c : Context?) : Long {
+fun storeDailyUsage(duration: Long, c: Context?) {
     val sharedPreferences = getScreenSharedPreferences(c)
-    val previousUsage = sharedPreferences?.getLong(DAILY_USAGE, 0L)
-    return(previousUsage!!)
+    val editor = sharedPreferences?.edit()
+
+    val currentDay = getCurrentDay()
+    val lastLoggedDay = sharedPreferences?.getInt(LAST_LOGGED_DAY, currentDay)
+
+    // If it's a new day, reset usage
+    if (currentDay != lastLoggedDay) {
+        editor?.putLong(DAILY_USAGE, 0L) // Reset usage
+    }
+
+    editor?.putLong(DAILY_USAGE, duration)
+    editor?.putInt(LAST_LOGGED_DAY, currentDay)
+    editor?.apply()
 }
+
+fun getDailyUsage(c: Context?): Long {
+    val sharedPreferences = getScreenSharedPreferences(c)
+
+    val currentDay = getCurrentDay()
+    val lastLoggedDay = sharedPreferences?.getInt(LAST_LOGGED_DAY, currentDay)
+
+    // If it's a new day, return 0 instead of old data
+    if (currentDay != lastLoggedDay) {
+        return 0L
+    }
+
+    return sharedPreferences.getLong(DAILY_USAGE, 0L) ?: 0L
+}
+
+// Determines the "day" based on 4 AM cutoff
+private fun getCurrentDay(): Int {
+    val calendar = Calendar.getInstance()
+    val hour = calendar.get(Calendar.HOUR_OF_DAY)
+
+    if (hour < 4) {
+        calendar.add(Calendar.DATE, -1) // Before 4 AM? Count as the previous day
+    }
+
+    return calendar.get(Calendar.DAY_OF_YEAR) // Unique day identifier
+}
+
 
 private const val LAST_USAGE_SESSION_TS = "LAST_USAGE_SESSION_TS"
 fun storeLastDailyUsageTime(time : Long, c: Context?) {
@@ -561,10 +608,11 @@ fun getLastDailyUsageTime(c : Context?) : Long {
     random utils
  */
 
+@SuppressLint("DefaultLocale")
 fun formatMinutesToTime(minutes: Int): String {
     val hours = minutes / 60
-    val mins = minutes % 60
-    return String.format("%02d:%02d", hours, mins)
+    val minutes = minutes % 60
+    return String.format("%02d:%02d", hours, minutes)
 }
 
 fun calculateMinutesUntilBedtime(bedtimeInMinutes: Int): Int {
@@ -591,4 +639,9 @@ fun parseBedtimeToMinutes(input : String): Int {
         return (bedtimeInMinutes)
     }
     return(0)
+}
+
+fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
+    val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    return manager.getRunningServices(Int.MAX_VALUE).any { it.service.className == serviceClass.name }
 }
