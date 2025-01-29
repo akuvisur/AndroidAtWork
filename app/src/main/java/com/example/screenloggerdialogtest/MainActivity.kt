@@ -365,7 +365,6 @@ class MainActivity : FragmentActivity() {
             else if (studyState == STUDY_STATE_POST_BASELINE) {
                 checkAndStartBaselineService()
 
-                var usageAverage = 0L
                 // Actions for post-baseline phase
                 // e.g., gather baseline data, prepare for intervention
                 inflaterView = inflater.inflate(R.layout.post_baseline_layout, container, false)
@@ -378,6 +377,7 @@ class MainActivity : FragmentActivity() {
                 intervention1TestButton = inflaterView.findViewById(R.id.intervention1TestButton)
                 startInterventionButton = inflaterView.findViewById(R.id.startInterventionButton)
 
+                var usageAverage = 0L
                 FirebaseUtils.fetchUsageTotal(LocalDateTime.now()) { usage ->
                     val totalUsageAllDays = usage.values.sum()
                     val averageUsageMillis = if (usage.isNotEmpty()) totalUsageAllDays / usage.size else 0L
@@ -394,6 +394,8 @@ class MainActivity : FragmentActivity() {
                     usageAverage = averageUsageMillis
                 }
 
+                setStudyVariable(requireContext(), BASELINE_USAGE_AVERAGE, usageAverage)
+
                 reduceUsageSlider.setLabelFormatter {
                     value -> "-${value.toInt()}%"
                 }
@@ -402,10 +404,10 @@ class MainActivity : FragmentActivity() {
                 var reducedUsageMillis = 0L
                 reduceUsageSlider.addOnChangeListener { slider, value, _ ->
                     // Convert the slider value to a percentage (negative)
-                    val percentageReduction = -value.toInt()
+                    val percentageReduction = value.toInt()
 
                     // Calculate the reduced usage in milliseconds
-                    reducedUsageMillis = usageAverage * (100 + percentageReduction) / 100
+                    reducedUsageMillis = usageAverage * (100 - percentageReduction) / 100
 
                     // Convert reduced usage to HH:mm format
                     val hours = reducedUsageMillis / (1000 * 60 * 60)
@@ -475,25 +477,6 @@ class MainActivity : FragmentActivity() {
                         setStudyVariable(c, INT_SMARTPHONE_USAGE_LIMIT_PERCENTAGE, reduceUsageSlider.value.toInt())
                         setStudyVariable(c, BEDTIME_GOAL, parseBedtimeToMinutes(bedTimeInput.text.toString()))
                         setStudyTimestamp(c, INT1_START_TIMESTAMP, System.currentTimeMillis())
-
-                        val goalData = hashMapOf(
-                            INT1_START_TIMESTAMP to System.currentTimeMillis(),
-                            INT_SMARTPHONE_USAGE_LIMIT_GOAL to reducedUsageMillis,
-                            BEDTIME_GOAL to parseBedtimeToMinutes(bedTimeInput.text.toString()),
-                            "ts" to System.currentTimeMillis()
-                        )
-
-                        FirebaseUtils.sendEntryToDatabase(
-                            path = "users/${FirebaseUtils.getCurrentUserUID()}/study_state_info",
-                            data = goalData,
-                            onSuccess = {
-                                //Toast.makeText(requireContext(), "Screen event sent successfully", Toast.LENGTH_SHORT).show()
-                            },
-                            onFailure = { exception ->
-                                // Handle failure
-                                //Toast.makeText(requireContext(), "Failed to send data: ${exception.message}", Toast.LENGTH_LONG).show()
-                            }
-                        )
 
                         (requireActivity() as MainActivity).refreshUI()
                     }
@@ -820,10 +803,10 @@ class MainActivity : FragmentActivity() {
             var reducedUsageMillis = 0L
             settingsReduceUsageSlider.addOnChangeListener { _, value, _ ->
                 // Convert the slider value to a percentage (negative)
-                val percentageReduction = -value.toInt()
+                val percentageReduction = value.toInt()
 
                 // Calculate the reduced usage in milliseconds
-                reducedUsageMillis = usageAverage * (100 + percentageReduction) / 100
+                reducedUsageMillis = usageAverage * (100 - percentageReduction) / 100
 
                 // Convert reduced usage to HH:mm format
                 val hours = reducedUsageMillis / (1000 * 60 * 60)
@@ -972,7 +955,7 @@ class MainActivity : FragmentActivity() {
                 }
             })
 
-            if (getStudyState(requireContext()) < 3) {
+            if (getStudyState(requireContext()) < 4) {
                 settingsGoalLayout.visibility = View.GONE
             }
 

@@ -73,6 +73,8 @@ open class INT2Service : BaselineService() {
     private val channelNameInt2 = "Int2ChannelName"
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d("SERVICE_LOGIC", "INT2 starting")
+
         dailyUsageGoal = getStudyVariable(this, INT_SMARTPHONE_USAGE_LIMIT_GOAL, 0L)
         bedtimeGoal = getStudyVariable(this, BEDTIME_GOAL, BEDTIME_GOAL_DEFAULT_VALUE)
         lastUsageTimestamp = getLastDailyUsageTime(this)

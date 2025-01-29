@@ -113,7 +113,7 @@ fun uploadStudyVariable(c : Context?, variable : String, value : Number) {
     )
 
     FirebaseUtils.sendEntryToDatabase(
-        path = "users/${FirebaseUtils.getCurrentUserUID()}/study_state_info",
+        path = "users/${FirebaseUtils.getCurrentUserUID()}/study_state_info/${System.currentTimeMillis()}",
         data = studyVariableData,
         onSuccess = {
             //Toast.makeText(requireContext(), "Screen event sent successfully", Toast.LENGTH_SHORT).show()

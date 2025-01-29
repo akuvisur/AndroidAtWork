@@ -77,6 +77,8 @@ open class BaselineService : Service() {
     val channelName = "BaselineService"
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d("SERVICE_LOGIC", "Baseline starting")
+
         // Start as a foreground service (if necessary)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
@@ -134,6 +136,7 @@ open class BaselineService : Service() {
 
             // have to skip incase we dont have a timestamp, otherwise WILL
             // cause weird bugs with duration
+            // the getPreviousEvent() defaults to System.currentTimeMillis() to this should not occur
             if (previousEventTimestamp == 0L) return
 
             val now = System.currentTimeMillis()

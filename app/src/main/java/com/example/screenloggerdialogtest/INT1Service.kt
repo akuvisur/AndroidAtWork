@@ -3,6 +3,7 @@ package com.example.screenloggerdialogtest
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.util.Log
 
 /**
  * ### Service Hierarchy Documentation
@@ -54,6 +55,7 @@ class INT1Service : INT2Service() {
     private lateinit var INT1Receiver : INT1ScreenReceiver
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d("SERVICE_LOGIC", "INT1 starting")
 
         // this is largely irrelevant since its reset in INT2Service (super.onStart...)
         studyPhase = 1
@@ -93,7 +95,7 @@ class INT1Service : INT2Service() {
                     )
                     FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses/", data)
                 }
-                dialog.close(p0)
+                if (::dialog.isInitialized) dialog.close(p0)
             }
 
             super.onReceive(p0, p1) // Retain functionality from Service A
