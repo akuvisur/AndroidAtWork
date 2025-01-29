@@ -800,6 +800,12 @@ class MainActivity : FragmentActivity() {
                     value -> "-${value.toInt()}%"
             }
 
+            val usageGoal = getStudyVariable(requireContext(), INT_SMARTPHONE_USAGE_LIMIT_PERCENTAGE, 10)
+            settingsReduceUsageSlider.value = usageGoal.toFloat()
+            settingsReduceUsageSlider.setLabelFormatter {
+                    value -> "-${value.toInt()}%"
+            }
+
             var reducedUsageMillis = 0L
             settingsReduceUsageSlider.addOnChangeListener { _, value, _ ->
                 // Convert the slider value to a percentage (negative)
@@ -821,12 +827,6 @@ class MainActivity : FragmentActivity() {
                 // update values here automatically
                 setStudyVariable(requireContext(), INT_SMARTPHONE_USAGE_LIMIT_GOAL, reducedUsageMillis)
                 setStudyVariable(requireContext(), INT_SMARTPHONE_USAGE_LIMIT_PERCENTAGE, value.toInt())
-            }
-
-            val usageGoal = getStudyVariable(requireContext(), INT_SMARTPHONE_USAGE_LIMIT_PERCENTAGE, 10)
-            settingsReduceUsageSlider.value = usageGoal.toFloat()
-            settingsReduceUsageSlider.setLabelFormatter {
-                    value -> "-${value.toInt()}%"
             }
 
             settingsDeviceidText.text = String.format(
