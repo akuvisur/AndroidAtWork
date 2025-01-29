@@ -77,16 +77,19 @@ class INT1Service : INT2Service() {
 
             // Additional functionality for Service B
             if (p1?.action == Intent.ACTION_USER_PRESENT) {
-                if (dailyUsage > dailyUsageGoal && !usageWithin45Seconds(now)) {
+                Log.d("INT1", "usage: ${dailyUsage} goal: ${dailyUsageGoal} diff: ${dailyUsageGoalDiff}")
+                Log.d("INT1", "bed goal ${bedtimeGoal} minutes until bed: ${calculateMinutesUntilBedtime(bedtimeGoal)}")
+                Log.d("INT1", "usage within 45 seconds: ${usageWithin45Seconds(p0, now)}")
+                if (dailyUsage > dailyUsageGoal && !usageWithin45Seconds(p0, now)) {
                     dialog = UnlockDialog()
                     dialog.showDialog(p0, now, bedtimeGoal, dailyUsage, dailyUsageGoal, DIALOG_TYPE_GOAL_EXCEEDED, false)
-                } else if (calculateMinutesUntilBedtime(bedtimeGoal) <= 60 && !usageWithin45Seconds(now)) {
+                } else if (calculateMinutesUntilBedtime(bedtimeGoal) <= 60 && !usageWithin45Seconds(p0, now)) {
                     dialog = UnlockDialog()
                     dialog.showDialog(p0, now, bedtimeGoal, dailyUsage, dailyUsageGoal, DIALOG_TYPE_BEDTIME, false)
                 }
             }
             else if (p1?.action == Intent.ACTION_SCREEN_OFF) {
-                if (System.currentTimeMillis() - previousEventTimestamp <= 10000) {
+                if (System.currentTimeMillis() - previousEventTimestamp <= 10000 && ::dialog.isInitialized) {
                     val data = UnlockDialog.AdheredResponse(
                         dialogType = dialog.dialogType,
                         dialogClosedTimestamp = System.currentTimeMillis(),

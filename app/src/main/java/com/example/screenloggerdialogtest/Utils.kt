@@ -445,9 +445,14 @@ class UnlockDialog() {
     }
 
     fun close(c: Context?) {
-        if (c == null) return
-        val wm = c.getSystemService(WINDOW_SERVICE) as WindowManager
-        wm.removeView(dialogView)
+        if (c == null || !::dialogView.isInitialized) return // Ensure dialogView is initialized
+
+        val wm = c.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+
+        // Check if the view is still attached to the window
+        if (dialogView.isAttachedToWindow) {
+            wm.removeView(dialogView)
+        }
     }
 
     // Function to initialize button click listeners

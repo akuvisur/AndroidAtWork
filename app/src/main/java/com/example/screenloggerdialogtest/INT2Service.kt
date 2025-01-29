@@ -94,7 +94,7 @@ open class INT2Service : BaselineService() {
         dailyUsage = getDailyUsage(this)
 
         notificationManager = getSystemService(NotificationManager::class.java)
-        notificationChannel = NotificationChannel(channelIdInt2, channelNameInt2, NotificationManager.IMPORTANCE_MAX)
+        notificationChannel = NotificationChannel(channelIdInt2, channelNameInt2, NotificationManager.IMPORTANCE_HIGH)
         notificationManager.createNotificationChannel(notificationChannel)
 
         studyPhase = 2
@@ -129,7 +129,7 @@ open class INT2Service : BaselineService() {
             }
             else if (p1?.action == Intent.ACTION_USER_PRESENT && (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY)) {
                 // show notification if above usage goal
-                if (dailyUsage > dailyUsageGoal && !usageWithin45Seconds(now)) {
+                if (dailyUsage > dailyUsageGoal && !usageWithin45Seconds(p0, now)) {
                     dailyUsageGoalDiff = dailyUsageGoal - dailyUsage
                     val notification: Notification = Notification.Builder(p0, channelId)
                         .setContentTitle("Smartphone Interventions")
@@ -140,7 +140,7 @@ open class INT2Service : BaselineService() {
                 }
                 // within an hour of bedtime goal
                 // show a notification
-                else if (calculateMinutesUntilBedtime(bedtimeGoal) <= 60 && !usageWithin45Seconds(now)) {
+                else if (calculateMinutesUntilBedtime(bedtimeGoal) <= 60 && !usageWithin45Seconds(p0, now)) {
                     val notification: Notification = Notification.Builder(p0, channelId)
                         .setContentTitle("Smartphone Interventions")
                         .setContentText("Bedtime nearing, you should consider putting your phone away!")
@@ -176,7 +176,8 @@ open class INT2Service : BaselineService() {
     }
 
     // within 45 seconds continues previous use, no further disruptions after unlock
-    fun usageWithin45Seconds(time : Long) : Boolean {
+    fun usageWithin45Seconds(c : Context?, time : Long) : Boolean {
+        lastUsageTimestamp = getDailyUsage(c)
         return((time - lastUsageTimestamp) < 45000)
     }
 }
