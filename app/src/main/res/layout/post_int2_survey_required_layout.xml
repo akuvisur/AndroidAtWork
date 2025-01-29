@@ -40,7 +40,7 @@
         android:id="@+id/spai_questionnaire_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Please also fill the Smartphone Addiction Survey (SPAI) again. It is done to underestand if the intervention influenced your reliance on your smartphone."
+        android:text="Please also fill the Smartphone Addiction Inventory (SPAI) and Smartphone Addiction Survey (SAS-SV) again. It is done to underestand if the intervention influenced your reliance on your smartphone."
         android:textSize="16sp"
         android:textColor="@color/deep_purple_600"
         />
@@ -51,7 +51,16 @@
         android:id="@+id/postStudySpaiButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Smartphone Addiction Survey (SPAI)"
+        android:text="Smartphone Addiction Inventory (SPAI)"
+        android:backgroundTint="@color/deep_purple_500"
+        android:textColor="@color/deep_purple_50"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/postStudySASSVButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Smartphone Addiction Survey (SAS-SV)"
         android:backgroundTint="@color/deep_purple_500"
         android:textColor="@color/deep_purple_50"
         android:layout_marginBottom="32dp"/>
