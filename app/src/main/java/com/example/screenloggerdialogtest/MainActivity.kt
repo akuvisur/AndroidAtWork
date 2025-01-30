@@ -419,6 +419,7 @@ class MainActivity : FragmentActivity() {
 
                 var reduceUsageTouched = false
                 var reducedUsageMillis = 0L
+
                 reduceUsageSlider.addOnChangeListener { slider, value, _ ->
                     // Convert the slider value to a percentage (negative)
                     val percentageReduction = value.toInt()
@@ -691,7 +692,7 @@ class MainActivity : FragmentActivity() {
             else {
                 inflaterView = inflater.inflate(R.layout.fragment_data_collected, container, false)
 
-                usageBarChart = inflaterView.findViewById(R.id.dailyUsageBarChart)
+                usageBarChart = inflaterView.findViewById( R.id.dailyUsageBarChart)
 
                 FirebaseUtils.fetchUsageTotal(LocalDateTime.now()) { usage ->
                     val studyState = getStudyState(requireContext())
@@ -885,27 +886,38 @@ class MainActivity : FragmentActivity() {
             }
 
             var reducedUsageMillis = 0L
-            settingsReduceUsageSlider.addOnChangeListener { _, value, _ ->
-                // Convert the slider value to a percentage (negative)
-                val percentageReduction = value.toInt()
+            settingsReduceUsageSlider.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
+                override fun onStartTrackingTouch(slider: Slider) {
+                    // No action needed here
+                }
 
-                // Calculate the reduced usage in milliseconds
-                reducedUsageMillis = usageAverage * (100 - percentageReduction) / 100
+                override fun onStopTrackingTouch(slider: Slider) {
+                    // Perform the action when the user stops interacting with the slider
+                    val value = slider.value
 
-                // Convert reduced usage to HH:mm format
-                val hours = reducedUsageMillis / (1000 * 60 * 60)
-                val minutes = (reducedUsageMillis / (1000 * 60)) % 60
-                val reducedUsageFormatted = String.format("%02dh %02dm", hours, minutes)
+                    // Convert the slider value to a percentage (negative)
+                    val percentageReduction = value.toInt()
 
-                settingsReduceUsageText.text = String.format(
-                    settingsReduceUsageText.context.getString(R.string.usage_limit_text),
-                    reducedUsageFormatted
-                )
+                    // Calculate the reduced usage in milliseconds
+                    reducedUsageMillis = usageAverage * (100 - percentageReduction) / 100
 
-                // update values here automatically
-                setStudyVariable(requireContext(), INT_SMARTPHONE_USAGE_LIMIT_GOAL, reducedUsageMillis)
-                setStudyVariable(requireContext(), INT_SMARTPHONE_USAGE_LIMIT_PERCENTAGE, value.toInt())
-            }
+                    // Convert reduced usage to HH:mm format
+                    val hours = reducedUsageMillis / (1000 * 60 * 60)
+                    val minutes = (reducedUsageMillis / (1000 * 60)) % 60
+                    val reducedUsageFormatted = String.format("%02dh %02dm", hours, minutes)
+
+                    settingsReduceUsageText.text = String.format(
+                        settingsReduceUsageText.context.getString(R.string.usage_limit_text),
+                        reducedUsageFormatted
+                    )
+
+                    // update values here automatically
+                    setStudyVariable(requireContext(), INT_SMARTPHONE_USAGE_LIMIT_GOAL, reducedUsageMillis)
+                    setStudyVariable(requireContext(), INT_SMARTPHONE_USAGE_LIMIT_PERCENTAGE, value.toInt())
+                    // Do something with the value
+                    Log.d("Slider", "User stopped interacting, final value: $value")
+                }
+            })
 
             settingsDeviceidText.text = String.format(
                 settingsDeviceidText.context.getString(R.string.settings_deviceid_text),
