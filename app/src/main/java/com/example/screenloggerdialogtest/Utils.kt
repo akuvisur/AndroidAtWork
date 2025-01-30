@@ -394,7 +394,7 @@ class UnlockDialog() {
                     dialogCreatedTimestamp = dialogCreatedTimestamp,
                     response = DIALOG_RESPONSE_IGNORED
                 )
-                FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses/",data) // does this need onSuccesss?
+                FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses/${System.currentTimeMillis()}",data) // does this need onSuccesss?
             }
             close(c)
         }
@@ -419,7 +419,7 @@ class UnlockDialog() {
                 response = DIALOG_RESPONSE_SUBMITTED
             )
 
-            if (!localTestDialogVariable) FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses/",data) // does this need onSuccesss?
+            if (!localTestDialogVariable) FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses//${System.currentTimeMillis()}",data) // does this need onSuccesss?
 
             close(c)
 
@@ -432,7 +432,7 @@ class UnlockDialog() {
                         dialogCreatedTimestamp = dialogCreatedTimestamp,
                         response = DIALOG_RESPONSE_AUTOMATICALLY_CLOSED
                     )
-                    FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses/",sentData) // does this need onSuccesss?
+                    FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses//${System.currentTimeMillis()}",sentData) // does this need onSuccesss?
                 }
                 close(c)
             }, 300000L) // 300000 ms = 5 minutes
