@@ -190,11 +190,11 @@ open class BaselineService : Service() {
                 path = "users/${FirebaseUtils.getCurrentUserUID()}/screen/${time}", // Path in the database (e.g., "users/user_1")
                 data = screenEvent,
                 onSuccess = {
-                    Toast.makeText(c, "Screen event sent successfully", Toast.LENGTH_SHORT).show()
+                    //Toast.makeText(c, "Screen event sent successfully", Toast.LENGTH_SHORT).show()
                 },
                 onFailure = { exception ->
                     // Handle failure
-                    Toast.makeText(c, "Failed to send data: ${exception.message}", Toast.LENGTH_LONG).show()
+                    //Toast.makeText(c, "Failed to send data: ${exception.message}", Toast.LENGTH_LONG).show()
                 }
             )
         }

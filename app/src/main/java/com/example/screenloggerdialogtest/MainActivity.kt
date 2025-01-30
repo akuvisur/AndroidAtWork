@@ -72,10 +72,10 @@ class MainActivity : FragmentActivity() {
 
         FirebaseUtils.authenticateUser(
             onSuccess = { uid ->
-                Toast.makeText(this, "Authentication succeeded! UID: $uid", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(this, "Authentication succeeded! UID: $uid", Toast.LENGTH_SHORT).show()
             },
             onFailure = { errorMessage ->
-                Toast.makeText(this, "Authentication failed: $errorMessage", Toast.LENGTH_LONG).show()
+                //Toast.makeText(this, "Authentication failed: $errorMessage", Toast.LENGTH_LONG).show()
             }
         )
     }
