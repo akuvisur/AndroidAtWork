@@ -33,16 +33,19 @@ import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.github.mikephil.charting.charts.BarChart
+import com.github.mikephil.charting.components.LimitLine
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.components.YAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
+import com.github.mikephil.charting.formatter.ValueFormatter
 import com.google.android.material.slider.Slider
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import kotlin.math.min
 
@@ -668,11 +671,16 @@ class MainActivity : FragmentActivity() {
                 return inflaterView
             }
             else {
+
                 inflaterView = inflater.inflate(R.layout.fragment_data_collected, container, false)
 
                 usageBarChart = inflaterView.findViewById(R.id.dailyUsageBarChart)
 
                 FirebaseUtils.fetchUsageTotal(LocalDateTime.now()) { usage ->
+                    val studyState = getStudyState(requireContext())
+                    val baselineUsageAverage : Long = getStudyVariable(requireContext(), BASELINE_USAGE_AVERAGE, 0L)
+                    val usageGoal : Int = getStudyVariable(requireContext(), INT_SMARTPHONE_USAGE_LIMIT_PERCENTAGE, 20)
+
                     val entries = mutableListOf<BarEntry>()
                     val today = LocalDate.now()
                     val startDate = today.minusDays(1)  // Yesterday
@@ -710,7 +718,23 @@ class MainActivity : FragmentActivity() {
 
                     // Create a BarDataSet
                     val barDataSet = BarDataSet(entries, "")
-                    barDataSet.color = resources.getColor(R.color.deep_purple_500, null)
+
+                    val colorRes = when (studyState) {
+                        2, 3 -> R.color.teal_500
+                        4, 5 -> R.color.blue_500
+                        in 6..8 -> R.color.deep_purple_500
+                        else -> R.color.blue_gray_500 // Default color if needed
+                    }
+
+                    barDataSet.color = resources.getColor(colorRes, null)
+
+                    val customValueFormatter = object : ValueFormatter() {
+                        override fun getFormattedValue(value: Float): String {
+                            // Format the value to an integer (no decimals) and add "m" at the end
+                            return String.format("%d m", value.toInt())
+                        }
+                    }
+                    barDataSet.valueFormatter = customValueFormatter
 
                     // Set up BarData
                     val barData = BarData(barDataSet)
@@ -735,6 +759,22 @@ class MainActivity : FragmentActivity() {
                     xAxis.granularity = 1f // One interval per bar
                     xAxis.setDrawGridLines(false)
 
+                    val dateValueFormatter = object : ValueFormatter() {
+                        override fun getFormattedValue(value: Float): String {
+                            // Convert the 'value' (day of the year) into a LocalDate (assume the current year)
+                            val currentYear = LocalDate.now().year // Get the current year
+                            val dayOfYear = value.toInt() // 'value' is the day of the year (Float to Int)
+
+                            // Create the corresponding LocalDate for the given day of the year
+                            val date = LocalDate.ofYearDay(currentYear, dayOfYear)
+
+                            // Format the LocalDate to include day and month in "DD-MM" format
+                            val formatter = DateTimeFormatter.ofPattern("dd-MM") // "dd-MM" for day and month
+                            return date.format(formatter) // Format the LocalDate to show "DD-MM"
+                        }
+                    }
+                    xAxis.valueFormatter = dateValueFormatter
+
                     // Customize the Y-Axis (optional)
                     val yAxis = usageBarChart.axisLeft
                     yAxis.axisMinimum = 0f // Optional: Set minimum value for the axis
@@ -743,6 +783,28 @@ class MainActivity : FragmentActivity() {
 
                     val yAxisRight: YAxis = usageBarChart.axisRight
                     yAxisRight.isEnabled = false // Disable right Y-Axis
+
+                    if (studyState in 4..8) {
+                        val baselineLine = LimitLine(baselineUsageAverage.toFloat() / 60000, "Baseline Avg").apply {
+                            lineWidth = 2f
+                            lineColor = resources.getColor(R.color.red, null)
+                            labelPosition = LimitLine.LimitLabelPosition.LEFT_TOP // Position the label to the left
+                            textSize = 12f // Customize the label text size if needed
+                        }
+
+                        val goalLine = LimitLine((baselineUsageAverage * (1 - usageGoal / 100f) / 60000), "Usage Goal").apply {
+                            lineWidth = 2f
+                            lineColor = resources.getColor(R.color.green, null)
+                            labelPosition = LimitLine.LimitLabelPosition.LEFT_TOP // Position the label to the left
+                            textSize = 12f // Customize the label text size if needed
+                        }
+
+                        val yAxis = usageBarChart.axisLeft // Adjust for your chart setup
+                        yAxis.addLimitLine(baselineLine)
+                        yAxis.addLimitLine(goalLine)
+
+                        Log.d("CHARTING", "Add baseline: ${baselineLine.limit} and goal: ${goalLine.limit}")
+                    }
 
                     // Refresh the chart
                     usageBarChart.invalidate() // Refresh chart with new data
