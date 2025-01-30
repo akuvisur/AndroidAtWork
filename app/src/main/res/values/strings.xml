@@ -25,6 +25,19 @@
         Smartphone Addiction Scale-Short Version (SAS-SV)
     </string>
 
+    # tsrq
+    <string name="tsrq_text1">
+        The TSRQ concerns why people engage in some healthy behavior, enter treatment for a condition, try to change an unhealthy behavior, follow a treatment regimen, or engage in some other health-relevant behavior.. It contains nineteen 7-point Likert scale items.\n
+        You can click SUBMIT once all questions are responded to.
+    </string>
+    <string name="tsrq_text2">
+        Please select how much you agree or disagree with each question.\n
+        1 = not at all true .. 4 = somewhat true .. 7 = very true
+    </string>
+    <string name="tsrq_title">
+        Treatment Self-Regulation Questionnaire(TSRQ)
+    </string>
+
     # onboarding consent
     <string name="consent_agree">Do you consent to these terms?</string>
 

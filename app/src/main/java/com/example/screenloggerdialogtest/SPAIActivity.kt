@@ -41,7 +41,7 @@ class SPAIActivity : AppCompatActivity() {
         "SPAI26" to "I feel tired on daytime due to late-night use of smartphone"
     )
 
-    private val responses = mutableMapOf<String, SASSVAnswer>()
+    private val responses = mutableMapOf<String, SPAIAnswer>()
     private lateinit var submitButton: Button
     private lateinit var source: String
 
@@ -95,8 +95,8 @@ class SPAIActivity : AppCompatActivity() {
                 orientation = RadioGroup.HORIZONTAL
                 setOnCheckedChangeListener { _, checkedId ->
                     val response = checkedId
-                    val answer = SASSVAnswer(spai_id, response)
-                    updateResponse(spai_id, answer)
+                    val SPAIAnswer = SPAIAnswer(spai_id, response)
+                    updateResponse(spai_id, SPAIAnswer)
                     updateQuestionText(questionTextView, questionText, true)
                     checkAllAnswered()
                 }
@@ -135,15 +135,29 @@ class SPAIActivity : AppCompatActivity() {
 
             if (source == "consent_given") {
                 setStudyVariable(this, SPAI_1_SUBMITTED, 1)
+                val submissionTime = SPAIAnswer("pre_questionnaire", responses.size)
+                responses["submission_time"] = submissionTime
             }
             else {
                 setStudyVariable(this, SPAI_2_SUBMITTED, 1)
+                val submissionTime = SPAIAnswer("post_questionnaire", responses.size)
+                responses["submission_time"] = submissionTime
             }
+
+            FirebaseUtils.sendEntryToDatabase(
+                path = "users/${FirebaseUtils.getCurrentUserUID()}/questionnaires/spai/${System.currentTimeMillis()}",
+                data = responses,
+                onSuccess = {
+                },
+                onFailure = { exception ->
+                }
+            )
+
             finish()
         }
     }
 
-    private fun updateResponse(id: String, answer: SASSVAnswer) {
+    private fun updateResponse(id: String, answer: SPAIAnswer) {
         responses[id] = answer  // Add or update the response in the map by ID
     }
 
@@ -160,4 +174,4 @@ class SPAIActivity : AppCompatActivity() {
     }
 }
 
-data class Answer(val questionId: String, val response: Int)
+data class SPAIAnswer(val questionId: String, val response: Int)

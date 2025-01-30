@@ -121,7 +121,7 @@ open class BaselineService : Service() {
         if (::screenStateReceiver.isInitialized) {
             unregisterReceiver(screenStateReceiver)
         }
-        heartbeat.stopHeartbeat()
+        if (::heartbeat.isInitialized) heartbeat.stopHeartbeat()
     }
 
     open inner class ScreenStateReceiver : BroadcastReceiver() {

@@ -116,14 +116,28 @@ class SASSVActivity : AppCompatActivity() {
             // Save responses logic here, e.g., storing them to database or SharedPreferences
             Toast.makeText(this, "Responses submitted!", Toast.LENGTH_SHORT).show()
 
-            Log.d("SPAI", responses.toString())
+            Log.d("SAS_SV", responses.toString())
 
             if (source == "consent_given") {
                 setStudyVariable(this, SASSV_1_SUBMITTED, 1)
+                val submissionTime = SASSVAnswer("pre_questionnaire", responses.size)
+                responses["submission_time"] = submissionTime
             }
             else {
                 setStudyVariable(this, SASSV_2_SUBMITTED, 1)
+                val submissionTime = SASSVAnswer("post_questionnaire", responses.size)
+                responses["submission_time"] = submissionTime
             }
+
+            FirebaseUtils.sendEntryToDatabase(
+                path = "users/${FirebaseUtils.getCurrentUserUID()}/questionnaires/sas_sv/${System.currentTimeMillis()}",
+                data = responses,
+                onSuccess = {
+                },
+                onFailure = { exception ->
+                }
+            )
+
             finish()
         }
     }

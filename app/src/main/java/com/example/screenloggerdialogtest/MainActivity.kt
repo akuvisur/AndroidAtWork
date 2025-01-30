@@ -207,6 +207,7 @@ class MainActivity : FragmentActivity() {
 
         private lateinit var baselineProgressSlider: Slider
 
+        private lateinit var tsrqButton : Button
         private lateinit var averageUsageText: TextView
         private lateinit var reduceUsageSlider: Slider
         private lateinit var reduceUsageText: TextView
@@ -372,6 +373,7 @@ class MainActivity : FragmentActivity() {
                 // e.g., gather baseline data, prepare for intervention
                 inflaterView = inflater.inflate(R.layout.post_baseline_layout, container, false)
 
+                tsrqButton = inflaterView.findViewById(R.id.tsrqButton)
                 averageUsageText = inflaterView.findViewById(R.id.averageUsageText)
                 reduceUsageSlider = inflaterView.findViewById(R.id.settingsReduceUsageSlider)
                 reduceUsageText = inflaterView.findViewById(R.id.reduceUsageText)
@@ -379,6 +381,18 @@ class MainActivity : FragmentActivity() {
                 enableOverlayButton = inflaterView.findViewById(R.id.enableOverlayButton)
                 intervention1TestButton = inflaterView.findViewById(R.id.intervention1TestButton)
                 startInterventionButton = inflaterView.findViewById(R.id.startInterventionButton)
+
+                tsrqButton.setOnClickListener {
+                    val intent = Intent(activity, TSRQActivity::class.java)
+                    startActivity(intent)
+                }
+                var tsrqSubmitted = studyStateVars[TSRQ_SUBMITTED] == 1
+                if (tsrqSubmitted) {
+                    tsrqButton.isEnabled = false
+                    tsrqButton.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue_200))
+                    tsrqButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue_600))
+                }
+
 
                 var usageAverage = 0L
                 FirebaseUtils.fetchUsageTotal(LocalDateTime.now()) { usage ->
@@ -472,7 +486,7 @@ class MainActivity : FragmentActivity() {
                     // TODO send setup data to firebase
                     // TODO and store to local vars
                     Log.d("MAIN", bedTimeInput.text.toString())
-                    if (overlaysAllowed && bedTimeInput.text.isNotEmpty() && reduceUsageTouched && interventionTested) {
+                    if (overlaysAllowed && bedTimeInput.text.isNotEmpty() && reduceUsageTouched && interventionTested && tsrqSubmitted ) {
                         val c = requireContext()
                         setStudyState(c, STUDY_STATE_INT1)
                         setStudyVariable(c, BASELINE_USAGE_AVERAGE, usageAverage)
@@ -496,6 +510,9 @@ class MainActivity : FragmentActivity() {
                         }
                         else if (!interventionTested) {
                             Toast.makeText(requireContext(), "Please test the intervention screen before starting Intervention Phase #1", Toast.LENGTH_SHORT).show()
+                        }
+                        else if (!tsrqSubmitted) {
+                            Toast.makeText(requireContext(), "Please fill the questionnaire", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -601,6 +618,8 @@ class MainActivity : FragmentActivity() {
                 // Actions for post Intervention Phase 2 survey
                 // e.g., collect survey data, prepare for final analysis
                 inflaterView = inflater.inflate(R.layout.post_int2_survey_required_layout, container, false)
+
+                //TODO Add post-surveys
             }
 
             else if (studyState == STUDY_STATE_COMPLETE) {
@@ -656,7 +675,6 @@ class MainActivity : FragmentActivity() {
 
     class DataCollectedFragment : Fragment() {
         private lateinit var inflaterView : View
-
         private lateinit var usageBarChart : BarChart
 
         override fun onCreateView(
@@ -671,7 +689,6 @@ class MainActivity : FragmentActivity() {
                 return inflaterView
             }
             else {
-
                 inflaterView = inflater.inflate(R.layout.fragment_data_collected, container, false)
 
                 usageBarChart = inflaterView.findViewById(R.id.dailyUsageBarChart)
@@ -805,14 +822,13 @@ class MainActivity : FragmentActivity() {
 
                         Log.d("CHARTING", "Add baseline: ${baselineLine.limit} and goal: ${goalLine.limit}")
                     }
-
                     // Refresh the chart
                     usageBarChart.invalidate() // Refresh chart with new data
                 }
-
                 return inflaterView
             }
         }
+
     }
 
     // settings fragment is always the same
@@ -917,6 +933,14 @@ class MainActivity : FragmentActivity() {
                 val intent = Intent(activity, SASSVActivity::class.java)
                 startActivity(intent)
             }
+
+            val tsrqButton : Button = view.findViewById(R.id.settingsTSRQ)
+            tsrqButton.setOnClickListener {
+                // Start the MainActivity for onboarding
+                val intent = Intent(activity, TSRQActivity::class.java)
+                startActivity(intent)
+            }
+
 
             studyStateSpinner = view.findViewById<Spinner>(R.id.study_state_spinner)
 

@@ -17,12 +17,20 @@
             android:id="@+id/baselineCompleteText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Baseline tracking is now completed"
+            android:text="Baseline tracking is now completed. Please first take a questionnaire about your motivation to reduce smartphone usage."
             android:textSize="18sp"
             android:textColor="@color/blue_700"
             android:textStyle="bold"
             android:layout_gravity="center_horizontal" />
 
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/tsrqButton"
+            android:text="Self-regulation questionnaire"
+            android:textColor="@color/blue_50"
+            android:backgroundTint="@color/blue_500"
+            />
 
         <!-- Average Smartphone Usage Display -->
         <TextView

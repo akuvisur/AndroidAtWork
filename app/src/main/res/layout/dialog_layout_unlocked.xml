@@ -42,7 +42,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/dialog_unlocked_info"
-            android:textSize="24sp"
+            android:textSize="20sp"
             android:padding="4dp"
             android:textColor="@color/black" />
     </LinearLayout>
@@ -154,7 +154,7 @@
             android:layout_height="wrap_content"
             android:text="Did you receive a notification that prompted you to use your phone?"
             android:textColor="@color/black"
-            android:textSize="16sp"
+            android:textSize="14sp"
             android:paddingLeft="12dp"
             />
 
@@ -206,7 +206,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/extraInfoEditText"
         android:layout_marginTop="12dp"
-        android:textSize="18sp"
+        android:textSize="14sp"
         android:padding="4dp"
         android:textColor="@color/black"
         android:text="Please select one option from each row, then click submit to continue phone use"

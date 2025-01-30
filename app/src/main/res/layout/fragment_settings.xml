@@ -127,13 +127,14 @@
 
             </LinearLayout>
 
-            <LinearLayout
+            <GridLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:padding="8dp"
                 android:layout_margin="4dp"
-                android:background="@drawable/linear_layout_background">
+                android:background="@drawable/linear_layout_background"
+                android:columnCount="3">
 
                 <Button
                     android:layout_width="wrap_content"
@@ -153,7 +154,13 @@
                     android:id="@+id/SAS_SV"
                     android:text="SAS-SV"/>
 
-            </LinearLayout>
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/settingsTSRQ"
+                    android:text="TSRQ"/>
+
+            </GridLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"

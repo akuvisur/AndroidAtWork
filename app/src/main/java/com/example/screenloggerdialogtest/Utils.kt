@@ -38,6 +38,7 @@ const val SCREEN_EVENTS_SHAREDPREFS : String = "SCREEN_EVENTS_SHAREDPREFS"
 const val CONSENT_GIVEN: String = "CONSENT_GIVEN"
 const val SPAI_1_SUBMITTED: String = "SPAI_1_SUBMITTED"
 const val SASSV_1_SUBMITTED: String = "SASSV_1_SUBMITTED"
+const val TSRQ_SUBMITTED: String = "TSRQ_SUBMITTED"
 const val ONBOARDING_COMPLETED: String = "ONBOARDING_COMPLETED"
 const val BASELINE_START_TIMESTAMP: String = "BASELINE_START_TIMESTAMP"
 const val BASELINE_COMPLETED: String = "BASELINE_COMPLETED"
@@ -156,6 +157,7 @@ fun getStudyStateVariables(c: Context?): Map<String, Number?> {
         CONSENT_GIVEN to sharedPrefs?.getInt(CONSENT_GIVEN, 0),
         SPAI_1_SUBMITTED to sharedPrefs?.getInt(SPAI_1_SUBMITTED, 0),
         SASSV_1_SUBMITTED to sharedPrefs?.getInt(SASSV_1_SUBMITTED, 0),
+        TSRQ_SUBMITTED to sharedPrefs?.getInt(TSRQ_SUBMITTED, 0),
         ONBOARDING_COMPLETED to sharedPrefs?.getInt(ONBOARDING_COMPLETED, 0),
         BASELINE_COMPLETED to sharedPrefs?.getInt(BASELINE_COMPLETED, 0),
         INT_SMARTPHONE_USAGE_LIMIT_GOAL to sharedPrefs?.getLong(INT_SMARTPHONE_USAGE_LIMIT_GOAL, 0),
