@@ -356,8 +356,6 @@ class UnlockDialog() {
         closeButton = dialogView.findViewById(R.id.closeButton)
         submitButton = dialogView.findViewById(R.id.submitButton)
 
-        extraInfo = dialogView.findViewById(R.id.extraInfoEditText)
-
         // First row
         contextHomeButton = dialogView.findViewById(R.id.contextHomeButton)
         contextWorkButton = dialogView.findViewById(R.id.contextWorkButton)
@@ -412,7 +410,6 @@ class UnlockDialog() {
                 contextSelection = row1Selection,
                 purposeSelection = row2Selection,
                 initiationSelection = row3Selection,
-                extraInfo = extraInfo,
                 dialogType = type,
                 dialogClosedTimestamp = System.currentTimeMillis(),
                 dialogCreatedTimestamp = dialogCreatedTimestamp,
@@ -489,7 +486,6 @@ class UnlockDialog() {
         val contextSelection: String?,
         val purposeSelection: String?,
         val initiationSelection: String?,
-        val extraInfo: String,
         val dialogType: String,
         val dialogClosedTimestamp: Long,
         val dialogCreatedTimestamp: Long,

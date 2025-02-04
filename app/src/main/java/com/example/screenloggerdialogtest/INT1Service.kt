@@ -96,7 +96,7 @@ class INT1Service : INT2Service() {
                         dialogCreatedTimestamp = dialog.dialogCreatedTimestamp,
                         response = DIALOG_RESPONSE_ADHERED
                     )
-                    FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses/", data)
+                    FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/${System.currentTimeMillis()}/dialog_responses/", data)
                 }
                 if (::dialog.isInitialized) dialog.close(p0)
             }
