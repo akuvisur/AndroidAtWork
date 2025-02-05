@@ -6,7 +6,9 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.BitmapFactory
 import android.util.Log
+import androidx.core.content.ContextCompat
 
 /**
  * ### Service Hierarchy Documentation
@@ -129,34 +131,55 @@ open class INT2Service : BaselineService() {
             }
             else if (p1?.action == Intent.ACTION_USER_PRESENT && (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY)) {
                 // show notification if above usage goal
-                if (dailyUsage > dailyUsageGoal && !usageWithin45Seconds(p0, now)) {
+                if (calculateMinutesUntilBedtime(bedtimeGoal) <= 60 && !usageWithin45Seconds(p0, now)) {
+                    if (p0 != null) {
+                        val largeIcon = BitmapFactory.decodeResource(p0.resources, R.drawable.drowsy)
+                        val notification: Notification = Notification.Builder(p0, channelId)
+                            .setContentTitle("Smartphone Interventions")
+                            .setContentText("Bedtime near, put your phone away!")
+                            .setSmallIcon(R.drawable.bedtime2) // Set your app icon here
+                            .setLargeIcon(largeIcon)
+                            .setColorized(true)
+                            .setColor(ContextCompat.getColor(p0, R.color.deep_purple_700))
+                            .build()
+                        notificationManager.notify(bedtimeNotificationId, notification)
+                    }
+                }
+                else if (dailyUsage > dailyUsageGoal && !usageWithin45Seconds(p0, now)) {
                     dailyUsageGoalDiff = dailyUsageGoal - dailyUsage
-                    val notification: Notification = Notification.Builder(p0, channelId)
-                        .setContentTitle("Smartphone Interventions")
-                        .setContentText("You have exceeded your daily goal of ${formatTime(dailyUsageGoal)} by ${formatTime(-dailyUsageGoalDiff)}.")
-                        .setSmallIcon(R.drawable.ic_launcher_foreground) // Set your app icon here
-                        .build()
-                    notificationManager.notify(usageNotificationId, notification)
+                    if (p0 != null) {
+                        val largeIcon = BitmapFactory.decodeResource(p0.resources, R.drawable.alert)
+                        val notification: Notification = Notification.Builder(p0, channelId)
+                            .setContentTitle("Smartphone Interventions")
+                            .setContentText(
+                                "Exceeded daily goal ${
+                                    formatTime(
+                                        dailyUsageGoal
+                                    )
+                                } by ${formatTime(-dailyUsageGoalDiff)}."
+                            )
+                            .setSmallIcon(R.drawable.goal_reached) // Set your app icon here
+                            .setLargeIcon(largeIcon)
+                            .setColorized(true)
+                            .setColor(ContextCompat.getColor(p0, R.color.yellow))
+                            .build()
+                        notificationManager.notify(usageNotificationId, notification)
+                    }
                 }
                 // within an hour of bedtime goal
                 // show a notification
-                else if (calculateMinutesUntilBedtime(bedtimeGoal) <= 60 && !usageWithin45Seconds(p0, now)) {
-                    val notification: Notification = Notification.Builder(p0, channelId)
-                        .setContentTitle("Smartphone Interventions")
-                        .setContentText("Bedtime nearing, you should consider putting your phone away!")
-                        .setSmallIcon(R.drawable.ic_launcher_foreground) // Set your app icon here
-                        .build()
-                    notificationManager.notify(bedtimeNotificationId, notification)
-                }
-                // if no "alerts" then just show usage notificatoin
+                // if no "alerts" then just show usage notification
                 else {
-                    val notification: Notification = Notification.Builder(p0, channelId)
-                        .setContentTitle("Smartphone Interventions")
-                        .setContentText("Today you have used your phone for ${formatTime(dailyUsage)}")
-                        .setSmallIcon(R.drawable.ic_launcher_foreground) // Set your app icon here
-                        .build()
-                    notificationManager.notify(usageNotificationId, notification)
-
+                    if (p0 != null) {
+                        val notification: Notification = Notification.Builder(p0, channelId)
+                            .setContentTitle("Smartphone Interventions")
+                            .setContentText("Today you have used your phone for ${formatTime(dailyUsage)}")
+                            .setSmallIcon(R.drawable.goal_reached) // Set your app icon here
+                            .setColorized(true)
+                            .setColor(ContextCompat.getColor(p0, R.color.teal_300))
+                            .build()
+                        notificationManager.notify(usageNotificationId, notification)
+                    }
                     dailyUsage += (now - previousEventTimestamp)
                     lastUsageTimestamp = now
                     storeDailyUsage(dailyUsage, p0)
