@@ -762,7 +762,7 @@ class MainActivity : FragmentActivity() {
                     for (entry in sortedDates) {
                         val date = entry.first
                         val minutes = entry.second
-                        val barEntry = BarEntry(date.dayOfMonth.toFloat(), minutes)
+                        val barEntry = BarEntry(date.dayOfYear.toFloat(), minutes)
                         entries.add(barEntry)
                     }
 
