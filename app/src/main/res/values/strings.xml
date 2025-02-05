@@ -91,5 +91,8 @@
 
     <string name="settings_deviceid_text">Device id: %s</string>
 
+    # Link for exit survey
+    <string name="exit_survey_forms_link"><![CDATA[https://docs.google.com/forms/d/e/1FAIpQLSftjU6w5QAfj3g7y3Tu_A0gr3Ftx-ABy04DvnDeEtUZIY039A/viewform?usp=pp_url&entry.376538456=]]></string>
+
 
 </resources>

@@ -146,9 +146,6 @@ fun setStudyTimestamp(c: Context?, variable: String, value: Long) {
         editor.putLong(variable, value)
         editor.apply()
     }
-    if (c != null) {
-        Toast.makeText(c, "Study variable $variable changed to $value", Toast.LENGTH_SHORT).show()
-    }
 }
 
 fun getStudyStateVariables(c: Context?): Map<String, Number?> {
