@@ -745,7 +745,6 @@ class MainActivity : FragmentActivity() {
 
                         // If there is usage data for this date, create a BarEntry
                         if (usageInMillis != null) {
-                            Log.d("DATE_DEBUG_DUMP", "Usage on $currentDate: $usageInMillis")
                             // Convert the usage from milliseconds to minutes
                             val minutes = (usageInMillis / 60000).toFloat() // Convert to minutes
                             val p = Pair(currentDate, minutes)
