@@ -2,6 +2,7 @@ package com.example.screenloggerdialogtest
 
 import android.annotation.SuppressLint
 import android.app.TimePickerDialog
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Paint
@@ -43,6 +44,7 @@ import com.github.mikephil.charting.formatter.ValueFormatter
 import com.google.android.material.slider.Slider
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import java.net.URLEncoder
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -221,6 +223,7 @@ class MainActivity : FragmentActivity() {
         private lateinit var intervention2ProgressSlider: Slider
         private lateinit var postStudyExitSurveyButton: Button
         private lateinit var postStudySpaiButton: Button
+        private lateinit var postStudySASButton: Button
         private lateinit var completeStudyButton: Button
 
         private val POST_NOTIFICATIONS_PERMISSION : String = "android.permission.POST_NOTIFICATIONS"
@@ -569,18 +572,6 @@ class MainActivity : FragmentActivity() {
                         "ts" to System.currentTimeMillis()
                     )
 
-                    FirebaseUtils.sendEntryToDatabase(
-                        path = "users/${FirebaseUtils.getCurrentUserUID()}/study_state_info",
-                        data = goalData,
-                        onSuccess = {
-                            //Toast.makeText(requireContext(), "Screen event sent successfully", Toast.LENGTH_SHORT).show()
-                        },
-                        onFailure = { exception ->
-                            // Handle failure
-                            //Toast.makeText(requireContext(), "Failed to send data: ${exception.message}", Toast.LENGTH_LONG).show()
-                        }
-                    )
-
                     checkAndStartBaselineService()
 
                     (requireActivity() as MainActivity).refreshUI()
@@ -620,7 +611,49 @@ class MainActivity : FragmentActivity() {
                 // e.g., collect survey data, prepare for final analysis
                 inflaterView = inflater.inflate(R.layout.post_int2_survey_required_layout, container, false)
 
-                //TODO Add post-surveys
+                postStudyExitSurveyButton = inflaterView.findViewById(R.id.postStudyExitSurveyButton)
+                postStudySpaiButton  = inflaterView.findViewById(R.id.postStudySpaiButton)
+                postStudySASButton = inflaterView.findViewById(R.id.postStudySASSVButton)
+                completeStudyButton = inflaterView.findViewById(R.id.completeStudyButton)
+
+                postStudyExitSurveyButton.setOnClickListener {
+                    val sharedPreferences = requireActivity().getSharedPreferences(STUDY_STATE_SHAREDPREFS, Context.MODE_PRIVATE)
+                    val identification = sharedPreferences.getString("identification", "") ?: ""
+                    val prefilledUrl = getString(R.string.exit_survey_forms_link) +
+                            URLEncoder.encode(identification, "UTF-8")
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(prefilledUrl))
+                    startActivity(intent)
+                }
+
+                postStudySpaiButton.setOnClickListener {
+                    val intent = Intent(activity, SPAIActivity::class.java)
+                    intent.putExtra("source", "post_study")
+                    startActivity(intent)
+                }
+
+                if (studyStateVars[SPAI_2_SUBMITTED] == 1) {
+                    postStudySpaiButton.visibility = View.GONE
+                    postStudySpaiButton.isEnabled = false
+                }
+
+                postStudySASButton.setOnClickListener {
+                    val intent = Intent(activity, SASSVActivity::class.java)
+                    intent.putExtra("source", "post_study")
+                    startActivity(intent)
+                }
+
+                if (studyStateVars[SASSV_2_SUBMITTED] == 1) {
+                    postStudySASButton.visibility = View.GONE
+                    postStudySASButton.isEnabled = false
+                }
+
+                completeStudyButton.setOnClickListener {
+                    setStudyState(requireContext(), STUDY_STATE_COMPLETE)
+                    setStudyTimestamp(requireContext(), STUDY_COMPLETE_TIMESTAMP, System.currentTimeMillis())
+
+                    (requireActivity() as MainActivity).refreshUI()
+                }
+
             }
 
             else if (studyState == STUDY_STATE_COMPLETE) {
@@ -712,7 +745,6 @@ class MainActivity : FragmentActivity() {
 
                         // If there is usage data for this date, create a BarEntry
                         if (usageInMillis != null) {
-                            Log.d("DATE_DEBUG_DUMP", "Usage on $currentDate: $usageInMillis")
                             // Convert the usage from milliseconds to minutes
                             val minutes = (usageInMillis / 60000).toFloat() // Convert to minutes
                             val p = Pair(currentDate, minutes)
@@ -730,7 +762,7 @@ class MainActivity : FragmentActivity() {
                     for (entry in sortedDates) {
                         val date = entry.first
                         val minutes = entry.second
-                        val barEntry = BarEntry(date.dayOfMonth.toFloat(), minutes)
+                        val barEntry = BarEntry(date.dayOfYear.toFloat(), minutes)
                         entries.add(barEntry)
                     }
 

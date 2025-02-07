@@ -90,7 +90,6 @@ fun setStudyVariable(c : Context?, variable : String, value : Int) {
         editor.putInt(variable, value)
         editor.apply()
     }
-    if (c != null) Toast.makeText(c, "Study variable $variable changed to $value", Toast.LENGTH_SHORT).show()
     uploadStudyVariable(c, variable, value)
 }
 
@@ -102,7 +101,6 @@ fun setStudyVariable(c : Context?, variable : String, value : Long) {
         editor.putLong(variable, value)
         editor.apply()
     }
-    if (c != null) Toast.makeText(c, "Study variable $variable changed to $value", Toast.LENGTH_SHORT).show()
     uploadStudyVariable(c, variable, value)
 }
 
@@ -145,9 +143,6 @@ fun setStudyTimestamp(c: Context?, variable: String, value: Long) {
     if (editor != null) {
         editor.putLong(variable, value)
         editor.apply()
-    }
-    if (c != null) {
-        Toast.makeText(c, "Study variable $variable changed to $value", Toast.LENGTH_SHORT).show()
     }
 }
 
@@ -194,7 +189,7 @@ fun calculateStudyPeriodDay(type: String, c: Context?): Int {
 
     // If the period start timestamp is null or not set, return -1
     if (periodStartTimestamp == null || periodStartTimestamp == 0L) {
-        return -1
+        return 0
     }
 
     // Calculate the elapsed days for the selected period
@@ -239,7 +234,6 @@ fun setStudyState(c : Context?, state : Int) {
         editor.putInt(STUDY_STATE, state)
         editor.apply()
     }
-    if (c != null) Toast.makeText(c, "Study state changed to $state", Toast.LENGTH_SHORT).show()
 
     val stateData = hashMapOf(
         "study_state" to state,
@@ -290,7 +284,7 @@ const val DIALOG_RESPONSE_IGNORED : String = "DIALOG_RESPONSE_IGNORED"
 const val DIALOG_RESPONSE_AUTOMATICALLY_CLOSED : String = "DIALOG_RESPONSE_AUTOMATICALLY_CLOSED"
 const val DIALOG_RESPONSE_ADHERED : String = "DIALOG_RESPONSE_ADHERED"
 
-class UnlockDialog() {
+class UnlockDialog {
 
     private lateinit var dialogView: View
     var dialogCreatedTimestamp : Long = 0L

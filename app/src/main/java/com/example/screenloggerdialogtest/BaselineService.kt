@@ -12,9 +12,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.util.Log
-import android.view.View
-import android.view.WindowManager
-import android.widget.Toast
+import androidx.core.content.ContentProviderCompat.requireContext
+import androidx.core.content.ContextCompat
 import com.example.screenloggerdialogtest.FirebaseUtils.ScreenEvent
 import com.example.screenloggerdialogtest.FirebaseUtils.getCurrentUserUID
 import java.util.concurrent.TimeUnit
@@ -89,7 +88,9 @@ open class BaselineService : Service() {
             val notification: Notification = Notification.Builder(this, channelId)
                 .setContentTitle("Smartphone Interventions")
                 .setContentText("Monitoring smartphone usage...")
-                .setSmallIcon(R.drawable.ic_launcher_foreground) // Set your app icon here
+                .setSmallIcon(android.R.drawable.ic_popup_sync) // Set your app icon here
+                .setColorized(true)
+                .setColor(ContextCompat.getColor(this, R.color.deep_purple_300))
                 .build()
 
             startForeground(1, notification)
@@ -106,7 +107,7 @@ open class BaselineService : Service() {
             registerReceiver(screenStateReceiver, filter)
         }
 
-        heartbeat = HeartbeatBeater()
+        heartbeat = HeartbeatBeater(this)
         heartbeat.startHeartbeat()
 
         return START_STICKY // Or other flags depending on your use case
@@ -190,11 +191,8 @@ open class BaselineService : Service() {
                 path = "users/${FirebaseUtils.getCurrentUserUID()}/screen/${time}", // Path in the database (e.g., "users/user_1")
                 data = screenEvent,
                 onSuccess = {
-                    //Toast.makeText(c, "Screen event sent successfully", Toast.LENGTH_SHORT).show()
                 },
                 onFailure = { exception ->
-                    // Handle failure
-                    //Toast.makeText(c, "Failed to send data: ${exception.message}", Toast.LENGTH_LONG).show()
                 }
             )
         }
@@ -205,9 +203,24 @@ open class BaselineService : Service() {
         }
     }
 
-    class HeartbeatBeater {
+    class HeartbeatBeater (context: Context) {
+
+        private var c : Context
+        private val HB_NOTIFICATION_ID : String = "HB_NOTIFICATION_ID"
+        private val HB_NOTIFICATION_CHANNEL_NAME : String = "HB_NOTIFICATION_CHANNEL_NAME"
+        private val HB_NOTIFICATION_NUMBER = 123123
+
+        private var notificationManager: NotificationManager
+        private var notificationChannel : NotificationChannel
 
         private val handler = Handler()
+
+        init {
+            c = context
+            notificationManager = context.getSystemService(NotificationManager::class.java)
+            notificationChannel = NotificationChannel(HB_NOTIFICATION_ID, HB_NOTIFICATION_CHANNEL_NAME, NotificationManager.IMPORTANCE_LOW)
+            notificationManager.createNotificationChannel(notificationChannel)
+        }
 
         // Runnable to create a Heartbeat every hour
         private val heartbeatRunnable = object : Runnable {
@@ -229,17 +242,25 @@ open class BaselineService : Service() {
         }
 
         fun storeBeat() {
+
+            val studyDay = calculateStudyPeriodDay(BASELINE_START_TIMESTAMP, c)
+
+            val notification: Notification = Notification.Builder(c, HB_NOTIFICATION_ID)
+                .setContentTitle("Android Interventions Updates")
+                .setContentText("Its currently day ${studyDay} of the study.")
+                .setSmallIcon(android.R.drawable.ic_popup_sync)
+                .setColorized(true)
+                .setColor(ContextCompat.getColor(c, R.color.deep_purple_200))
+                .build()
+            notificationManager.notify(HB_NOTIFICATION_NUMBER, notification)
+
             val heartbeat = Heartbeat(timestamp = System.currentTimeMillis())
-            Log.d("HEARTBEAT", "New Heartbeat: $heartbeat")
             FirebaseUtils.sendEntryToDatabase(
                 path = "/users/${getCurrentUserUID()}/heartbeat/${heartbeat.timestamp}",
                 data = heartbeat,
                 onSuccess = {
-                    Log.d("HEARTBEAT_FIREBASE", "HB stored successfully")
                 },
                 onFailure = { exception ->
-                    // Handle failure
-                    Log.d("HEARTBEAT_FIREBASE", "Failed to send HB data: ${exception.message}")
                 }
             )
         }

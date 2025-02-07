@@ -70,6 +70,31 @@ class OnboardingActivity : AppCompatActivity() {
                 // This is the last page, so "Complete" action should be triggered
                 setStudyVariable(this, ONBOARDING_COMPLETED, 1)
                 setStudyState(this, STUDY_STATE_CONSENT_GIVEN)
+
+                val sharedPreferences = getSharedPreferences(STUDY_STATE_SHAREDPREFS, Context.MODE_PRIVATE)
+                val contactEmail = sharedPreferences.getString("contact_email", "")
+                val identification = sharedPreferences.getString("identification", "")
+                val gender = sharedPreferences.getString("gender", "")
+                val occupation = sharedPreferences.getString("occupation", "")
+                val ethnicity = sharedPreferences.getString("ethnicity", "")
+
+                val data = OnboardingData (
+                    contactEmail = contactEmail,
+                    identification = identification,
+                    gender = gender,
+                    occupation = occupation,
+                    ethnicity = ethnicity
+                )
+
+                FirebaseUtils.sendEntryToDatabase(
+                    path = "users/${FirebaseUtils.getCurrentUserUID()}/onboarding/${System.currentTimeMillis()}", // Path in the database (e.g., "users/user_1")
+                    data = data,
+                    onSuccess = {
+                    },
+                    onFailure = { exception ->
+                    }
+                )
+
                 finish() // or any other final action
             }
 
@@ -122,6 +147,13 @@ class OnboardingActivity : AppCompatActivity() {
         nextButton.isEnabled = enable
     }
 
+    data class OnboardingData(
+        val contactEmail : String?,
+        val identification : String?,
+        val gender : String?,
+        val occupation : String?,
+        val ethnicity : String?
+    )
 }
 
 class ConsentFragment : Fragment() {
@@ -198,7 +230,7 @@ class InformationFragment : Fragment() {
         prolificEditText.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
                 val editor = sharedPreferences.edit()
-                editor.putString("prolific_id", s.toString())
+                editor.putString("identification", s.toString())
                 editor.apply() // Save changes
             }
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -209,7 +241,9 @@ class InformationFragment : Fragment() {
 
         genderGroup.setOnCheckedChangeListener { _, checkedId ->
             val gender = genderGroup.findViewById<RadioButton>(checkedId).text.toString()
-            Toast.makeText(requireContext(), gender, Toast.LENGTH_SHORT).show()
+            val editor = sharedPreferences.edit()
+            editor.putString("gender", gender)
+            editor.apply() // Save changes
         }
 
 
@@ -224,6 +258,10 @@ class InformationFragment : Fragment() {
                 val selectedOccupation = parent.getItemAtPosition(position).toString()
                 // Handle the selection, e.g., store in Firebase
                 //Toast.makeText(requireContext(), selectedOccupation, Toast.LENGTH_SHORT).show()
+                val editor = sharedPreferences.edit()
+                editor.putString("occupation", selectedOccupation)
+                editor.apply() // Save changes
+
             }
             override fun onNothingSelected(parent: AdapterView<*>) {
                 // Optional: handle the case where no item is selected if needed
@@ -244,8 +282,9 @@ class InformationFragment : Fragment() {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                 // Get the selected item as a string
                 val selectedEthnicity = parent.getItemAtPosition(position).toString()
-                // Handle the selection, e.g., store in Firebase
-                //Toast.makeText(requireContext(), selectedEthnicity, Toast.LENGTH_SHORT).show()
+                val editor = sharedPreferences.edit()
+                editor.putString("ethnicity", selectedEthnicity)
+                editor.apply() // Save change
             }
             override fun onNothingSelected(parent: AdapterView<*>) {
                 // Optional: handle the case where no item is selected if needed
