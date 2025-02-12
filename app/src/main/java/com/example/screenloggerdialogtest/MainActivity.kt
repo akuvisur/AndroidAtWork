@@ -396,7 +396,6 @@ class MainActivity : FragmentActivity() {
                     tsrqButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue_600))
                 }
 
-
                 var usageAverage = 0L
                 FirebaseUtils.fetchUsageTotal(LocalDateTime.now()) { usage ->
                     val totalUsageAllDays = usage.values.sum()
@@ -412,9 +411,8 @@ class MainActivity : FragmentActivity() {
                     )
                     averageUsageText.text = usageText
                     usageAverage = averageUsageMillis
+                    setStudyVariable(requireContext(), BASELINE_USAGE_AVERAGE, usageAverage)
                 }
-
-                setStudyVariable(requireContext(), BASELINE_USAGE_AVERAGE, usageAverage)
 
                 reduceUsageSlider.setLabelFormatter {
                     value -> "-${value.toInt()}%"
@@ -481,7 +479,6 @@ class MainActivity : FragmentActivity() {
                 var interventionTested = false
                 intervention1TestButton.setOnClickListener {
                     UnlockDialog().showDialog(requireContext(), 0,0,0,0, DIALOG_TYPE_GOAL_EXCEEDED, true)
-                    //
                     interventionTested = true
                 }
                 intervention1TestButton.isEnabled = overlaysAllowed

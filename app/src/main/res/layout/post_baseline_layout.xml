@@ -29,7 +29,9 @@
             android:id="@+id/tsrqButton"
             android:text="Self-regulation questionnaire"
             android:textColor="@color/blue_50"
-            android:backgroundTint="@color/blue_500"
+            android:backgroundTint="@color/blue_700"
+            android:padding="16dp"
+            android:layout_gravity="center_horizontal"
             />
 
         <!-- Average Smartphone Usage Display -->

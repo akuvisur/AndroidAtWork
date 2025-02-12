@@ -315,8 +315,6 @@ class UnlockDialog {
         listOf(selfInitiatedButton, notificationInitiatedButton)
     }
 
-    private lateinit var extraInfo : EditText
-
     fun showDialog(
         c: Context?,
         curTime: Long,
@@ -395,9 +393,6 @@ class UnlockDialog {
             val row1Selection = getSelectedButtonText(c, row1)
             val row2Selection = getSelectedButtonText(c, row2)
             val row3Selection = getSelectedButtonText(c, row3)
-
-            // Collect additional text from EditText
-            val extraInfo = extraInfo.text.toString()
 
             // Create a Response object
             val data = Response(
