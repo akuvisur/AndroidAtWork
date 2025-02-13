@@ -572,7 +572,7 @@ fun getDailyUsage(c: Context?): Long {
 }
 
 // Determines the "day" based on 4 AM cutoff
-private fun getCurrentDay(): Int {
+fun getCurrentDay(): Int {
     val calendar = Calendar.getInstance()
     val hour = calendar.get(Calendar.HOUR_OF_DAY)
 
@@ -581,6 +581,15 @@ private fun getCurrentDay(): Int {
     }
 
     return calendar.get(Calendar.DAY_OF_YEAR) // Unique day identifier
+}
+
+fun getDayFromMillis(ts : Long): Int {
+    val calendar = Calendar.getInstance().apply { timeInMillis = ts }
+    val hour = calendar.get(Calendar.HOUR_OF_DAY)
+    if (hour < 4) {
+        calendar.add(Calendar.DATE, -1) // Before 4 AM? Count as the previous day
+    }
+    return calendar.get(Calendar.DAY_OF_YEAR)
 }
 
 

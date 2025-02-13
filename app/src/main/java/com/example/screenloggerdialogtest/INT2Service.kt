@@ -7,8 +7,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.BitmapFactory
+import android.media.AudioAttributes
+import android.media.RingtoneManager
 import android.util.Log
 import androidx.core.content.ContextCompat
+
 
 /**
  * ### Service Hierarchy Documentation
@@ -97,6 +100,15 @@ open class INT2Service : BaselineService() {
 
         notificationManager = getSystemService(NotificationManager::class.java)
         notificationChannel = NotificationChannel(channelIdInt2, channelNameInt2, NotificationManager.IMPORTANCE_HIGH)
+        notificationChannel.enableVibration(true)
+        val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+        val audioAttributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build()
+        notificationChannel.setSound(soundUri, audioAttributes) // Set default notification sound
+        notificationChannel.enableVibration(true)
+        notificationChannel.setVibrationPattern(longArrayOf(0, 200))
         notificationManager.createNotificationChannel(notificationChannel)
 
         studyPhase = 2
@@ -121,7 +133,19 @@ open class INT2Service : BaselineService() {
 
             if (p1?.action == Intent.ACTION_SCREEN_OFF && (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY)) {
                 if (previousEventType == "ACTION_USER_PRESENT") {
-                    dailyUsage += (now - previousEventTimestamp)
+                    //
+                    if (getCurrentDay() == getDayFromMillis(previousEventTimestamp)) {
+                        dailyUsage += (now - previousEventTimestamp)
+                    }
+                    else {
+                        if (getCurrentDay() == getDayFromMillis(previousEventTimestamp)) {
+                            dailyUsage = (now - previousEventTimestamp)
+                        }
+                        else {
+                            dailyUsage = 0
+                        }
+                    }
+
                     lastUsageTimestamp = now
                     storeDailyUsage(dailyUsage, p0)
                     storeLastDailyUsageTime(now, p0)
@@ -134,14 +158,17 @@ open class INT2Service : BaselineService() {
                 if (calculateMinutesUntilBedtime(bedtimeGoal) <= 60 && !usageWithin45Seconds(p0, now)) {
                     if (p0 != null) {
                         val largeIcon = BitmapFactory.decodeResource(p0.resources, R.drawable.drowsy)
-                        val notification: Notification = Notification.Builder(p0, channelId)
+
+                        val notificationBuilder = Notification.Builder(p0, channelId)
                             .setContentTitle("Smartphone Interventions")
                             .setContentText("Bedtime near, put your phone away!")
                             .setSmallIcon(R.drawable.bedtime2) // Set your app icon here
                             .setLargeIcon(largeIcon)
                             .setColorized(true)
                             .setColor(ContextCompat.getColor(p0, R.color.deep_purple_700))
-                            .build()
+
+                        val notification: Notification = notificationBuilder.build()
+
                         notificationManager.notify(bedtimeNotificationId, notification)
                     }
                 }
@@ -149,7 +176,7 @@ open class INT2Service : BaselineService() {
                     dailyUsageGoalDiff = dailyUsageGoal - dailyUsage
                     if (p0 != null) {
                         val largeIcon = BitmapFactory.decodeResource(p0.resources, R.drawable.alert)
-                        val notification: Notification = Notification.Builder(p0, channelId)
+                        val notificationBuilder = Notification.Builder(p0, channelId)
                             .setContentTitle("Smartphone Interventions")
                             .setContentText(
                                 "Exceeded daily goal ${
@@ -162,7 +189,8 @@ open class INT2Service : BaselineService() {
                             .setLargeIcon(largeIcon)
                             .setColorized(true)
                             .setColor(ContextCompat.getColor(p0, R.color.yellow))
-                            .build()
+
+                        val notification = notificationBuilder.build()
                         notificationManager.notify(usageNotificationId, notification)
                     }
                 }
@@ -171,16 +199,22 @@ open class INT2Service : BaselineService() {
                 // if no "alerts" then just show usage notification
                 else {
                     if (p0 != null) {
-                        val notification: Notification = Notification.Builder(p0, channelId)
+                        val notificationBuilder = Notification.Builder(p0, channelId)
                             .setContentTitle("Smartphone Interventions")
                             .setContentText("Today you have used your phone for ${formatTime(dailyUsage)}")
                             .setSmallIcon(R.drawable.goal_reached) // Set your app icon here
                             .setColorized(true)
                             .setColor(ContextCompat.getColor(p0, R.color.teal_300))
-                            .build()
+
+                        val notification = notificationBuilder.build()
                         notificationManager.notify(usageNotificationId, notification)
                     }
-                    dailyUsage += (now - previousEventTimestamp)
+                    if (getCurrentDay() == getDayFromMillis(now)) {
+                        dailyUsage += (now - previousEventTimestamp)
+                    }
+                    else {
+                        dailyUsage = (now - previousEventTimestamp)
+                    }
                     lastUsageTimestamp = now
                     storeDailyUsage(dailyUsage, p0)
                     storeLastDailyUsageTime(now, p0)
