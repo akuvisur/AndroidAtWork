@@ -57,6 +57,13 @@ class INT1Service : INT2Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("SERVICE_LOGIC", "INT1 starting")
 
+        if (isServiceRunning(this, BaselineService::class.java)) {
+            stopService(Intent(this, BaselineService::class.java))
+        }
+        if (isServiceRunning(this, INT2Service::class.java)) {
+            stopService(Intent(this, INT2Service::class.java))
+        }
+
         // this is largely irrelevant since its reset in INT2Service (super.onStart...)
         studyPhase = 1
 

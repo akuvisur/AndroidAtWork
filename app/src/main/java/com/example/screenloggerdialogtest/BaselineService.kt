@@ -78,6 +78,13 @@ open class BaselineService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("SERVICE_LOGIC", "Baseline starting")
 
+        if (isServiceRunning(this, INT2Service::class.java)) {
+            stopService(Intent(this, INT2Service::class.java))
+        }
+        if (isServiceRunning(this, INT1Service::class.java)) {
+            stopService(Intent(this, INT1Service::class.java))
+        }
+
         // Start as a foreground service (if necessary)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 

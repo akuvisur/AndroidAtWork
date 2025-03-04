@@ -80,6 +80,13 @@ open class INT2Service : BaselineService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("SERVICE_LOGIC", "INT2 starting")
 
+        if (isServiceRunning(this, BaselineService::class.java)) {
+            stopService(Intent(this, BaselineService::class.java))
+        }
+        if (isServiceRunning(this, INT1Service::class.java)) {
+            stopService(Intent(this, INT1Service::class.java))
+        }
+
         dailyUsageGoal = getStudyVariable(this, INT_SMARTPHONE_USAGE_LIMIT_GOAL, 0L)
         bedtimeGoal = getStudyVariable(this, BEDTIME_GOAL, BEDTIME_GOAL_DEFAULT_VALUE)
         lastUsageTimestamp = getLastDailyUsageTime(this)
