@@ -14,6 +14,8 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
@@ -437,9 +439,15 @@ class UnlockDialog {
 
         val wm = c.getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
-        // Check if the view is still attached to the window
         if (dialogView.isAttachedToWindow) {
-            wm.removeView(dialogView)
+            dialogView.animate()
+                .alpha(0f)
+                .setDuration(500)
+                .setStartDelay(50)
+                .withEndAction {
+                    wm.removeView(dialogView)
+                }
+                .start()
         }
     }
 
@@ -453,22 +461,25 @@ class UnlockDialog {
     // Function to set up selection logic for a row of buttons
     private fun setupRowButtons(c : Context, buttons: List<Button>) {
         // Store original background for each button in this row
-        val originalBackgrounds = buttons.associateWith { it.background }
+        val originalBackgroundTints = buttons.associateWith { it.backgroundTintList }
 
         buttons.forEach { button ->
             button.setOnClickListener {
-                // Reset all buttons in the row to their original background
+                // Reset all buttons in the row to their original background tint
                 buttons.forEach { btn ->
-                    btn.background = originalBackgrounds[btn]
+                    btn.backgroundTintList = originalBackgroundTints[btn]
+                    btn.setTextColor(ContextCompat.getColor(c, R.color.white))
                 }
-                // Highlight the selected button
-                button.setBackgroundColor(ContextCompat.getColor(c, R.color.white)) // Replace with desired highlight color
+                // Highlight the selected button by setting the background tint to white
+                button.backgroundTintList = ContextCompat.getColorStateList(c, R.color.white)
+                button.setTextColor(ContextCompat.getColor(c, R.color.blue_gray_900))
             }
         }
     }
 
     private fun getSelectedButtonText(c: Context, buttons: List<Button>): String? {
-        return buttons.find { it.background.constantState == ContextCompat.getDrawable(c, R.color.white)?.constantState }?.text?.toString()
+        val whiteColorStateList = ContextCompat.getColorStateList(c, R.color.white)
+        return buttons.find { it.backgroundTintList == whiteColorStateList }?.text?.toString()
     }
 
     data class Response(

@@ -75,22 +75,33 @@ open class INT2Service : BaselineService() {
     var dailyUsageGoalDiff : Long = 0L
     var bedtimeGoal : Int = 0
 
-
     private val channelIdInt2 = "ScreenLoggerServiceChannelInt2"
     private val channelNameInt2 = "Int2ChannelName"
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // Start as a foreground service (if necessary)
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
+
+        notificationManager.createNotificationChannel(channel)
+        val notification: Notification = Notification.Builder(this, channelId)
+            .setContentTitle("Smartphone Interventions")
+            .setContentText("Monitoring smartphone usage...")
+            .setSmallIcon(android.R.drawable.ic_popup_sync) // Set your app icon here
+            .setColorized(true)
+            .setColor(ContextCompat.getColor(this, R.color.deep_purple_300))
+            .build()
+
+        startForeground(1, notification)
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("SERVICE_LOGIC", "INT2 starting")
 
         uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
             FirebaseUtils.FirebaseDataLoggingObject(event = "INT2_SERVICE_STARTED"))
-
-        if (isServiceRunning(this, BaselineService::class.java)) {
-            stopService(Intent(this, BaselineService::class.java))
-        }
-        if (isServiceRunning(this, INT1Service::class.java)) {
-            stopService(Intent(this, INT1Service::class.java))
-        }
 
         dailyUsageGoal = getStudyVariable(this, INT_SMARTPHONE_USAGE_LIMIT_GOAL, 0L)
         bedtimeGoal = getStudyVariable(this, BEDTIME_GOAL, BEDTIME_GOAL_DEFAULT_VALUE)
@@ -132,6 +143,9 @@ open class INT2Service : BaselineService() {
         super.onDestroy()
         uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
             FirebaseUtils.FirebaseDataLoggingObject(event = "INT2_SERVICE_STOPPED"))
+        if (::INT2Receiver.isInitialized) {
+            unregisterReceiver(INT2Receiver)
+        }
     }
 
     open inner class INT2ScreenReceiver : ScreenStateReceiver() {

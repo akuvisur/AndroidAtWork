@@ -381,7 +381,9 @@ class MainActivity : FragmentActivity() {
                     (requireActivity() as MainActivity).refreshUI()
                 }
 
-                checkAndStartBaselineService()
+                stopService(requireContext(), INT2Service::class.java)
+                stopService(requireContext(), INT1Service::class.java)
+                checkAndStartService(BaselineService::class.java)
 
                 FirebaseUtils.fetchUsageTotal(LocalDateTime.now()) { usage ->
                     Log.d("FIREBASE", "Total Usage All Days: $usage")
@@ -392,7 +394,7 @@ class MainActivity : FragmentActivity() {
             }
 
             else if (studyState == STUDY_STATE_POST_BASELINE) {
-                checkAndStartBaselineService()
+                checkAndStartService(BaselineService::class.java)
 
                 // Actions for post-baseline phase
                 // e.g., gather baseline data, prepare for intervention
@@ -411,7 +413,8 @@ class MainActivity : FragmentActivity() {
                     val intent = Intent(activity, TSRQActivity::class.java)
                     startActivity(intent)
                 }
-                var tsrqSubmitted = studyStateVars[TSRQ_SUBMITTED] == 1
+
+                val tsrqSubmitted = studyStateVars[TSRQ_SUBMITTED] == 1
                 if (tsrqSubmitted) {
                     tsrqButton.isEnabled = false
                     tsrqButton.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue_200))
@@ -518,6 +521,8 @@ class MainActivity : FragmentActivity() {
                         setStudyVariable(c, BEDTIME_GOAL, parseBedtimeToMinutes(bedTimeInput.text.toString()))
                         setStudyTimestamp(c, INT1_START_TIMESTAMP, System.currentTimeMillis())
 
+                        stopService(requireContext(), BaselineService::class.java)
+
                         (requireActivity() as MainActivity).refreshUI()
                     }
                     // prompt user to do the missing thing!
@@ -569,7 +574,8 @@ class MainActivity : FragmentActivity() {
                     (requireActivity() as MainActivity).refreshUI()
                 }
 
-                checkAndStartBaselineService()
+                stopService(requireContext(), INT2Service::class.java)
+                checkAndStartService(INT1Service::class.java)
 
                 intervention1ProgressSlider = inflaterView.findViewById(R.id.intervention1ProgressSlider)
                 intervention1ProgressSlider.value = min(int1Day.toFloat(), INT1_DURATION.toFloat())
@@ -591,7 +597,7 @@ class MainActivity : FragmentActivity() {
                         "ts" to System.currentTimeMillis()
                     )
 
-                    checkAndStartBaselineService()
+                    checkAndStartService(INT1Service::class.java)
 
                     (requireActivity() as MainActivity).refreshUI()
                 }
@@ -608,15 +614,8 @@ class MainActivity : FragmentActivity() {
                     (requireActivity() as MainActivity).refreshUI()
                 }
 
-                checkAndStartBaselineService()
-
-                if (!isServiceRunning(requireContext(), INT2Service::class.java)) {
-                    val intent = Intent(
-                        requireContext(),
-                        INT2Service::class.java
-                    ) // Build the intent for the service
-                    (requireActivity() as MainActivity).startForegroundService(intent)
-                }
+                stopService(requireContext(), INT1Service::class.java)
+                checkAndStartService(INT2Service::class.java)
 
                 intervention2ProgressSlider = inflaterView.findViewById(R.id.intervention2ProgressSlider)
 
@@ -626,6 +625,10 @@ class MainActivity : FragmentActivity() {
             }
 
             else if (studyState == STUDY_STATE_POST_INT2_SURVEY_REQUIRED) {
+                stopService(requireContext(), INT2Service::class.java)
+                stopService(requireContext(), INT1Service::class.java)
+                stopService(requireContext(), BaselineService::class.java)
+
                 // Actions for post Intervention Phase 2 survey
                 // e.g., collect survey data, prepare for final analysis
                 inflaterView = inflater.inflate(R.layout.post_int2_survey_required_layout, container, false)
@@ -687,14 +690,20 @@ class MainActivity : FragmentActivity() {
             return inflaterView
         }
 
-        private fun checkAndStartBaselineService() {
-            if (!isServiceRunning(requireContext(), BaselineService::class.java)) {
+        private fun checkAndStartService(serviceClass: Class<*>) {
+            if (!isServiceRunning(requireContext(), serviceClass)) {
                 val intent = Intent(
                     requireContext(),
-                    BaselineService::class.java
+                    serviceClass
                 ) // Build the intent for the service
                 (requireActivity() as MainActivity).startForegroundService(intent)
             }
+        }
+
+        private fun stopService(context: Context, serviceClass: Class<*>) {
+            val intent = Intent(context, serviceClass)
+            context.stopService(intent)
+            Log.d("ServiceManager", "${serviceClass.simpleName} stopped.")
         }
 
         private fun checkEnableConsentButton(studyStateVars : Map<String, Number?>, notificationsAllowed : Boolean) {

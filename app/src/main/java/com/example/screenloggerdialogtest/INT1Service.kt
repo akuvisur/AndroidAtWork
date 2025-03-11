@@ -1,9 +1,13 @@
 package com.example.screenloggerdialogtest
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.util.Log
+import androidx.core.content.ContextCompat
 import com.example.screenloggerdialogtest.FirebaseUtils.getCurrentUserUID
 import com.example.screenloggerdialogtest.FirebaseUtils.uploadFirebaseEntry
 
@@ -56,18 +60,30 @@ class INT1Service : INT2Service() {
 
     private lateinit var INT1Receiver : INT1ScreenReceiver
 
+    override fun onCreate() {
+        super.onCreate()
+
+        // Start as a foreground service (if necessary)
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
+
+        notificationManager.createNotificationChannel(channel)
+        val notification: Notification = Notification.Builder(this, channelId)
+            .setContentTitle("Smartphone Interventions")
+            .setContentText("Monitoring smartphone usage...")
+            .setSmallIcon(android.R.drawable.ic_popup_sync) // Set your app icon here
+            .setColorized(true)
+            .setColor(ContextCompat.getColor(this, R.color.deep_purple_300))
+            .build()
+
+        startForeground(1, notification)
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("SERVICE_LOGIC", "INT1 starting")
 
         uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
             FirebaseUtils.FirebaseDataLoggingObject(event = "INT1_SERVICE_STARTED"))
-
-        if (isServiceRunning(this, BaselineService::class.java)) {
-            stopService(Intent(this, BaselineService::class.java))
-        }
-        if (isServiceRunning(this, INT2Service::class.java)) {
-            stopService(Intent(this, INT2Service::class.java))
-        }
 
         // this is largely irrelevant since its reset in INT2Service (super.onStart...)
         studyPhase = 1
@@ -79,6 +95,20 @@ class INT1Service : INT2Service() {
         }
         registerReceiver(INT1Receiver, filter)
 
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
+
+        notificationManager.createNotificationChannel(channel)
+        val notification: Notification = Notification.Builder(this, channelId)
+            .setContentTitle("Smartphone Interventions")
+            .setContentText("Monitoring smartphone usage...")
+            .setSmallIcon(android.R.drawable.ic_popup_sync) // Set your app icon here
+            .setColorized(true)
+            .setColor(ContextCompat.getColor(this, R.color.deep_purple_300))
+            .build()
+
+        startForeground(1, notification)
+
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -86,6 +116,9 @@ class INT1Service : INT2Service() {
         super.onDestroy()
         uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
             FirebaseUtils.FirebaseDataLoggingObject(event = "INT1_SERVICE_STOPPED"))
+        if (::INT1Receiver.isInitialized) {
+            unregisterReceiver(INT1Receiver)
+        }
     }
 
     inner class INT1ScreenReceiver : INT2Service.INT2ScreenReceiver() {

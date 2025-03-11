@@ -76,37 +76,44 @@ open class BaselineService : Service() {
     val channelId = "ScreenLoggerServiceChannel"
     val channelName = "BaselineService"
 
+    override fun onCreate() {
+        super.onCreate()
+
+        // Start as a foreground service (if necessary)
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
+
+        notificationManager.createNotificationChannel(channel)
+        val notification: Notification = Notification.Builder(this, channelId)
+            .setContentTitle("Smartphone Interventions")
+            .setContentText("Monitoring smartphone usage...")
+            .setSmallIcon(android.R.drawable.ic_popup_sync) // Set your app icon here
+            .setColorized(true)
+            .setColor(ContextCompat.getColor(this, R.color.deep_purple_300))
+            .build()
+
+        startForeground(1, notification)
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("SERVICE_LOGIC", "Baseline starting")
+        // Start as a foreground service (if necessary)
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
+
+        notificationManager.createNotificationChannel(channel)
+        val notification: Notification = Notification.Builder(this, channelId)
+            .setContentTitle("Smartphone Interventions")
+            .setContentText("Monitoring smartphone usage...")
+            .setSmallIcon(android.R.drawable.ic_popup_sync) // Set your app icon here
+            .setColorized(true)
+            .setColor(ContextCompat.getColor(this, R.color.deep_purple_300))
+            .build()
+
+        startForeground(1, notification)
 
         uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
             FirebaseUtils.FirebaseDataLoggingObject(event = "BASELINE_SERVICE_STARTED"))
-
-
-        if (isServiceRunning(this, INT2Service::class.java)) {
-            stopService(Intent(this, INT2Service::class.java))
-        }
-        if (isServiceRunning(this, INT1Service::class.java)) {
-            stopService(Intent(this, INT1Service::class.java))
-        }
-
-        // Start as a foreground service (if necessary)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
-
-            notificationManager.createNotificationChannel(channel)
-            val notification: Notification = Notification.Builder(this, channelId)
-                .setContentTitle("Smartphone Interventions")
-                .setContentText("Monitoring smartphone usage...")
-                .setSmallIcon(android.R.drawable.ic_popup_sync) // Set your app icon here
-                .setColorized(true)
-                .setColor(ContextCompat.getColor(this, R.color.deep_purple_300))
-                .build()
-
-            startForeground(1, notification)
-        }
 
         // Run this only in baseline mode == 0
         if (studyPhase == 0) {
