@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.util.Log
+import com.example.screenloggerdialogtest.FirebaseUtils.getCurrentUserUID
+import com.example.screenloggerdialogtest.FirebaseUtils.uploadFirebaseEntry
 
 /**
  * ### Service Hierarchy Documentation
@@ -57,6 +59,9 @@ class INT1Service : INT2Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("SERVICE_LOGIC", "INT1 starting")
 
+        uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
+            FirebaseUtils.FirebaseDataLoggingObject(event = "INT1_SERVICE_STARTED"))
+
         if (isServiceRunning(this, BaselineService::class.java)) {
             stopService(Intent(this, BaselineService::class.java))
         }
@@ -75,6 +80,12 @@ class INT1Service : INT2Service() {
         registerReceiver(INT1Receiver, filter)
 
         return super.onStartCommand(intent, flags, startId)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
+            FirebaseUtils.FirebaseDataLoggingObject(event = "INT1_SERVICE_STOPPED"))
     }
 
     inner class INT1ScreenReceiver : INT2Service.INT2ScreenReceiver() {

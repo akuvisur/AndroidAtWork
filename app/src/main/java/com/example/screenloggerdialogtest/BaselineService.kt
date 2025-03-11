@@ -16,6 +16,7 @@ import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.content.ContextCompat
 import com.example.screenloggerdialogtest.FirebaseUtils.ScreenEvent
 import com.example.screenloggerdialogtest.FirebaseUtils.getCurrentUserUID
+import com.example.screenloggerdialogtest.FirebaseUtils.uploadFirebaseEntry
 import java.util.concurrent.TimeUnit
 
 /**
@@ -78,6 +79,10 @@ open class BaselineService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("SERVICE_LOGIC", "Baseline starting")
 
+        uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
+            FirebaseUtils.FirebaseDataLoggingObject(event = "BASELINE_SERVICE_STARTED"))
+
+
         if (isServiceRunning(this, INT2Service::class.java)) {
             stopService(Intent(this, INT2Service::class.java))
         }
@@ -126,6 +131,9 @@ open class BaselineService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
+            FirebaseUtils.FirebaseDataLoggingObject(event = "BASELINE_SERVICE_STOPPED"))
+
         if (::screenStateReceiver.isInitialized) {
             unregisterReceiver(screenStateReceiver)
         }
@@ -175,6 +183,9 @@ open class BaselineService : Service() {
                 Intent.ACTION_SCREEN_OFF -> {
                     // Screen turned off
                     Log.d("ScreenStateReceiver", "Screen OFF")
+                    uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/screen_events/${System.currentTimeMillis()}",
+                        FirebaseUtils.FirebaseDataLoggingObject(event = "ACTION_SCREEN_OFF"))
+
                     if (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY) uploadEvent(previousEventType, previousEventTimestamp, p0)
                     previousEventTimestamp = now
                     updatePreviousEvent(now, "ACTION_SCREEN_OFF", p0)
@@ -183,6 +194,9 @@ open class BaselineService : Service() {
                 Intent.ACTION_USER_PRESENT -> {
                     // User unlocked the screen
                     Log.d("ScreenStateReceiver", "User Present (Unlocked)")
+                    uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/screen_events/${System.currentTimeMillis()}",
+                        FirebaseUtils.FirebaseDataLoggingObject(event = "ACTION_USER_PRESENT"))
+
                     if (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY) uploadEvent(previousEventType, previousEventTimestamp, p0)
                     previousEventTimestamp = now
                     updatePreviousEvent(now, "ACTION_USER_PRESENT", p0)

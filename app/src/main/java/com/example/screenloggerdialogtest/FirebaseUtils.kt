@@ -132,4 +132,34 @@ object FirebaseUtils {
         val duration: Long = 0L    // Duration in milliseconds (e.g., screen-on time)
     )
 
+    fun uploadFirebaseEntry(path : String, data : FirebaseDataLoggingObject) {
+        sendEntryToDatabase(
+            path = path, // Path in the database (e.g., "users/user_1")
+            data = data,
+            onSuccess = {
+            },
+            onFailure = { exception ->
+            }
+        )
+    }
+
+    data class FirebaseDataLoggingObject(
+        val event: String
+    )
+
+    fun uploadFeedback(path : String, data : FirebaseFeedbackDataObject) {
+        sendEntryToDatabase(
+            path = path, // Path in the database (e.g., "users/user_1")
+            data = data,
+            onSuccess = {
+            },
+            onFailure = { exception ->
+            }
+        )
+    }
+
+    data class FirebaseFeedbackDataObject(
+        val feedback: String
+    )
+
 }

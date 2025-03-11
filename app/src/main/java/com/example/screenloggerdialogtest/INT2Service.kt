@@ -11,6 +11,8 @@ import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.example.screenloggerdialogtest.FirebaseUtils.getCurrentUserUID
+import com.example.screenloggerdialogtest.FirebaseUtils.uploadFirebaseEntry
 
 
 /**
@@ -80,6 +82,9 @@ open class INT2Service : BaselineService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("SERVICE_LOGIC", "INT2 starting")
 
+        uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
+            FirebaseUtils.FirebaseDataLoggingObject(event = "INT2_SERVICE_STARTED"))
+
         if (isServiceRunning(this, BaselineService::class.java)) {
             stopService(Intent(this, BaselineService::class.java))
         }
@@ -121,6 +126,12 @@ open class INT2Service : BaselineService() {
         studyPhase = 2
 
         return super.onStartCommand(intent, flags, startId)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
+            FirebaseUtils.FirebaseDataLoggingObject(event = "INT2_SERVICE_STOPPED"))
     }
 
     open inner class INT2ScreenReceiver : ScreenStateReceiver() {

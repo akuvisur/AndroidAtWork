@@ -25,6 +25,7 @@ import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -33,6 +34,9 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
+import com.example.screenloggerdialogtest.FirebaseUtils.getCurrentUserUID
+import com.example.screenloggerdialogtest.FirebaseUtils.uploadFeedback
+import com.example.screenloggerdialogtest.FirebaseUtils.uploadFirebaseEntry
 import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.components.LimitLine
 import com.github.mikephil.charting.components.XAxis
@@ -85,6 +89,9 @@ class MainActivity : FragmentActivity() {
     @SuppressLint("SetTextI18n")
     override fun onResume() {
         super.onResume()
+
+        uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
+            FirebaseUtils.FirebaseDataLoggingObject(event = "MAIN_ACTIVITY_RESUMED"))
 
         studyPhaseSlider = findViewById(R.id.studyPhaseSlider)
         studyPhaseSlider.isEnabled = false
@@ -156,6 +163,18 @@ class MainActivity : FragmentActivity() {
         val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(intent)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
+            FirebaseUtils.FirebaseDataLoggingObject(event = "MAIN_ACTIVITY_STOPPED"))
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
+            FirebaseUtils.FirebaseDataLoggingObject(event = "MAIN_ACTIVITY_DESTROYED"))
     }
 
     @Deprecated("Deprecated in Java")
@@ -233,6 +252,9 @@ class MainActivity : FragmentActivity() {
             inflater: LayoutInflater, container: ViewGroup?,
             savedInstanceState: Bundle?
         ): View {
+
+            uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
+                FirebaseUtils.FirebaseDataLoggingObject(event = "MAIN_ACTIVITY_CREATED"))
 
             val studyStateVars = getStudyStateVariables(requireContext())
 
@@ -864,6 +886,8 @@ class MainActivity : FragmentActivity() {
     // settings fragment is always the same
     // some fields are disabled field.isEnabled = false prior to INT1
     class SettingsFragment : Fragment() {
+        private lateinit var feedbackButton: Button
+
         private lateinit var studyStateSpinner: Spinner
         private lateinit var settingsReduceUsageSlider: Slider
         private lateinit var settingsReduceUsageText : TextView
@@ -890,6 +914,8 @@ class MainActivity : FragmentActivity() {
             // Inflate the layout for this fragment
             val view = inflater.inflate(R.layout.fragment_settings, container, false)
 
+            feedbackButton = view.findViewById(R.id.settingsQuestionButton)
+
             settingsReduceUsageSlider = view.findViewById(R.id.settingsReduceUsageSlider)
             settingsReduceUsageText = view.findViewById(R.id.settingsReduceUsageText)
             settingsLayout = view.findViewById(R.id.settingsHiddenLayout)
@@ -901,6 +927,10 @@ class MainActivity : FragmentActivity() {
             settingsDeviceidText = view.findViewById(R.id.settingsDeviceId)
             clearSharedPreferencesButton = view.findViewById(R.id.clearSharedPreferences)
             clearDailyUsageButton = view.findViewById(R.id.clearDailyUsage)
+
+            feedbackButton.setOnClickListener {
+                showFeedbackDialog()
+            }
 
             usageAverage = getStudyVariable(requireContext(), BASELINE_USAGE_AVERAGE, 0L)
 
@@ -1088,5 +1118,27 @@ class MainActivity : FragmentActivity() {
 
             return view
         }
+
+        fun showFeedbackDialog() {
+            val builder: AlertDialog.Builder = AlertDialog.Builder(requireContext())
+            builder.setTitle("Feedback")
+
+            val input = EditText(requireContext())
+            builder.setView(input)
+
+            builder.setPositiveButton("Submit") { dialog, which ->
+                val feedback = input.text.toString()
+                uploadFeedback("/users/${getCurrentUserUID()}/feedback/${System.currentTimeMillis()}",
+                    FirebaseUtils.FirebaseFeedbackDataObject(feedback = feedback))
+            }
+
+            builder.setNegativeButton("Cancel") { dialog, which ->
+                dialog.cancel()
+            }
+
+            builder.show()
+        }
     }
+
+
 }
