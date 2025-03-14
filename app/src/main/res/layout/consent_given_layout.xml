@@ -6,90 +6,108 @@
     android:orientation="vertical"
     android:padding="16dp"
     android:gravity="center_horizontal">
-
-    <!-- Instructions for Notifications -->
     <LinearLayout
+        android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingTop="16dp">
+        android:elevation="4dp"
+        android:background="@drawable/linear_layout_background"
+        android:layout_margin="0dp"
+        android:padding="4dp">
+
+        <!-- Instructions for Notifications -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingTop="16dp">
+
+            <TextView
+                android:id="@+id/notificationInstructionText"
+                android:layout_width="0dp"
+                android:layout_weight="2"
+                android:layout_height="wrap_content"
+                android:text="Step 1: Please allow notifications for this application"
+                android:textSize="16sp"
+                android:textColor="@color/blue_gray_700" />
+
+            <ImageView
+                android:id="@+id/allowNotificationIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_checkmark"
+                android:visibility="invisible"
+                />
+
+            <Button
+                android:id="@+id/allowNotificationButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ALLOW"
+                android:textColor="@color/blue_gray_50"
+                android:backgroundTint="@color/blue_gray_500"
+                />
+
+        </LinearLayout>
 
         <TextView
-            android:id="@+id/notificationInstructionText"
-            android:layout_width="0dp"
-            android:layout_weight="2"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Please allow notifications for this application"
-            android:textSize="16sp"
-            android:textColor="@color/blue_gray_700" />
-
-        <ImageView
-            android:id="@+id/allowNotificationIcon"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_checkmark"
-            android:visibility="invisible"
+            android:textStyle="italic"
+            android:textSize="12sp"
+            android:text="Notifications are required for this application to function correctly."
             />
 
-        <Button
-            android:id="@+id/allowNotificationButton"
-            android:layout_width="wrap_content"
+        <!-- Instructions for Battery Management -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="ALLOW"
-            android:textColor="@color/blue_gray_50"
-            android:backgroundTint="@color/blue_gray_500"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingTop="16dp">
+
+            <TextView
+                android:id="@+id/batteryInstructionText"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Step 2: Disable battery management for this application to ensure tracking"
+                android:textSize="16sp"
+                android:textColor="@color/blue_gray_700" />
+
+            <Button
+                android:id="@+id/disableBatteryManagementButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="DISABLE"
+                android:textColor="@color/blue_gray_50"
+                android:backgroundTint="@color/blue_gray_500" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textStyle="italic"
+            android:textSize="12sp"
+            android:text="This ensures that the data collection continues on its own as reliably as possible. If you are using any 3rd party battery management software, please white list this application."
             />
 
     </LinearLayout>
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textStyle="italic"
-        android:textSize="12sp"
-        android:text="Notifications are required for this application to function correctly."
-        />
-
-    <!-- Instructions for Battery Management -->
     <LinearLayout
+        android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingTop="16dp">
-
-        <TextView
-            android:id="@+id/batteryInstructionText"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="Disable battery management for this application to ensure tracking"
-            android:textSize="16sp"
-            android:textColor="@color/blue_gray_700" />
-
-        <Button
-            android:id="@+id/disableBatteryManagementButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="DISABLE"
-            android:textColor="@color/blue_gray_50"
-            android:backgroundTint="@color/blue_gray_500" />
-    </LinearLayout>
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textStyle="italic"
-        android:textSize="12sp"
-        android:text="This ensures that the data collection continues on its own as reliably as possible. If you are using any 3rd party battery management software, please white list this application."
-        />
-
+        android:elevation="4dp"
+        android:background="@drawable/linear_layout_background"
+        android:layout_marginTop="4dp"
+        android:padding="4dp">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16sp"
+        android:layout_marginTop="4sp"
         android:textSize="16sp"
         android:textColor="@color/blue_gray_700"
         android:text="@string/addiction_scales_text"
@@ -133,7 +151,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingBottom="8dp">
+            android:paddingBottom="4dp">
 
             <ImageView
                 android:id="@+id/sasIcon"
@@ -152,6 +170,8 @@
                 android:backgroundTint="@color/blue_gray_500"
                 android:textColor="@color/blue_gray_50" />
         </LinearLayout>
+
+    </LinearLayout>
 
     </LinearLayout>
 

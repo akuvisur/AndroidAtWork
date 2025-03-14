@@ -12,12 +12,20 @@
         android:orientation="vertical"
         android:gravity="center_horizontal">
 
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="4dp"
+        android:background="@drawable/linear_layout_background"
+        android:layout_marginTop="4dp"
+        android:padding="4dp">
         <!-- Completion Message and Slider -->
         <TextView
             android:id="@+id/baselineCompleteText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Baseline tracking is now completed. Please first take a questionnaire about your motivation to reduce smartphone usage."
+            android:text="Baseline tracking is now completed. Step 1: Please first take a questionnaire about your motivation to reduce smartphone usage."
             android:textSize="18sp"
             android:textColor="@color/blue_700"
             android:textStyle="bold"
@@ -33,7 +41,16 @@
             android:padding="16dp"
             android:layout_gravity="center_horizontal"
             />
+    </LinearLayout>
 
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="4dp"
+        android:background="@drawable/linear_layout_background"
+        android:layout_marginTop="4dp"
+        android:padding="4dp">
         <!-- Average Smartphone Usage Display -->
         <TextView
             android:id="@+id/averageUsageText"
@@ -42,7 +59,7 @@
             android:text="@string/daily_usage"
             android:textSize="16sp"
             android:textColor="@color/blue_700"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="0dp"
             android:layout_gravity="center_horizontal" />
 
         <!-- Smartphone Usage Reduction Question -->
@@ -52,7 +69,7 @@
             android:layout_height="wrap_content"
             android:text="@string/smartphone_usage_goal"
             android:textSize="16sp"
-            android:layout_marginTop="24dp" />
+            android:layout_marginTop="0dp" />
 
         <com.google.android.material.slider.Slider
             android:id="@+id/settingsReduceUsageSlider"
@@ -63,7 +80,7 @@
             android:valueTo="50"
             android:stepSize="5"
             app:labelBehavior="visible"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="0dp"
             app:thumbTint="@color/blue_500"
             app:trackColor="@color/blue_200"
             app:trackColorActive="@color/blue_500" />
@@ -75,7 +92,15 @@
             android:text="@string/usage_limit_text"
             android:layout_gravity="left"/>
 
-
+    </LinearLayout>
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="4dp"
+        android:background="@drawable/linear_layout_background"
+        android:layout_marginTop="4dp"
+        android:padding="4dp">
         <!-- Bedtime Question -->
         <TextView
             android:id="@+id/bedtimeQuestion"
@@ -83,8 +108,8 @@
             android:layout_height="wrap_content"
             android:text="@string/bedtime_input"
             android:textSize="16sp"
-            android:textColor="@color/blue_gray_700"
-            android:layout_marginTop="24dp" />
+            android:textColor="@color/blue_700"
+            android:layout_marginTop="0dp" />
 
         <EditText
             android:id="@+id/bedtimeInput"
@@ -96,22 +121,32 @@
             android:textColor="@color/blue_gray_700"
             android:backgroundTint="@color/blue_gray_300"
             android:padding="8dp"
-            android:layout_marginTop="8dp" />
-
+            android:layout_marginTop="0dp" />
+    </LinearLayout>
         <!-- Overlay Permission Button -->
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="4dp"
+        android:background="@drawable/linear_layout_background"
+        android:layout_marginTop="4dp"
+        android:padding="4dp">
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingTop="24dp">
+            android:paddingTop="0dp">
 
             <TextView
                 android:id="@+id/overlayPermissionText"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:text="Enable overlay permission for this application"
+                android:text="Step 4: Enable overlay permission for this application"
+                android:textColor="@color/blue_700"
                 android:textSize="16sp"
                  />
 
@@ -133,6 +168,7 @@
                 android:backgroundTint="@color/blue_500" />
         </LinearLayout>
 
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -151,6 +187,7 @@
             android:padding="16dp"
             android:layout_gravity="center_horizontal"/>
 
+    </LinearLayout>
         <!-- Start Intervention Button at the Bottom -->
         <Button
             android:id="@+id/startInterventionButton"
