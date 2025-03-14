@@ -442,7 +442,7 @@ class UnlockDialog {
         if (dialogView.isAttachedToWindow) {
             dialogView.animate()
                 .alpha(0f)
-                .setDuration(500)
+                .setDuration(550)
                 .setStartDelay(50)
                 .withEndAction {
                     wm.removeView(dialogView)

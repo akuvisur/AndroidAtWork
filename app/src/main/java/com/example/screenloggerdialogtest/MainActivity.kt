@@ -509,8 +509,6 @@ class MainActivity : FragmentActivity() {
                 intervention1TestButton.isEnabled = overlaysAllowed
 
                 startInterventionButton.setOnClickListener {
-                    // TODO send setup data to firebase
-                    // TODO and store to local vars
                     Log.d("MAIN", bedTimeInput.text.toString())
                     if (overlaysAllowed && bedTimeInput.text.isNotEmpty() && reduceUsageTouched && interventionTested && tsrqSubmitted ) {
                         val c = requireContext()
@@ -522,6 +520,8 @@ class MainActivity : FragmentActivity() {
                         setStudyTimestamp(c, INT1_START_TIMESTAMP, System.currentTimeMillis())
 
                         stopService(requireContext(), BaselineService::class.java)
+
+
 
                         (requireActivity() as MainActivity).refreshUI()
                     }
@@ -553,11 +553,9 @@ class MainActivity : FragmentActivity() {
 
                 // INT1 requires overlay permission
                 if (Settings.canDrawOverlays(requireContext())) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        if (!isServiceRunning(requireContext(), INT1Service::class.java)) {
-                            val intent = Intent(requireContext(), INT1Service::class.java) // Build the intent for the service
-                            (requireActivity() as MainActivity).startForegroundService(intent)
-                        }
+                    if (!isServiceRunning(requireContext(), INT1Service::class.java)) {
+                        val intent = Intent(requireContext(), INT1Service::class.java) // Build the intent for the service
+                        (requireActivity() as MainActivity).startForegroundService(intent)
                     }
                     else {
                         Log.d("MAIN:ONCREATE", "SDK level too low")
@@ -1139,6 +1137,7 @@ class MainActivity : FragmentActivity() {
                 val feedback = input.text.toString()
                 uploadFeedback("/users/${getCurrentUserUID()}/feedback/${System.currentTimeMillis()}",
                     FirebaseUtils.FirebaseFeedbackDataObject(feedback = feedback))
+                Toast.makeText(requireContext(), "Feedback sent!", Toast.LENGTH_SHORT).show()
             }
 
             builder.setNegativeButton("Cancel") { dialog, which ->
