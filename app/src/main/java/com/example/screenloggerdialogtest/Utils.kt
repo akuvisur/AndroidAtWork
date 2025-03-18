@@ -55,6 +55,8 @@ const val SPAI_2_SUBMITTED: String = "SPAI_2_SUBMITTED"
 const val SASSV_2_SUBMITTED: String = "SASSV_2_SUBMITTED"
 const val STUDY_COMPLETE_TIMESTAMP: String = "STUDY_COMPLETE_TIMESTAMP"
 
+const val STUDY_DIALOG_LASTSHOWN_TIMESTAMP: String = "STUDY_DIALOG_LASTSHOWN_TIMESTAMP"
+
 const val BEDTIME_GOAL_DEFAULT_VALUE: Int = 22
 
 fun showClearConfirmationDialog(context: Context?) {
@@ -330,6 +332,16 @@ class UnlockDialog {
             return // Exit the function if context is null
         }
 
+        val lastShown = getStudyVariable(c, STUDY_DIALOG_LASTSHOWN_TIMESTAMP, 0)
+        // Get the current time in milliseconds
+        val currentTime = System.currentTimeMillis()
+        // Define ten minutes in milliseconds
+        val tenMinutesInMillis = 10 * 60 * 1000
+        // Check if ten minutes have passed since the last shown time
+        if (currentTime - lastShown < tenMinutesInMillis) {
+            return // exit if less than ten minutes since last dialog
+        }
+
         dialogCreatedTimestamp = System.currentTimeMillis()
         localTestDialogVariable = testDialog
 
@@ -426,6 +438,7 @@ class UnlockDialog {
             }, 300000L) // 300000 ms = 5 minutes
         }
 
+        setStudyVariable(c, STUDY_DIALOG_LASTSHOWN_TIMESTAMP, System.currentTimeMillis())
         // Add the view to the window
         show(dialogView, wm, layoutParams, c)
     }

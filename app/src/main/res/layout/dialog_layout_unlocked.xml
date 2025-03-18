@@ -198,7 +198,7 @@
         android:padding="4dp"
         android:layout_marginLeft="8dp"
         android:textColor="@color/black"
-        android:text="Please select one option from each row, then click submit to continue phone use. Or Skip if you dont have time to answer now."
+        android:text="Please select one option from each row, then click submit to continue phone use. Or Skip if you dont have time to answer now. \n\nOr close your phone screen if you decide it is not important to use it right now."
         />
 
     <!-- Close button -->

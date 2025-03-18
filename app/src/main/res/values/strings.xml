@@ -42,8 +42,8 @@
     <string name="consent_agree">Do you consent to these terms?</string>
 
     <string name="consent_start">This consent form part of the process of informed consent. It should give you the basic idea of what the research is about and what your participation will involve. If you would like more detail about something mentioned here, or information not included here, please ask. Please take the time to read this form carefully and to understand any accompanying information.</string>
-    <string name="consent_purpose">This study investigates daily smartphone use, effectiveness of smartphone usage intervention methods, and the effect of smartphone usage on sleep quality.</string>
-    <string name="consent_datacollection">This study will last approximately 5-6 weeks with an optional extension. We will collect smartphone usage data from the screen sensor, logging times when smartphone screen is unlocked. You will be requested to answer questionnaires using this application. All collected data is stored anonymously using Google Firebase. You can access your own data from your smartphone. We will also request each participant to provide sleep quality data after the study period through the Fitbit API. </string>
+    <string name="consent_purpose">This study investigates daily smartphone use, effectiveness of smartphone usage intervention methods, and the impact of smartphone usage on sleep quality.</string>
+    <string name="consent_datacollection">This study will last approximately 6 weeks. We will collect smartphone usage data from the screen sensor, logging times when smartphone screen is unlocked. You will be requested to answer questionnaires using this application. All collected data is stored anonymously using Google Firebase. You can access your own data from your smartphone. We will also request each participant to provide sleep quality data after the study period through the Fitbit API. You will be provided with a Fitbit Versa 3 device for this study if you do not own one. This device is required to be returned after the study has concluded.</string>
     <string name="consent_contact_information">This research is conducted by University of Oulu. The responsible researcher is Dr. Aku Visuri (aku.visuri@oulu.fi)</string>
     <string name="consent_participation">In no way does this waive your legal rights nor release the investigators, sponsors, or involved institutions from their legal and professional responsibilities. You are free to not answer specific items or questions in interviews or on questionnaires. You are free to withdraw from the study at any time without penalty. Your continued participation should be as informed as your initial consent, so you should feel free to ask for clarification or new information throughout your participation. If you have further questions concerning matters related to this research, please contact the researcher. We retain the possibility to retract your participation in case of any technical difficulties emerge, and will inform you in case it happens.</string>
 
@@ -55,10 +55,10 @@
         You will see the following persistent notification in your notification tray to indicate that the monitoring service is running
     </string>
     <string name="information_study_phases1_2">
-        If you do not see this notification, it means the application has been automatically shut down. In this case, please restart this application manually from its launcher icon.
+        If you *do not* see this notification, it means the application has been automatically shut down. In this case, please restart this application manually from its launcher icon.
     </string>
     <string name="information_study_phases2">
-        Before the first intervention phase (INT1), you will be asked how much you wish to reduce your daily smartphone usage, and what is your typical bedtime. \n
+        Before the first intervention phase (INT1), you will be asked to fill a motivation survey, how much you wish to reduce your daily smartphone usage, and what is your typical bedtime. \n
         During INT1, you will receive notifications that inform you about your daily smartphone use, and will receive a popup screen after unlocking your phone if you 1) have exceeded your daily goal or 2) close to your bedtime.\n
         This popup prompts you to either ignore it, or cease using your smartphone. The goal of INT1 is to serve as an initial prompt for helping you reduce your smartphone use.\n
         INT1 lasts for 7 days.
@@ -66,8 +66,8 @@
     <string name="information_study_phases3">
         Before moving from INT1 to INT2, you will again be asked for verification.\n
         During INT2, you will no longer receive the popup after unlocking, but will still receive information about your smartphone usage. You will be expected to use this information to help you reduce your smartphone use, or keep it within your designated goal.\n
-        INT2 lasts two weeks, after which this study concludes.\n
-        After INT2 you will be asked to again fill the Smartphone Addiction Survey, and will be asked to answer a brief questionnaire about the study and the intervention mechanisms.\n
+        INT2 lasts three weeks, after which this study concludes.\n
+        After INT2 you will be asked to again fill two surveys, and will be asked to answer a brief exit questionnaire about the study and the intervention mechanisms.\n
         Finally, you will receive the Prolific study completion code, if you require one.
     </string>
 
