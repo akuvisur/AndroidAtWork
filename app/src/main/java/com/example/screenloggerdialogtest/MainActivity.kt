@@ -573,6 +573,7 @@ class MainActivity : FragmentActivity() {
                 }
 
                 stopService(requireContext(), INT2Service::class.java)
+                stopService(requireContext(), BaselineService::class.java)
                 checkAndStartService(INT1Service::class.java)
 
                 intervention1ProgressSlider = inflaterView.findViewById(R.id.intervention1ProgressSlider)
@@ -613,6 +614,7 @@ class MainActivity : FragmentActivity() {
                 }
 
                 stopService(requireContext(), INT1Service::class.java)
+                stopService(requireContext(), BaselineService::class.java)
                 checkAndStartService(INT2Service::class.java)
 
                 intervention2ProgressSlider = inflaterView.findViewById(R.id.intervention2ProgressSlider)
