@@ -11,8 +11,6 @@ import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.example.screenloggerdialogtest.FirebaseUtils.getCurrentUserUID
-import com.example.screenloggerdialogtest.FirebaseUtils.uploadFirebaseEntry
 
 
 /**
@@ -75,51 +73,26 @@ open class INT2Service : BaselineService() {
     var dailyUsageGoalDiff : Long = 0L
     var bedtimeGoal : Int = 0
 
+
     private val channelIdInt2 = "ScreenLoggerServiceChannelInt2"
     private val channelNameInt2 = "Int2ChannelName"
-
-    override fun onCreate() {
-        super.onCreate()
-
-        // Start as a foreground service (if necessary)
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
-
-        notificationManager.createNotificationChannel(channel)
-        val notification: Notification = Notification.Builder(this, channelId)
-            .setContentTitle("Smartphone Interventions")
-            .setContentText("Monitoring smartphone usage...")
-            .setSmallIcon(android.R.drawable.ic_popup_sync) // Set your app icon here
-            .setColorized(true)
-            .setColor(ContextCompat.getColor(this, R.color.deep_purple_300))
-            .build()
-
-        startForeground(1, notification)
-    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("SERVICE_LOGIC", "INT2 starting")
 
-        uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
-            FirebaseUtils.FirebaseDataLoggingObject(event = "INT2_SERVICE_STARTED"))
-
         dailyUsageGoal = getStudyVariable(this, INT_SMARTPHONE_USAGE_LIMIT_GOAL, 0L)
+        dailyUsage = getDailyUsage(this)
+
         bedtimeGoal = getStudyVariable(this, BEDTIME_GOAL, BEDTIME_GOAL_DEFAULT_VALUE)
         lastUsageTimestamp = getLastDailyUsageTime(this)
 
-        // no need to start service here if we are in INT1 phase (studyPhase == 1)
-        // we start the receiver already in INT1Service.kt
-        if (studyPhase != 1) {
-            INT2Receiver = INT2ScreenReceiver()
-            val filter = IntentFilter().apply {
-                //addAction(Intent.ACTION_SCREEN_ON)
-                addAction(Intent.ACTION_SCREEN_OFF)
-                addAction(Intent.ACTION_USER_PRESENT)
-            }
-            registerReceiver(INT2Receiver, filter)
+        INT2Receiver = INT2ScreenReceiver()
+        val filter = IntentFilter().apply {
+            //addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_USER_PRESENT)
         }
-
-        dailyUsage = getDailyUsage(this)
+        registerReceiver(INT2Receiver, filter)
 
         notificationManager = getSystemService(NotificationManager::class.java)
         notificationChannel = NotificationChannel(channelIdInt2, channelNameInt2, NotificationManager.IMPORTANCE_HIGH)
@@ -139,43 +112,29 @@ open class INT2Service : BaselineService() {
         return super.onStartCommand(intent, flags, startId)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
-            FirebaseUtils.FirebaseDataLoggingObject(event = "INT2_SERVICE_STOPPED"))
-        if (::INT2Receiver.isInitialized) {
-            unregisterReceiver(INT2Receiver)
-        }
-    }
-
     open inner class INT2ScreenReceiver : ScreenStateReceiver() {
         var now : Long = 0L
         override fun onReceive(p0: Context?, p1: Intent?) {
             // Additional functionality for Service B
             now = System.currentTimeMillis()
 
+            // these plus daily usage are reduntant when in INT1 but necesary when in INT2
+            val (ts, type) = getPreviousEvent(p0)
+            previousEventTimestamp = ts
+            previousEventType = type
+
             dailyUsageGoal = getStudyVariable(p0, INT_SMARTPHONE_USAGE_LIMIT_GOAL, 0L)
             dailyUsage = getDailyUsage(p0)
 
-            if (previousEventTimestamp < 1) {
-                val (ts, type) = getPreviousEvent(p0)
-                previousEventTimestamp = ts
-                previousEventType = type
-            }
-
             if (p1?.action == Intent.ACTION_SCREEN_OFF && (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY)) {
                 if (previousEventType == "ACTION_USER_PRESENT") {
-                    //
                     if (getCurrentDay() == getDayFromMillis(previousEventTimestamp)) {
-                        dailyUsage += (now - previousEventTimestamp)
+                        var duration = (now - previousEventTimestamp)
+                        if (duration > 3_600_000) duration = 180_000
+                        dailyUsage += duration
                     }
                     else {
-                        if (getCurrentDay() == getDayFromMillis(previousEventTimestamp)) {
-                            dailyUsage = (now - previousEventTimestamp)
-                        }
-                        else {
-                            dailyUsage = 0
-                        }
+                        dailyUsage = 0
                     }
 
                     lastUsageTimestamp = now
@@ -186,6 +145,10 @@ open class INT2Service : BaselineService() {
                 }
             }
             else if (p1?.action == Intent.ACTION_USER_PRESENT && (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY)) {
+                // reset daily usage if last entry from previous day
+                if (getCurrentDay() != getDayFromMillis(previousEventTimestamp)) {
+                    dailyUsage = 0
+                }
                 // show notification if above usage goal
                 if (calculateMinutesUntilBedtime(bedtimeGoal) <= 60 && !usageWithin45Seconds(p0, now)) {
                     if (p0 != null) {
@@ -248,9 +211,10 @@ open class INT2Service : BaselineService() {
                         dailyUsage = (now - previousEventTimestamp)
                     }
                     lastUsageTimestamp = now
-                    storeDailyUsage(dailyUsage, p0)
-                    storeLastDailyUsageTime(now, p0)
+                    //storeDailyUsage(dailyUsage, p0)
+                    //storeLastDailyUsageTime(now, p0)
                 }
+
             }
 
             // this has to occur last because it updates timestamps etc.

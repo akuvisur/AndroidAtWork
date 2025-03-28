@@ -9,7 +9,6 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import java.time.Instant
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 
@@ -54,7 +53,6 @@ object FirebaseUtils {
     }
 
     fun calculateUsagePerDay(
-        userId: String,
         data: Map<String, Any>
     ): Map<String, Long> {
 
@@ -66,7 +64,7 @@ object FirebaseUtils {
 
         for (eventEntry in screenEvents.values) {
             val event = eventEntry as Map<String, Any>
-            val duration = event["duration"] as Long
+            var duration = event["duration"] as Long
             val timestamp = event["timestamp_event_start"] as Long
             val eventType = event["type"] as String
             val eventTime = convertTimestampToLocalDateTime(timestamp)
@@ -78,6 +76,14 @@ object FirebaseUtils {
                     eventTime.toLocalDate().minusDays(1) // Consider it part of the previous day
                 } else {
                     eventTime.toLocalDate()
+                }
+
+                // Default duration to two minutes if it's longer than one hour
+                if (duration > 3_600_000) {
+                    duration = 180_000 // Three minutes in milliseconds
+                    // from Quantifying Sources and Types of Smartwatch Usage  Sessions
+                    // and Systematic Assessment of Usage Gaps ->
+                    // "mean usage duration is 2:46 minutes for new sessions and  3:11 minutes for continuous sessions
                 }
 
                 // Add the duration to the respective day
@@ -105,7 +111,7 @@ object FirebaseUtils {
 
                 val usage = try {
                     getCurrentUserUID()?.let { userId ->
-                        calculateUsagePerDay(userId, data).mapKeys { it.key.toString() }
+                        calculateUsagePerDay(data).mapKeys { it.key.toString() }
                     }
                 } catch (e: Exception) {
                     Log.e("FIREBASE", "Error during usage calculation: ${e.message}")
@@ -127,9 +133,9 @@ object FirebaseUtils {
     // IMPORTANT
     // timestamp is when the event started
     data class ScreenEvent(
-        val type: String,
-        val timestamp_event_start: Long = 0L,  // Timestamp in milliseconds (e.g., System.currentTimeMillis())
-        val duration: Long = 0L    // Duration in milliseconds (e.g., screen-on time)
+        var type: String,
+        var timestamp_event_start: Long = 0L,  // Timestamp in milliseconds (e.g., System.currentTimeMillis())
+        var duration: Long = 0L    // Duration in milliseconds (e.g., screen-on time)
     )
 
     fun uploadFirebaseEntry(path : String, data : FirebaseDataLoggingObject) {

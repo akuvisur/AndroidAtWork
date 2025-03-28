@@ -521,8 +521,6 @@ class MainActivity : FragmentActivity() {
 
                         stopService(requireContext(), BaselineService::class.java)
 
-
-
                         (requireActivity() as MainActivity).refreshUI()
                     }
                     // prompt user to do the missing thing!
@@ -762,7 +760,7 @@ class MainActivity : FragmentActivity() {
 
                     val entries = mutableListOf<BarEntry>()
                     val today = LocalDate.now()
-                    val startDate = today.minusDays(1)  // Yesterday
+                    val startDate = today  // Start today
                     val endDate = today.minusWeeks(2)    // Two weeks behind
                     val dates =
                         mutableListOf<Pair<LocalDate, Float>>()  // To store dates and corresponding usage in minutes

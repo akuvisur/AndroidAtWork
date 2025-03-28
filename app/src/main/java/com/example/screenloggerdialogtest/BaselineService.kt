@@ -78,21 +78,6 @@ open class BaselineService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-
-        // Start as a foreground service (if necessary)
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
-
-        notificationManager.createNotificationChannel(channel)
-        val notification: Notification = Notification.Builder(this, channelId)
-            .setContentTitle("Smartphone Interventions")
-            .setContentText("Monitoring smartphone usage...")
-            .setSmallIcon(android.R.drawable.ic_popup_sync) // Set your app icon here
-            .setColorized(true)
-            .setColor(ContextCompat.getColor(this, R.color.deep_purple_300))
-            .build()
-
-        startForeground(1, notification)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -115,16 +100,13 @@ open class BaselineService : Service() {
         uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
             FirebaseUtils.FirebaseDataLoggingObject(event = "BASELINE_SERVICE_STARTED"))
 
-        // Run this only in baseline mode == 0
-        if (studyPhase == 0) {
-            screenStateReceiver = ScreenStateReceiver()
-            val filter = IntentFilter().apply {
-                //addAction(Intent.ACTION_SCREEN_ON)
-                addAction(Intent.ACTION_SCREEN_OFF)
-                addAction(Intent.ACTION_USER_PRESENT)
-            }
-            registerReceiver(screenStateReceiver, filter)
+        screenStateReceiver = ScreenStateReceiver()
+        val filter = IntentFilter().apply {
+            //addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_USER_PRESENT)
         }
+        registerReceiver(screenStateReceiver, filter)
 
         heartbeat = HeartbeatBeater(this)
         heartbeat.startHeartbeat()
@@ -194,7 +176,6 @@ open class BaselineService : Service() {
                         FirebaseUtils.FirebaseDataLoggingObject(event = "ACTION_SCREEN_OFF"))
 
                     if (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY) uploadEvent(previousEventType, previousEventTimestamp, p0)
-                    previousEventTimestamp = now
                     updatePreviousEvent(now, "ACTION_SCREEN_OFF", p0)
                 }
 
@@ -205,7 +186,6 @@ open class BaselineService : Service() {
                         FirebaseUtils.FirebaseDataLoggingObject(event = "ACTION_USER_PRESENT"))
 
                     if (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY) uploadEvent(previousEventType, previousEventTimestamp, p0)
-                    previousEventTimestamp = now
                     updatePreviousEvent(now, "ACTION_USER_PRESENT", p0)
                 }
 
@@ -214,6 +194,8 @@ open class BaselineService : Service() {
 
         private fun uploadEvent(eventType : String, time : Long, c : Context?) {
             screenEvent = ScreenEvent(eventType, time, System.currentTimeMillis()-time)
+            // long events get defaulted to 3 minute duration
+            if (screenEvent.duration > 3_600_000) screenEvent.duration = 180_000
 
             FirebaseUtils.sendEntryToDatabase(
                 path = "users/${FirebaseUtils.getCurrentUserUID()}/screen/${time}", // Path in the database (e.g., "users/user_1")
@@ -226,6 +208,7 @@ open class BaselineService : Service() {
         }
 
         private fun updatePreviousEvent(time : Long, type : String, c : Context?) {
+            previousEventTimestamp = time
             previousEventType = type
             putPreviousEvent(time, type, c)
         }
@@ -270,7 +253,7 @@ open class BaselineService : Service() {
         }
 
         fun storeBeat() {
-
+            // this is not the day of the study phase, but total running study day
             val studyDay = calculateStudyPeriodDay(BASELINE_START_TIMESTAMP, c)
 
             val notification: Notification = Notification.Builder(c, HB_NOTIFICATION_ID)

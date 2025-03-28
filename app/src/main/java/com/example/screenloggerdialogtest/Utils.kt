@@ -193,7 +193,7 @@ fun calculateStudyPeriodDay(type: String, c: Context?): Int {
 
     // If the period start timestamp is null or not set, return -1
     if (periodStartTimestamp == null || periodStartTimestamp == 0L) {
-        return 0
+        return 1
     }
 
     // Calculate the elapsed days for the selected period
