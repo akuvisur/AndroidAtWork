@@ -85,6 +85,8 @@ object FirebaseUtils {
                     // and Systematic Assessment of Usage Gaps ->
                     // "mean usage duration is 2:46 minutes for new sessions and  3:11 minutes for continuous sessions
                 }
+                // the above is done in multiple places but some participants' databases might include a large duration
+                // thus its important to fix it here too
 
                 // Add the duration to the respective day
                 dailyUsage[adjustedDate.toString()] = dailyUsage.getOrDefault(adjustedDate.toString(), 0L) + duration

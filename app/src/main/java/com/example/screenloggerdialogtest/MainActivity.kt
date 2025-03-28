@@ -391,6 +391,14 @@ class MainActivity : FragmentActivity() {
 
                 baselineProgressSlider = inflaterView.findViewById(R.id.baselineProgressSlider)
                 baselineProgressSlider.value = min(baselineDay.toFloat(), BASELINE_DURATION.toFloat())
+
+                val dataVerificationLayout = inflater.inflate(R.layout.data_verification_layout, container, false)
+
+                // Find the parent layout in the baseline view where you want to add the data verification layout
+                val parentLayout = inflaterView.findViewById<LinearLayout>(R.id.baseline_ongoing_layout) // Replace with the actual ID of the parent layout
+
+                // Add the data verification layout to the parent layout
+                parentLayout.addView(dataVerificationLayout)
             }
 
             else if (studyState == STUDY_STATE_POST_BASELINE) {
