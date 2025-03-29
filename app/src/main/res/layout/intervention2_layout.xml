@@ -6,7 +6,8 @@
     android:orientation="vertical"
     android:gravity="center"
     android:padding="16dp"
-    android:background="@color/deep_purple_50">
+    android:background="@color/deep_purple_50"
+    android:id="@+id/intervention2_layout">
 
     <TextView
         android:id="@+id/currentPhaseText"

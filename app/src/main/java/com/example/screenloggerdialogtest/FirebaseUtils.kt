@@ -132,6 +132,39 @@ object FirebaseUtils {
 
     }
 
+    fun fetchVerificationStatusForPreviousDay(callback: (Boolean?) -> Unit) {
+        val previousDay = LocalDateTime.now().minusDays(1).toLocalDate().toString()
+        val database = FirebaseDatabase.getInstance()
+        val myRef = database.getReference("users/${getCurrentUserUID()}/data_verification/$previousDay")
+
+        myRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val status = snapshot.getValue(Boolean::class.java)
+                callback(status)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("FIREBASE", "Failed to read verification status: ${error.toException()}")
+                callback(null)
+            }
+        })
+    }
+
+    fun storeVerificationStatusForPreviousDay(status: Boolean) {
+        val previousDay = LocalDateTime.now().minusDays(1).toLocalDate().toString()
+        val database = FirebaseDatabase.getInstance()
+        val myRef = database.getReference("users/${getCurrentUserUID()}/data_verification/$previousDay")
+
+        myRef.setValue(status)
+            .addOnSuccessListener {
+                Log.d("FIREBASE", "Verification status stored successfully.")
+            }
+            .addOnFailureListener {
+                Log.e("FIREBASE", "Failed to store verification status: ${it.message}")
+            }
+    }
+
+
     // IMPORTANT
     // timestamp is when the event started
     data class ScreenEvent(

@@ -48,6 +48,7 @@ import com.github.mikephil.charting.formatter.ValueFormatter
 import com.google.android.material.slider.Slider
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import com.google.firebase.Firebase
 import java.net.URLEncoder
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -392,13 +393,15 @@ class MainActivity : FragmentActivity() {
                 baselineProgressSlider = inflaterView.findViewById(R.id.baselineProgressSlider)
                 baselineProgressSlider.value = min(baselineDay.toFloat(), BASELINE_DURATION.toFloat())
 
-                val dataVerificationLayout = inflater.inflate(R.layout.data_verification_layout, container, false)
-
-                // Find the parent layout in the baseline view where you want to add the data verification layout
-                val parentLayout = inflaterView.findViewById<LinearLayout>(R.id.baseline_ongoing_layout) // Replace with the actual ID of the parent layout
-
+                 // Replace with the actual ID of the parent layout
                 // Add the data verification layout to the parent layout
-                parentLayout.addView(dataVerificationLayout)
+                if (baselineDay > 0) setDataVerificationElement(
+                    inflater,
+                    container,
+                    inflaterView.findViewById<LinearLayout>(R.id.baseline_ongoing_layout),
+                    studyState,
+                    baselineDay // only relevant during baseline, use 2+ or something else on different calls
+                )
             }
 
             else if (studyState == STUDY_STATE_POST_BASELINE) {
@@ -585,6 +588,8 @@ class MainActivity : FragmentActivity() {
                 intervention1ProgressSlider = inflaterView.findViewById(R.id.intervention1ProgressSlider)
                 intervention1ProgressSlider.value = min(int1Day.toFloat(), INT1_DURATION.toFloat())
 
+                setDataVerificationElement(inflater, container, inflaterView.findViewById(R.id.intervention2_layout), studyState, 1000)
+
             }
 
             else if (studyState == STUDY_STATE_POST_INT1) {
@@ -627,6 +632,8 @@ class MainActivity : FragmentActivity() {
 
                 val safeInt2Day = if (int2Day < 1) 1 else int2Day
                 intervention2ProgressSlider.value = min(safeInt2Day.toFloat(), INT2_DURATION.toFloat())
+
+                setDataVerificationElement(inflater, container, inflaterView.findViewById(R.id.intervention2_layout), studyState, 1000)
 
             }
 
@@ -696,6 +703,80 @@ class MainActivity : FragmentActivity() {
             return inflaterView
         }
 
+        private fun setDataVerificationElement(inflater: LayoutInflater, container: ViewGroup?, parentLayout: LinearLayout?, studyState: Int, studyDay : Int) {
+
+            val dataVerificationLayout = inflater.inflate(R.layout.data_verification_layout, container, false)
+
+            val positiveButton = dataVerificationLayout.findViewById<Button>(R.id.dataVerificationPositiveButton)
+            val negativeButton = dataVerificationLayout.findViewById<Button>(R.id.dataVerificationNegativeButton)
+            val text = dataVerificationLayout.findViewById<TextView>(R.id.usageInfoText)
+
+            val (positiveColor, negativeColor, textColor) = when (studyState) {
+                2 -> Triple(R.color.teal_500, R.color.teal_700, R.color.teal_800)
+                4 -> Triple(R.color.blue_500, R.color.blue_700, R.color.blue_800)
+                6 -> Triple(R.color.deep_purple_500, R.color.deep_purple_700, R.color.deep_purple_800)
+                else -> Triple(R.color.blue_gray_500, R.color.blue_700, R.color.blue_800)
+            }
+
+            positiveButton.backgroundTintList = ContextCompat.getColorStateList(requireContext(), positiveColor)
+            negativeButton.backgroundTintList = ContextCompat.getColorStateList(requireContext(), negativeColor)
+            text.setTextColor(ContextCompat.getColor(requireContext(), textColor))
+
+            // Find the parent layout in the baseline view where you want to add the data verification layout
+            val parentLayout = inflaterView.findViewById<LinearLayout>(R.id.baseline_ongoing_layout)
+
+            FirebaseUtils.fetchUsageTotal(LocalDateTime.now()) { usage ->
+                val previousDayDate = LocalDateTime.now().minusDays(1).toLocalDate().toString()
+                val previousDayUsageMillis = usage[previousDayDate] ?: 0L
+                val hours = previousDayUsageMillis / (1000 * 60 * 60)
+                val minutes = (previousDayUsageMillis / (1000 * 60)) % 60
+                val usageFormatted = String.format("%dh %dmin", hours, minutes)
+                Log.d("verification", "Previous day's usage: $usageFormatted")
+                text.text = String.format(text.context.getString(R.string.usage_info_text), usageFormatted)
+
+                FirebaseUtils.fetchVerificationStatusForPreviousDay { isVerified ->
+                    if (isVerified == true) {
+                        Log.d("Verification", "yesterday IS verified")
+                        positiveButton.visibility = View.GONE
+                        negativeButton.visibility = View.GONE
+                        fadeOutAndRemoveButtons(positiveButton, negativeButton)
+                        removeVerificationPrompt(text)
+                    } else {
+                        // Set click listeners for both buttons
+                        Log.d("Verification", "yesterday not yet verified")
+                        positiveButton.setOnClickListener {
+                            FirebaseUtils.storeVerificationStatusForPreviousDay(true)
+                            removeVerificationPrompt(text)
+                            fadeOutAndRemoveButtons(positiveButton, negativeButton)
+                        }
+                        negativeButton.setOnClickListener {
+                            FirebaseUtils.storeVerificationStatusForPreviousDay(false)
+                            removeVerificationPrompt(text)
+                            fadeOutAndRemoveButtons(positiveButton, negativeButton)
+                        }
+                    }
+                }
+            }
+
+            // Add the data verification layout to the parent layout if studyDay > 0
+            if (studyDay > 0) parentLayout.addView(dataVerificationLayout)
+        }
+
+        private fun fadeOutAndRemoveButtons(vararg buttons: Button) {
+            buttons.forEach { button ->
+                button.animate()
+                    .alpha(0f)
+                    .setDuration(500) // Duration of the fade-out animation in milliseconds
+                    .withEndAction {
+                        button.visibility = View.GONE // Hide the button after the animation
+                        (button.parent as? ViewGroup)?.removeView(button) // Remove the button from the layout
+                    }
+            }
+        }
+        private fun removeVerificationPrompt(textView: TextView) {
+            textView.text = textView.text.toString().replace(", does this information seem correct?", "").trim()
+        }
+
         private fun checkAndStartService(serviceClass: Class<*>) {
             if (!isServiceRunning(requireContext(), serviceClass)) {
                 val intent = Intent(
@@ -709,7 +790,7 @@ class MainActivity : FragmentActivity() {
         private fun stopService(context: Context, serviceClass: Class<*>) {
             val intent = Intent(context, serviceClass)
             context.stopService(intent)
-            Log.d("ServiceManager", "${serviceClass.simpleName} stopped.")
+            Log.d("ServiceManager", "${serviceClass.simpleName} asked to be stopped (is not necessarily running).")
         }
 
         private fun checkEnableConsentButton(studyStateVars : Map<String, Number?>, notificationsAllowed : Boolean) {

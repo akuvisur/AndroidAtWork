@@ -332,7 +332,7 @@ class UnlockDialog {
             return // Exit the function if context is null
         }
 
-        val lastShown = getStudyVariable(c, STUDY_DIALOG_LASTSHOWN_TIMESTAMP, 0)
+        val lastShown = getStudyVariable(c, STUDY_DIALOG_LASTSHOWN_TIMESTAMP, 0L)
         // Get the current time in milliseconds
         val currentTime = System.currentTimeMillis()
         // Define ten minutes in milliseconds

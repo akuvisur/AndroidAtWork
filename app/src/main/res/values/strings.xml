@@ -71,6 +71,10 @@
         Finally, you will receive the Prolific study completion code, if you require one.
     </string>
 
+    # data verification
+    <string name="usage_info_text">You used your smartphone for %1$s yesterday, does this information seem correct?</string>
+
+
     # addiction scales info
     <string name="addiction_scales_text">
         Step 3: Please answer the following two questionnaires related to identifying and measuring smartphone addiction.

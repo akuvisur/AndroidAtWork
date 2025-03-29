@@ -69,16 +69,13 @@ const val MULTIPLE_SCREEN_EVENT_DELAY : Int = 1000
 open class BaselineService : Service() {
     private lateinit var screenStateReceiver: ScreenStateReceiver
     private lateinit var heartbeat: HeartbeatBeater
+    private var receiverRegistered : Boolean = false
 
     // 0 = baseline, 1=int1, 2=int2
     var studyPhase = 0;
 
     val channelId = "ScreenLoggerServiceChannel"
     val channelName = "BaselineService"
-
-    override fun onCreate() {
-        super.onCreate()
-    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("SERVICE_LOGIC", "Baseline starting")
@@ -106,7 +103,10 @@ open class BaselineService : Service() {
             addAction(Intent.ACTION_SCREEN_OFF)
             addAction(Intent.ACTION_USER_PRESENT)
         }
-        registerReceiver(screenStateReceiver, filter)
+        if (!receiverRegistered) {
+            registerReceiver(screenStateReceiver, filter)
+            receiverRegistered = true
+        }
 
         heartbeat = HeartbeatBeater(this)
         heartbeat.startHeartbeat()
@@ -176,6 +176,7 @@ open class BaselineService : Service() {
                         FirebaseUtils.FirebaseDataLoggingObject(event = "ACTION_SCREEN_OFF"))
 
                     if (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY) uploadEvent(previousEventType, previousEventTimestamp, p0)
+                    previousEventTimestamp = now
                     updatePreviousEvent(now, "ACTION_SCREEN_OFF", p0)
                 }
 
@@ -186,6 +187,7 @@ open class BaselineService : Service() {
                         FirebaseUtils.FirebaseDataLoggingObject(event = "ACTION_USER_PRESENT"))
 
                     if (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY) uploadEvent(previousEventType, previousEventTimestamp, p0)
+                    previousEventTimestamp = now
                     updatePreviousEvent(now, "ACTION_USER_PRESENT", p0)
                 }
 
@@ -194,8 +196,6 @@ open class BaselineService : Service() {
 
         private fun uploadEvent(eventType : String, time : Long, c : Context?) {
             screenEvent = ScreenEvent(eventType, time, System.currentTimeMillis()-time)
-            // long events get defaulted to 3 minute duration
-            if (screenEvent.duration > 3_600_000) screenEvent.duration = 180_000
 
             FirebaseUtils.sendEntryToDatabase(
                 path = "users/${FirebaseUtils.getCurrentUserUID()}/screen/${time}", // Path in the database (e.g., "users/user_1")
@@ -208,7 +208,6 @@ open class BaselineService : Service() {
         }
 
         private fun updatePreviousEvent(time : Long, type : String, c : Context?) {
-            previousEventTimestamp = time
             previousEventType = type
             putPreviousEvent(time, type, c)
         }
@@ -253,7 +252,7 @@ open class BaselineService : Service() {
         }
 
         fun storeBeat() {
-            // this is not the day of the study phase, but total running study day
+
             val studyDay = calculateStudyPeriodDay(BASELINE_START_TIMESTAMP, c)
 
             val notification: Notification = Notification.Builder(c, HB_NOTIFICATION_ID)
