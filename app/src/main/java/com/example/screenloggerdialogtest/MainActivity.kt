@@ -34,6 +34,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
+import com.example.screenloggerdialogtest.FirebaseUtils.deleteYesterdaysUsageEstimate
 import com.example.screenloggerdialogtest.FirebaseUtils.getCurrentUserUID
 import com.example.screenloggerdialogtest.FirebaseUtils.uploadFeedback
 import com.example.screenloggerdialogtest.FirebaseUtils.uploadFirebaseEntry
@@ -393,8 +394,6 @@ class MainActivity : FragmentActivity() {
                 baselineProgressSlider = inflaterView.findViewById(R.id.baselineProgressSlider)
                 baselineProgressSlider.value = min(baselineDay.toFloat(), BASELINE_DURATION.toFloat())
 
-                 // Replace with the actual ID of the parent layout
-                // Add the data verification layout to the parent layout
                 if (baselineDay > 0) setDataVerificationElement(
                     inflater,
                     container,
@@ -402,6 +401,7 @@ class MainActivity : FragmentActivity() {
                     studyState,
                     baselineDay // only relevant during baseline, use 2+ or something else on different calls
                 )
+
             }
 
             else if (studyState == STUDY_STATE_POST_BASELINE) {
@@ -588,7 +588,30 @@ class MainActivity : FragmentActivity() {
                 intervention1ProgressSlider = inflaterView.findViewById(R.id.intervention1ProgressSlider)
                 intervention1ProgressSlider.value = min(int1Day.toFloat(), INT1_DURATION.toFloat())
 
-                setDataVerificationElement(inflater, container, inflaterView.findViewById(R.id.intervention2_layout), studyState, 1000)
+                FirebaseUtils.fetchPreviousDayEstimate { estimateMinutes ->
+                    if (estimateMinutes == null) {
+                        // If the estimate does not exist, show the usage input element
+                        Log.d("estimate", "estimate does not exist for yesterday")
+                        setSmartphoneUsageInputElement(
+                            inflater,
+                            container,
+                            inflaterView.findViewById<LinearLayout>(R.id.intervention1_layout),
+                            studyState,
+                            1000 // only relevant during baseline, use 2+ or something else on different calls
+                        )
+
+                    } else {
+                        Log.d("estimate", "yesterdays estimate is " + estimateMinutes)
+                        // If the estimate exists, show the data verification element
+                        setDataVerificationElement(
+                            inflater,
+                            container,
+                            inflaterView.findViewById<LinearLayout>(R.id.intervention1_layout),
+                            studyState,
+                            1000 // only relevant during baseline, use 2+ or something else on different calls
+                        )
+                    }
+                }
 
             }
 
@@ -633,8 +656,30 @@ class MainActivity : FragmentActivity() {
                 val safeInt2Day = if (int2Day < 1) 1 else int2Day
                 intervention2ProgressSlider.value = min(safeInt2Day.toFloat(), INT2_DURATION.toFloat())
 
-                setDataVerificationElement(inflater, container, inflaterView.findViewById(R.id.intervention2_layout), studyState, 1000)
+                FirebaseUtils.fetchPreviousDayEstimate { estimateMinutes ->
+                    if (estimateMinutes == null) {
+                        // If the estimate does not exist, show the usage input element
+                        Log.d("estimate", "estimate does not exist for yesterday")
+                        setSmartphoneUsageInputElement(
+                            inflater,
+                            container,
+                            inflaterView.findViewById<LinearLayout>(R.id.intervention2_layout),
+                            studyState,
+                            1000 // only relevant during baseline, use 2+ or something else on different calls
+                        )
 
+                    } else {
+                        Log.d("estimate", "yesterdays estimate is " + estimateMinutes)
+                        // If the estimate exists, show the data verification element
+                        setDataVerificationElement(
+                            inflater,
+                            container,
+                            inflaterView.findViewById<LinearLayout>(R.id.intervention2_layout),
+                            studyState,
+                            1000 // only relevant during baseline, use 2+ or something else on different calls
+                        )
+                    }
+                }
             }
 
             else if (studyState == STUDY_STATE_POST_INT2_SURVEY_REQUIRED) {
@@ -703,7 +748,64 @@ class MainActivity : FragmentActivity() {
             return inflaterView
         }
 
-        private fun setDataVerificationElement(inflater: LayoutInflater, container: ViewGroup?, parentLayout: LinearLayout?, studyState: Int, studyDay : Int) {
+        private fun setSmartphoneUsageInputElement(inflater: LayoutInflater, container: ViewGroup?, parentLayout: LinearLayout, studyState: Int, studyDay: Int) {
+            val usageInputLayout = inflater.inflate(R.layout.data_estimation_layout, container, false)
+
+            val submitButton = usageInputLayout.findViewById<Button>(R.id.submitUsageButton)
+            val usageInputField = usageInputLayout.findViewById<EditText>(R.id.usageInputField)
+            val usageQuestionText = usageInputLayout.findViewById<TextView>(R.id.usageQuestionText)
+
+            val (buttonColor, textColor, editTextTintColor) = when (studyState) {
+                2 -> Triple(R.color.teal_500, R.color.teal_800, R.color.teal_500)
+                4 -> Triple(R.color.blue_500, R.color.blue_800, R.color.blue_500)
+                6 -> Triple(R.color.deep_purple_500, R.color.deep_purple_800, R.color.deep_purple_500)
+                else -> Triple(R.color.blue_gray_500, R.color.blue_800, R.color.blue_gray_500)
+            }
+
+            submitButton.backgroundTintList = ContextCompat.getColorStateList(requireContext(), buttonColor)
+            usageQuestionText.setTextColor(ContextCompat.getColor(requireContext(), textColor))
+            usageInputField.backgroundTintList = ContextCompat.getColorStateList(requireContext(), editTextTintColor)
+
+            // Set click listener for the submit button
+            submitButton.setOnClickListener {
+                val usageInput = usageInputField.text.toString()
+                if (usageInput.isNotEmpty()) {
+                    usageInputLayout.animate()
+                        .alpha(0f)
+                        .setDuration(500) // Duration of the fade-out animation in milliseconds
+                        .withEndAction {
+                            parentLayout.removeView(usageInputLayout)
+                            setDataVerificationElement(inflater, container, parentLayout, studyState, studyDay)
+                        }
+                        .start()
+                    val usageMinutes = usageInput.toIntOrNull()
+                    if (usageMinutes != null) {
+                        // Handle the input, e.g., store it in Firebase or update UI
+                        Log.d("UsageInput", "User input: $usageMinutes minutes")
+                        FirebaseUtils.storePreviousDayEstimate(usageMinutes)
+
+                    } else {
+                        Toast.makeText(requireContext(), "Please input a number in minutes", Toast.LENGTH_SHORT).show()
+                        Log.e("UsageInput", "Invalid input: not a number")
+                    }
+                } else {
+                    Log.e("UsageInput", "Input is empty")
+                    Toast.makeText(requireContext(), "Please input a number in minutes", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            // Add the usage input layout to the parent layout if studyDay > 0
+            if (studyDay > 0) {
+                parentLayout.addView(usageInputLayout)
+                usageInputLayout.alpha = 0f // Start with fully transparent
+                usageInputLayout.animate()
+                    .alpha(1f) // Fade in to fully opaque
+                    .setDuration(500) // Duration of the fade-in animation in milliseconds
+                    .start()
+            }
+        }
+
+        private fun setDataVerificationElement(inflater: LayoutInflater, container: ViewGroup?, parentLayout: LinearLayout, studyState: Int, studyDay : Int) {
 
             val dataVerificationLayout = inflater.inflate(R.layout.data_verification_layout, container, false)
 
@@ -722,26 +824,30 @@ class MainActivity : FragmentActivity() {
             negativeButton.backgroundTintList = ContextCompat.getColorStateList(requireContext(), negativeColor)
             text.setTextColor(ContextCompat.getColor(requireContext(), textColor))
 
-            // Find the parent layout in the baseline view where you want to add the data verification layout
-            val parentLayout = inflaterView.findViewById<LinearLayout>(R.id.baseline_ongoing_layout)
-
             FirebaseUtils.fetchUsageTotal(LocalDateTime.now()) { usage ->
                 val previousDayDate = LocalDateTime.now().minusDays(1).toLocalDate().toString()
                 val previousDayUsageMillis = usage[previousDayDate] ?: 0L
                 val hours = previousDayUsageMillis / (1000 * 60 * 60)
                 val minutes = (previousDayUsageMillis / (1000 * 60)) % 60
                 val usageFormatted = String.format("%dh %dmin", hours, minutes)
-                Log.d("verification", "Previous day's usage: $usageFormatted")
+                Log.d("Verification", "Previous day's usage: $usageFormatted")
                 text.text = String.format(text.context.getString(R.string.usage_info_text), usageFormatted)
 
                 FirebaseUtils.fetchVerificationStatusForPreviousDay { isVerified ->
                     if (isVerified == true) {
-                        Log.d("Verification", "yesterday IS verified")
+                        Log.d("Verification", "yesterday IS verified as true")
                         positiveButton.visibility = View.GONE
                         negativeButton.visibility = View.GONE
                         fadeOutAndRemoveButtons(positiveButton, negativeButton)
                         removeVerificationPrompt(text)
-                    } else {
+                    } else if (isVerified == false) {
+                        Log.d("Verification", "yesterday IS verified as false")
+                        positiveButton.visibility = View.GONE
+                        negativeButton.visibility = View.GONE
+                        removeVerificationPrompt(text)
+                        addDataWasErrorText(text)
+                    }
+                    else if (isVerified == null) {
                         // Set click listeners for both buttons
                         Log.d("Verification", "yesterday not yet verified")
                         positiveButton.setOnClickListener {
@@ -755,11 +861,19 @@ class MainActivity : FragmentActivity() {
                             fadeOutAndRemoveButtons(positiveButton, negativeButton)
                         }
                     }
+                    // Add the data verification layout to the parent layout if studyDay > 0
+                    if (studyDay > 0) {
+                        parentLayout.addView(dataVerificationLayout)
+                        dataVerificationLayout.alpha = 0f // Start with fully transparent
+                        dataVerificationLayout.animate()
+                            .alpha(1f) // Fade in to fully opaque
+                            .setDuration(500) // Duration of the fade-in animation in milliseconds
+                            .start()
+                    }
+
                 }
             }
 
-            // Add the data verification layout to the parent layout if studyDay > 0
-            if (studyDay > 0) parentLayout.addView(dataVerificationLayout)
         }
 
         private fun fadeOutAndRemoveButtons(vararg buttons: Button) {
@@ -774,7 +888,11 @@ class MainActivity : FragmentActivity() {
             }
         }
         private fun removeVerificationPrompt(textView: TextView) {
-            textView.text = textView.text.toString().replace(", does this information seem correct?", "").trim()
+            textView.text = textView.text.toString().replace(", does this information seem correct?", ".").trim()
+        }
+
+        private fun addDataWasErrorText(textView: TextView) {
+            textView.text = textView.text.toString() + ". Yesterday was flagged to contain incorrect information."
         }
 
         private fun checkAndStartService(serviceClass: Class<*>) {

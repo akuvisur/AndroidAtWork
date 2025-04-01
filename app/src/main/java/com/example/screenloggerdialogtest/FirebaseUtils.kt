@@ -11,6 +11,8 @@ import com.google.firebase.database.ValueEventListener
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
+import kotlin.math.log
+import kotlin.random.Random
 
 object FirebaseUtils {
 
@@ -52,12 +54,16 @@ object FirebaseUtils {
         return auth.currentUser?.uid
     }
 
-    fun calculateUsagePerDay(
-        data: Map<String, Any>
-    ): Map<String, Long> {
+    data class DailyUsageResult(
+        val dailyUsage: Map<String, Long>,
+        val errorCounts: Map<String, Int>
+    )
 
+    fun calculateUsagePerDay(data: Map<String, Any>): DailyUsageResult {
         val dailyUsage = mutableMapOf<String, Long>()
-        if (data == null) return dailyUsage
+        val errorCounts = mutableMapOf<String, Int>()
+
+        if (data.isEmpty()) return DailyUsageResult(dailyUsage, errorCounts)
 
         // Loop through all events and calculate total usage per day
         val screenEvents = data["screen"] as Map<String, Map<String, Any>>
@@ -78,22 +84,21 @@ object FirebaseUtils {
                     eventTime.toLocalDate()
                 }
 
+                val dateKey = adjustedDate.toString()
+
                 // Default duration to two minutes if it's longer than one hour
                 if (duration > 3_600_000) {
                     duration = 180_000 // Three minutes in milliseconds
-                    // from Quantifying Sources and Types of Smartwatch Usage  Sessions
-                    // and Systematic Assessment of Usage Gaps ->
-                    // "mean usage duration is 2:46 minutes for new sessions and  3:11 minutes for continuous sessions
+                    // Increment the error count for this day
+                    errorCounts[dateKey] = errorCounts.getOrDefault(dateKey, 0) + 1
                 }
-                // the above is done in multiple places but some participants' databases might include a large duration
-                // thus its important to fix it here too
 
                 // Add the duration to the respective day
-                dailyUsage[adjustedDate.toString()] = dailyUsage.getOrDefault(adjustedDate.toString(), 0L) + duration
+                dailyUsage[dateKey] = dailyUsage.getOrDefault(dateKey, 0L) + duration
             }
         }
 
-        return dailyUsage
+        return DailyUsageResult(dailyUsage, errorCounts)
     }
 
     fun convertTimestampToLocalDateTime(timestamp: Long): LocalDateTime {
@@ -111,26 +116,37 @@ object FirebaseUtils {
                     return  // Stop further execution
                 }
 
-                val usage = try {
+                val usageResult = try {
                     getCurrentUserUID()?.let { userId ->
-                        calculateUsagePerDay(data).mapKeys { it.key.toString() }
+                        calculateUsagePerDay(data)
                     }
                 } catch (e: Exception) {
                     Log.e("FIREBASE", "Error during usage calculation: ${e.message}")
                     null
                 }
 
-                usage?.let {
-                    callback(it)
+                Log.d("UsageResult", usageResult.toString())
+
+                usageResult?.let { result ->
+                    // Fetch all verification statuses
+                    fetchAllVerificationStatuses { verificationStatuses ->
+                        // Filter out usage for days where verification status is false
+                        val filteredUsage = result.dailyUsage.filter { (date, _) ->
+                            verificationStatuses[date] != false
+                        }
+
+                        Log.d("UsageResultFiltered", filteredUsage.toString())
+                        callback(filteredUsage)
+                    }
                 } ?: Log.e("FIREBASE", "Failed to calculate usage.")
             }
 
             override fun onCancelled(error: DatabaseError) {
-                println("Failed to read value: ${error.toException()}")
+                Log.e("FIREBASE", "Failed to read value: ${error.toException()}")
             }
         })
-
     }
+
 
     fun fetchVerificationStatusForPreviousDay(callback: (Boolean?) -> Unit) {
         val previousDay = LocalDateTime.now().minusDays(1).toLocalDate().toString()
@@ -150,6 +166,37 @@ object FirebaseUtils {
         })
     }
 
+    fun fetchAllVerificationStatuses(callback: (HashMap<String, Boolean>) -> Unit) {
+        val database = FirebaseDatabase.getInstance()
+        val myRef = database.getReference("users/${getCurrentUserUID()}/data_verification")
+
+        myRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val verificationStatuses = HashMap<String, Boolean>()
+
+                // Iterate over each child in the snapshot
+                for (childSnapshot in snapshot.children) {
+                    val date = childSnapshot.key ?: continue
+                    val status = childSnapshot.getValue(Boolean::class.java)
+
+                    // Only add to the map if the status is not null
+                    status?.let {
+                        verificationStatuses[date] = it
+                    }
+                }
+
+                Log.d("verification", "all verification statuses: " + verificationStatuses.toString())
+                callback(verificationStatuses)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("FIREBASE", "Failed to read verification statuses: ${error.toException()}")
+                callback(HashMap())
+            }
+        })
+    }
+
+
     fun storeVerificationStatusForPreviousDay(status: Boolean) {
         val previousDay = LocalDateTime.now().minusDays(1).toLocalDate().toString()
         val database = FirebaseDatabase.getInstance()
@@ -161,6 +208,103 @@ object FirebaseUtils {
             }
             .addOnFailureListener {
                 Log.e("FIREBASE", "Failed to store verification status: ${it.message}")
+            }
+    }
+
+    // testing functions
+    fun randomizeAllVerificationStatuses() {
+        val database = FirebaseDatabase.getInstance()
+        val myRef = database.getReference("users/${getCurrentUserUID()}/data_verification")
+
+        myRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val verificationStatuses = HashMap<String, Boolean>()
+
+                // Iterate over each child in the snapshot
+                for (childSnapshot in snapshot.children) {
+                    val date = childSnapshot.key ?: continue
+                    val randomStatus = Random.nextBoolean()
+                    verificationStatuses[date] = randomStatus
+                }
+
+                // Update the database with randomized statuses
+                for ((date, status) in verificationStatuses) {
+                    myRef.child(date).setValue(status)
+                        .addOnSuccessListener {
+                            Log.d("FIREBASE", "Randomized verification status for $date to $status")
+                        }
+                        .addOnFailureListener {
+                            Log.e("FIREBASE", "Failed to update verification status for $date: ${it.message}")
+                        }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("FIREBASE", "Failed to read verification statuses: ${error.toException()}")
+            }
+        })
+    }
+
+
+    fun deleteYesterdaysVerificationStatus() {
+        val previousDay = LocalDateTime.now().minusDays(1).toLocalDate().toString()
+        val database = FirebaseDatabase.getInstance()
+        val myRef = database.getReference("users/${getCurrentUserUID()}/data_verification/$previousDay")
+
+        myRef.removeValue()
+            .addOnSuccessListener {
+                Log.d("FIREBASE", "Yesterday's verification status deleted successfully.")
+            }
+            .addOnFailureListener {
+                Log.e("FIREBASE", "Failed to delete yesterday's verification status: ${it.message}")
+            }
+    }
+
+
+
+    fun storePreviousDayEstimate(estimateMinutes: Int) {
+        val previousDay = LocalDateTime.now().minusDays(1).toLocalDate().toString()
+        val database = FirebaseDatabase.getInstance()
+        val myRef = database.getReference("users/${getCurrentUserUID()}/usage_estimates/$previousDay")
+
+        myRef.setValue(estimateMinutes)
+            .addOnSuccessListener {
+                Log.d("FIREBASE", "Usage estimate stored successfully.")
+            }
+            .addOnFailureListener {
+                Log.e("FIREBASE", "Failed to store usage estimate: ${it.message}")
+            }
+    }
+
+    fun fetchPreviousDayEstimate(callback: (Int?) -> Unit) {
+        val previousDay = LocalDateTime.now().minusDays(1).toLocalDate().toString()
+        val database = FirebaseDatabase.getInstance()
+        val myRef = database.getReference("users/${getCurrentUserUID()}/usage_estimates/$previousDay")
+
+        myRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val estimateMinutes = snapshot.getValue(Int::class.java)
+                callback(estimateMinutes)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("FIREBASE", "Failed to read usage estimate: ${error.toException()}")
+                callback(null)
+            }
+        })
+    }
+
+    fun deleteYesterdaysUsageEstimate() {
+        val previousDay = LocalDateTime.now().minusDays(1).toLocalDate().toString()
+        val database = FirebaseDatabase.getInstance()
+        val myRef = database.getReference("users/${getCurrentUserUID()}/usage_estimates/$previousDay")
+
+        myRef.removeValue()
+            .addOnSuccessListener {
+                Log.d("FIREBASE", "Yesterday's usage estimate deleted successfully.")
+            }
+            .addOnFailureListener {
+                Log.e("FIREBASE", "Failed to delete yesterday's usage estimate: ${it.message}")
             }
     }
 

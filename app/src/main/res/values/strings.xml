@@ -51,7 +51,7 @@
     # onboarding information
     <string name="information_study_phases">This study consists of three phases. Before starting each phase, you will receive a notification and need to interact with this application to start that study phase.</string>
     <string name="information_study_phases1_1">
-        The baseline phase lasts for 14 days, during which this application monitors your smartphone use through screen events; it tracks when the screen of your smartphone is ON, OFF, or in the UNLOCKED state. \n
+        The baseline phase lasts for 14 days, during which this application monitors your smartphone use through screen events; it tracks when the screen of your smartphone is ON, OFF, or in the UNLOCKED state. During baseline you will be shown how much you used your phone according to collected data, and asked to verify the data each morning.\n
         You will see the following persistent notification in your notification tray to indicate that the monitoring service is running
     </string>
     <string name="information_study_phases1_2">
@@ -61,6 +61,7 @@
         Before the first intervention phase (INT1), you will be asked to fill a motivation survey, how much you wish to reduce your daily smartphone usage, and what is your typical bedtime. \n
         During INT1, you will receive notifications that inform you about your daily smartphone use, and will receive a popup screen after unlocking your phone if you 1) have exceeded your daily goal or 2) close to your bedtime.\n
         This popup prompts you to either ignore it, or cease using your smartphone. The goal of INT1 is to serve as an initial prompt for helping you reduce your smartphone use.\n
+        In addition to showing much you have used your smartphone, you are also asked to first give an estimate on each day.\n
         INT1 lasts for 7 days.
     </string>
     <string name="information_study_phases3">
@@ -97,6 +98,8 @@
 
     # Link for exit survey
     <string name="exit_survey_forms_link"><![CDATA[https://docs.google.com/forms/d/e/1FAIpQLSftjU6w5QAfj3g7y3Tu_A0gr3Ftx-ABy04DvnDeEtUZIY039A/viewform?usp=pp_url&entry.376538456=]]></string>
+    <string name="usage_question_text">Please estimate how much (in minutes) you used your smartphone yesterday.</string>
+    <string name="start_baseline_text">During this study, please start the application each morning and answer a question about your previous days smartphone use. This also ensures the application is always running throughout the day.</string>
 
 
 </resources>

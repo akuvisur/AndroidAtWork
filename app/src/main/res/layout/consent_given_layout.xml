@@ -175,6 +175,24 @@
 
     </LinearLayout>
 
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="4dp"
+        android:background="@drawable/linear_layout_background"
+        android:layout_margin="0dp"
+        android:padding="4dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/blue_gray_800"
+            android:text="@string/start_baseline_text"
+            android:textSize="16sp"
+            />
+    </LinearLayout>
     <!-- Start Baseline Button at the Bottom -->
     <Button
         android:id="@+id/startBaselineButton"
