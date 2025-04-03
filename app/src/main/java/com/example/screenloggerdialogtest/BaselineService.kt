@@ -71,8 +71,7 @@ open class BaselineService : Service() {
     private lateinit var heartbeat: HeartbeatBeater
     private var receiverRegistered : Boolean = false
 
-    // 0 = baseline, 1=int1, 2=int2
-    var studyPhase = 0;
+    private lateinit var notificationManager : NotificationManager
 
     val channelId = "ScreenLoggerServiceChannel"
     val channelName = "BaselineService"
@@ -80,16 +79,16 @@ open class BaselineService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("SERVICE_LOGIC", "Baseline starting")
         // Start as a foreground service (if necessary)
-        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager = getSystemService(NotificationManager::class.java)
         val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
 
         notificationManager.createNotificationChannel(channel)
         val notification: Notification = Notification.Builder(this, channelId)
             .setContentTitle("Smartphone Interventions")
-            .setContentText("Monitoring smartphone usage...")
+            .setContentText("Baseline monitoring")
             .setSmallIcon(android.R.drawable.ic_popup_sync) // Set your app icon here
             .setColorized(true)
-            .setColor(ContextCompat.getColor(this, R.color.deep_purple_300))
+            .setColor(ContextCompat.getColor(this, R.color.teal_500))
             .build()
 
         startForeground(1, notification)
@@ -127,14 +126,20 @@ open class BaselineService : Service() {
             unregisterReceiver(screenStateReceiver)
         }
         if (::heartbeat.isInitialized) heartbeat.stopHeartbeat()
+
+        notificationManager.cancel(1)
     }
 
     open inner class ScreenStateReceiver : BroadcastReceiver() {
+
         lateinit var screenEvent : ScreenEvent
         var previousEventTimestamp : Long = 0L
         lateinit var previousEventType : String
+        private var lastScreenEvent : Long = 0L
 
         override fun onReceive(p0: Context?, p1: Intent?) {
+            lastScreenEvent = System.currentTimeMillis()
+
             val (ts, type) = getPreviousEvent(p0)
             previousEventTimestamp = ts
             previousEventType = type
@@ -157,27 +162,23 @@ open class BaselineService : Service() {
                 - this should be fixed by only using the variables from sharedPreferences with getPreviousEvent()
             */
             when (p1?.action) {
-                // if the phone is unlocked with thumb id the order is sometimes Off -> Present -> On
-                // so lets just ignore all screen on events, since you cant go from present -> on
-                /*
-                Intent.ACTION_SCREEN_ON -> {
-                    // Screen turned on
-                    Log.d("ScreenStateReceiver", "Screen ON")
-                    if (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY) uploadEvent(previousEventType, previousEventTimestamp, p0)
-                    previousEventTimestamp = now
-                    updatePreviousEvent(now, "ACTION_SCREEN_ON", p0)
-                }
-                */
-
                 Intent.ACTION_SCREEN_OFF -> {
+                    if (previousEventType == "ACTION_USER_PRESENT") {
+                        var diff = System.currentTimeMillis() - previousEventTimestamp
+                        if (diff > 3_600_000) diff = 0
+                        val du = getDailyUsage(p0, "BaseLineService onReceive()")
+
+                        storeDailyUsage(du+diff, p0)
+                        Log.d("BASELINE", "Daily usage: $du diff/duration: $diff")
+                    }
                     // Screen turned off
                     Log.d("ScreenStateReceiver", "Screen OFF")
                     uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/screen_events/${System.currentTimeMillis()}",
                         FirebaseUtils.FirebaseDataLoggingObject(event = "ACTION_SCREEN_OFF"))
 
                     if (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY) uploadEvent(previousEventType, previousEventTimestamp, p0)
-                    previousEventTimestamp = now
                     updatePreviousEvent(now, "ACTION_SCREEN_OFF", p0)
+
                 }
 
                 Intent.ACTION_USER_PRESENT -> {
@@ -187,7 +188,6 @@ open class BaselineService : Service() {
                         FirebaseUtils.FirebaseDataLoggingObject(event = "ACTION_USER_PRESENT"))
 
                     if (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY) uploadEvent(previousEventType, previousEventTimestamp, p0)
-                    previousEventTimestamp = now
                     updatePreviousEvent(now, "ACTION_USER_PRESENT", p0)
                 }
 
@@ -209,6 +209,7 @@ open class BaselineService : Service() {
 
         private fun updatePreviousEvent(time : Long, type : String, c : Context?) {
             previousEventType = type
+            previousEventTimestamp = time
             putPreviousEvent(time, type, c)
         }
     }

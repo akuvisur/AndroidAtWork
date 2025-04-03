@@ -20,9 +20,12 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import org.json.JSONObject
+import java.text.SimpleDateFormat
 import java.time.LocalTime
 import java.util.Calendar
-
+import java.util.Date
+import java.util.Locale
 
 const val BASELINE_DURATION = 14
 const val INT1_DURATION = 7
@@ -527,9 +530,14 @@ class UnlockDialog {
 Screen event tracking
 
  */
-private fun getScreenSharedPreferences(c: Context?): SharedPreferences? {
-    return c?.applicationContext?.getSharedPreferences(SCREEN_EVENTS_SHAREDPREFS, Context.MODE_PRIVATE)
+fun getScreenSharedPreferences(c: Context?): SharedPreferences? {
+    return c?.getSharedPreferences("screen_prefs", Context.MODE_PRIVATE)
 }
+
+fun getDailyUsageSharedPreferences(c: Context?): SharedPreferences? {
+    return c?.getSharedPreferences("daily_usage_prefs", Context.MODE_PRIVATE)
+}
+
 
 private const val PREVIOUS_SCREEN_EVENT_TS = "PREVIOUS_SCREEN_EVENT_TS" //when
 private const val PREVIOUS_SCREEN_EVENT_TYPE = "PREVIOUS_SCREEN_EVENT_TYPE" //what
@@ -551,82 +559,54 @@ fun getPreviousEvent(c: Context?): Pair<Long, String> {
     return Pair(previousTime, previousType)
 }
 
-
-private const val DAILY_USAGE = "DAILY_USAGE"
-private const val LAST_LOGGED_DAY = "LAST_LOGGED_DAY"
-
-fun resetDailyUsage(c: Context?) {
-    val sharedPreferences = getScreenSharedPreferences(c)
-    val editor = sharedPreferences?.edit()
-    editor?.putLong(DAILY_USAGE, 0L)
-    val currentDay = getCurrentDay()
-    editor?.putInt(LAST_LOGGED_DAY, currentDay)
-    editor?.apply()
-}
-
 fun storeDailyUsage(duration: Long, c: Context?) {
-    val sharedPreferences = getScreenSharedPreferences(c)
+    val sharedPreferences = getDailyUsageSharedPreferences(c)
     val editor = sharedPreferences?.edit()
 
-    val currentDay = getCurrentDay()
-    val lastLoggedDay = sharedPreferences?.getInt(LAST_LOGGED_DAY, currentDay)
+    val today = getTodayAsString() // Get today's date as the key
 
-    // If it's a new day, reset usage
-    if (currentDay != lastLoggedDay) {
-        editor?.putLong(DAILY_USAGE, 0L) // Reset usage
-    }
+    // Store the usage with the date as the key
+    Log.d("storeDailyUsage()", "Storing: $duration for $today")
+    editor?.putLong(today, duration)
+    editor?.apply()
+    Log.d("storeDailyUsage()", "Stored: ${sharedPreferences?.getLong(today, -99L)} for $today")
+}
 
-    editor?.putLong(DAILY_USAGE, duration)
-    editor?.putInt(LAST_LOGGED_DAY, currentDay)
+fun getDailyUsage(c: Context?, call_from : String): Long {
+    val sharedPreferences = getDailyUsageSharedPreferences(c)
+
+    val dur = sharedPreferences?.getLong(getTodayAsString(), -1L) ?: 0L
+    val key = getTodayAsString()
+    // Retrieve the usage value for today, defaulting to 0 if not found
+    Log.d("getDailyUsage()", "today: $key value: $dur call_from: $call_from hash: ${c.hashCode()}")
+
+    return dur
+}
+
+fun clearTodayUsage(c: Context?) {
+    val sharedPreferences = getDailyUsageSharedPreferences(c)
+    val editor = sharedPreferences?.edit()
+
+    val today = getCurrentDateString()
+
+    // Remove today's entry by using the date as the key
+    editor?.remove(today)
     editor?.apply()
 }
 
-fun getDailyUsage(c: Context?): Long {
-    val sharedPreferences = getScreenSharedPreferences(c)
-
-    val currentDay = getCurrentDay()
-    val lastLoggedDay = sharedPreferences?.getInt(LAST_LOGGED_DAY, currentDay)
-
-    // If it's a new day, return 0 instead of old data
-    if (currentDay != lastLoggedDay) {
-        return 0L
-    }
-
-    return sharedPreferences.getLong(DAILY_USAGE, 0L) ?: 0L
+fun getTodayAsInt(): Int {
+    val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+    return dateFormat.format(Date()).toInt()
 }
 
-// Determines the "day" based on 4 AM cutoff
-fun getCurrentDay(): Int {
-    val calendar = Calendar.getInstance()
-    val hour = calendar.get(Calendar.HOUR_OF_DAY)
-
-    if (hour < 4) {
-        calendar.add(Calendar.DATE, -1) // Before 4 AM? Count as the previous day
-    }
-
-    return calendar.get(Calendar.DAY_OF_YEAR) // Unique day identifier
-}
-
-fun getDayFromMillis(ts : Long): Int {
-    val calendar = Calendar.getInstance().apply { timeInMillis = ts }
-    val hour = calendar.get(Calendar.HOUR_OF_DAY)
-    if (hour < 4) {
-        calendar.add(Calendar.DATE, -1) // Before 4 AM? Count as the previous day
-    }
-    return calendar.get(Calendar.DAY_OF_YEAR)
+fun getTodayAsString(): String {
+    return getTodayAsInt().toString()
 }
 
 
-private const val LAST_USAGE_SESSION_TS = "LAST_USAGE_SESSION_TS"
-fun storeLastDailyUsageTime(time : Long, c: Context?) {
-    val sharedPreferences = getScreenSharedPreferences(c)
-    sharedPreferences?.edit()?.putLong(LAST_USAGE_SESSION_TS, time)?.apply()
-}
-
-fun getLastDailyUsageTime(c : Context?) : Long {
-    val sharedPreferences = getScreenSharedPreferences(c)
-    val previousUsage = sharedPreferences?.getLong(LAST_USAGE_SESSION_TS, 0L)
-    return(previousUsage!!)
+fun getCurrentDateString(): String {
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    return dateFormat.format(Date())
 }
 
 /*
@@ -639,6 +619,20 @@ fun formatMinutesToTime(minutes: Int): String {
     val minutes = minutes % 60
     return String.format("%02d:%02d", hours, minutes)
 }
+
+@SuppressLint("DefaultLocale")
+fun formatTimestampToReadableTime(timestamp: Long): String {
+    val calendar = Calendar.getInstance().apply { timeInMillis = timestamp }
+    return String.format(
+        "%02d-%02d %02d:%02d:%02d",
+        calendar.get(Calendar.DAY_OF_MONTH),
+        calendar.get(Calendar.MONTH) + 1, // Months are 0-based
+        calendar.get(Calendar.HOUR_OF_DAY),
+        calendar.get(Calendar.MINUTE),
+        calendar.get(Calendar.SECOND)
+    )
+}
+
 
 fun calculateMinutesUntilBedtime(bedtimeInMinutes: Int): Int {
     val now = LocalTime.now()
@@ -669,4 +663,26 @@ fun parseBedtimeToMinutes(input : String): Int {
 fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
     val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
     return manager.getRunningServices(Int.MAX_VALUE).any { it.service.className == serviceClass.name }
+}
+
+fun checkServicesRunning(context: Context) {
+    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val runningServices = activityManager.getRunningServices(Int.MAX_VALUE)
+
+    val serviceClasses = listOf(
+        BaselineService::class.java,
+        INT1Service::class.java,
+        INT2Service::class.java
+    )
+
+    for (serviceClass in serviceClasses) {
+        var isServiceRunning = false
+        for (service in runningServices) {
+            if (service.service.className == serviceClass.name) {
+                isServiceRunning = true
+                break
+            }
+        }
+        Log.d("ServiceStatus", "${serviceClass.simpleName} is running: $isServiceRunning")
+    }
 }

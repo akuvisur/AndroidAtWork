@@ -9,6 +9,8 @@ import android.graphics.Paint
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
@@ -257,6 +259,8 @@ class MainActivity : FragmentActivity() {
 
             uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
                 FirebaseUtils.FirebaseDataLoggingObject(event = "MAIN_ACTIVITY_CREATED"))
+
+            checkServicesRunning(requireContext())
 
             val studyStateVars = getStudyStateVariables(requireContext())
 
@@ -581,9 +585,9 @@ class MainActivity : FragmentActivity() {
                     (requireActivity() as MainActivity).refreshUI()
                 }
 
-                stopService(requireContext(), INT2Service::class.java)
-                stopService(requireContext(), BaselineService::class.java)
+                checkAndStartService(BaselineService::class.java)
                 checkAndStartService(INT1Service::class.java)
+                checkAndStartService(INT2Service::class.java)
 
                 intervention1ProgressSlider = inflaterView.findViewById(R.id.intervention1ProgressSlider)
                 intervention1ProgressSlider.value = min(int1Day.toFloat(), INT1_DURATION.toFloat())
@@ -647,8 +651,8 @@ class MainActivity : FragmentActivity() {
                     (requireActivity() as MainActivity).refreshUI()
                 }
 
+                checkAndStartService(BaselineService::class.java)
                 stopService(requireContext(), INT1Service::class.java)
-                stopService(requireContext(), BaselineService::class.java)
                 checkAndStartService(INT2Service::class.java)
 
                 intervention2ProgressSlider = inflaterView.findViewById(R.id.intervention2ProgressSlider)
@@ -749,6 +753,12 @@ class MainActivity : FragmentActivity() {
         }
 
         private fun setSmartphoneUsageInputElement(inflater: LayoutInflater, container: ViewGroup?, parentLayout: LinearLayout, studyState: Int, studyDay: Int) {
+            if (isAdded && context != null) {
+                clearTodayUsage(requireContext()) // Safe to use requireContext()
+            } else {
+                Log.w("Fragment", "Fragment not attached yet, skipping clearTodayUsage")
+            }
+
             val usageInputLayout = inflater.inflate(R.layout.data_estimation_layout, container, false)
 
             val submitButton = usageInputLayout.findViewById<Button>(R.id.submitUsageButton)
@@ -806,7 +816,11 @@ class MainActivity : FragmentActivity() {
         }
 
         private fun setDataVerificationElement(inflater: LayoutInflater, container: ViewGroup?, parentLayout: LinearLayout, studyState: Int, studyDay : Int) {
-
+            if (isAdded && context != null) {
+                clearTodayUsage(requireContext()) // Safe to use requireContext()
+            } else {
+                Log.w("Fragment", "Fragment not attached yet, skipping clearTodayUsage")
+            }
             val dataVerificationLayout = inflater.inflate(R.layout.data_verification_layout, container, false)
 
             val positiveButton = dataVerificationLayout.findViewById<Button>(R.id.dataVerificationPositiveButton)
@@ -1299,7 +1313,7 @@ class MainActivity : FragmentActivity() {
             }
 
             clearDailyUsageButton.setOnClickListener {
-                resetDailyUsage(requireContext())
+                clearTodayUsage(requireContext())
             }
 
             // Set settings content to hidden unless passkey is entered

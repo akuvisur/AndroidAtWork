@@ -3,16 +3,22 @@ package com.example.screenloggerdialogtest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.BitmapFactory
+import android.icu.util.Calendar
 import android.media.AudioAttributes
 import android.media.RingtoneManager
+import android.os.IBinder
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.example.screenloggerdialogtest.FirebaseUtils.ScreenEvent
 import com.example.screenloggerdialogtest.FirebaseUtils.getCurrentUserUID
 import com.example.screenloggerdialogtest.FirebaseUtils.uploadFirebaseEntry
+import java.util.Date
 
 
 /**
@@ -60,69 +66,68 @@ import com.example.screenloggerdialogtest.FirebaseUtils.uploadFirebaseEntry
  * enabling tailored interventions for each study phase.
  */
 
-open class INT2Service : BaselineService() {
-
-    lateinit var notificationManager : NotificationManager
-    private lateinit var notificationChannel : NotificationChannel
+open class INT2Service : Service() {
 
     private val usageNotificationId = 876
     private val bedtimeNotificationId = 654
 
-    private lateinit var INT2Receiver : ScreenStateReceiver
-    var dailyUsage : Long = 0L
-    var lastUsageTimestamp : Long = 0L
-    var dailyUsageGoal : Long = 0L
+    private lateinit var INT2Receiver : INT2ScreenReceiver
     var dailyUsageGoalDiff : Long = 0L
     var bedtimeGoal : Int = 0
 
+    private lateinit var notificationManager : NotificationManager
+    private lateinit var notificationChannel: NotificationChannel
+
+    var previousEventTimestamp : Long = 0L
+    lateinit var previousEventType : String
+
     private val channelIdInt2 = "ScreenLoggerServiceChannelInt2"
     private val channelNameInt2 = "Int2ChannelName"
-
-    override fun onCreate() {
-        super.onCreate()
-
-        // Start as a foreground service (if necessary)
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
-
-        notificationManager.createNotificationChannel(channel)
-        val notification: Notification = Notification.Builder(this, channelId)
-            .setContentTitle("Smartphone Interventions")
-            .setContentText("Monitoring smartphone usage...")
-            .setSmallIcon(android.R.drawable.ic_popup_sync) // Set your app icon here
-            .setColorized(true)
-            .setColor(ContextCompat.getColor(this, R.color.deep_purple_300))
-            .build()
-
-        startForeground(1, notification)
-    }
+    private val channelIdINT2ImportantNotifications = "channelIdINT2ImportantNotifications"
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("SERVICE_LOGIC", "INT2 starting")
 
+        // Start as a foreground service (if necessary)
+        notificationManager = getSystemService(NotificationManager::class.java)
+        val channel = NotificationChannel(channelIdInt2, channelNameInt2, NotificationManager.IMPORTANCE_LOW)
+
+        // Determine the notification color based on study state
+        val studyState = getStudyState(this)
+        val notificationColor = when (studyState) {
+            4 -> ContextCompat.getColor(this, R.color.blue_500)  // Blue for study state 4
+            6 -> ContextCompat.getColor(this, R.color.deep_purple_500)  // Deep Purple for study state 6
+            else -> ContextCompat.getColor(this, R.color.blue_gray_500)  // Default color if studyState is neither 4 nor 6
+        }
+
+        notificationManager.createNotificationChannel(channel)
+        val notification: Notification = Notification.Builder(this, channelIdInt2)
+            .setContentTitle("Smartphone Interventions")
+            .setContentText("Intervention phase")
+            .setSmallIcon(android.R.drawable.ic_popup_sync) // Set your app icon here
+            .setColorized(true)
+            .setColor(notificationColor)
+            .build()
+
+        startForeground(1, notification)
+
         uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
             FirebaseUtils.FirebaseDataLoggingObject(event = "INT2_SERVICE_STARTED"))
 
-        dailyUsageGoal = getStudyVariable(this, INT_SMARTPHONE_USAGE_LIMIT_GOAL, 0L)
         bedtimeGoal = getStudyVariable(this, BEDTIME_GOAL, BEDTIME_GOAL_DEFAULT_VALUE)
-        lastUsageTimestamp = getLastDailyUsageTime(this)
 
         // no need to start service here if we are in INT1 phase (studyPhase == 1)
         // we start the receiver already in INT1Service.kt
-        if (studyPhase != 1) {
-            INT2Receiver = INT2ScreenReceiver()
-            val filter = IntentFilter().apply {
-                //addAction(Intent.ACTION_SCREEN_ON)
-                addAction(Intent.ACTION_SCREEN_OFF)
-                addAction(Intent.ACTION_USER_PRESENT)
-            }
-            registerReceiver(INT2Receiver, filter)
+
+        INT2Receiver = INT2ScreenReceiver()
+        val filter = IntentFilter().apply {
+            //addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_USER_PRESENT)
         }
+        registerReceiver(INT2Receiver, filter)
 
-        dailyUsage = getDailyUsage(this)
-
-        notificationManager = getSystemService(NotificationManager::class.java)
-        notificationChannel = NotificationChannel(channelIdInt2, channelNameInt2, NotificationManager.IMPORTANCE_HIGH)
+        notificationChannel = NotificationChannel(channelIdINT2ImportantNotifications, channelNameInt2, NotificationManager.IMPORTANCE_HIGH)
         notificationChannel.enableVibration(true)
         val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         val audioAttributes = AudioAttributes.Builder()
@@ -134,8 +139,6 @@ open class INT2Service : BaselineService() {
         notificationChannel.setVibrationPattern(longArrayOf(0, 200))
         notificationManager.createNotificationChannel(notificationChannel)
 
-        studyPhase = 2
-
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -146,16 +149,18 @@ open class INT2Service : BaselineService() {
         if (::INT2Receiver.isInitialized) {
             unregisterReceiver(INT2Receiver)
         }
+        notificationManager.cancel(1)
     }
 
-    open inner class INT2ScreenReceiver : ScreenStateReceiver() {
+    override fun onBind(intent: Intent?): IBinder? {
+        TODO("Not yet implemented")
+    }
+
+    open inner class INT2ScreenReceiver : BroadcastReceiver() {
         var now : Long = 0L
         override fun onReceive(p0: Context?, p1: Intent?) {
             // Additional functionality for Service B
             now = System.currentTimeMillis()
-
-            dailyUsageGoal = getStudyVariable(p0, INT_SMARTPHONE_USAGE_LIMIT_GOAL, 0L)
-            dailyUsage = getDailyUsage(p0)
 
             if (previousEventTimestamp < 1) {
                 val (ts, type) = getPreviousEvent(p0)
@@ -163,28 +168,16 @@ open class INT2Service : BaselineService() {
                 previousEventType = type
             }
 
-            if (p1?.action == Intent.ACTION_SCREEN_OFF && (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY)) {
-                if (previousEventType == "ACTION_USER_PRESENT") {
-                    //
-                    if (getCurrentDay() == getDayFromMillis(previousEventTimestamp)) {
-                        dailyUsage += (now - previousEventTimestamp)
-                    }
-                    else dailyUsage = 0
-
-                    lastUsageTimestamp = now
-                    storeDailyUsage(dailyUsage, p0)
-                    storeLastDailyUsageTime(now, p0)
-                    dailyUsageGoalDiff = dailyUsageGoal - dailyUsage
-                    Log.d("DAILY_USAGE", "dailyusage: ${formatTime(dailyUsage)} diff: ${formatTime(dailyUsageGoalDiff)} goal: ${formatTime(dailyUsageGoal)}")
-                }
-            }
-            else if (p1?.action == Intent.ACTION_USER_PRESENT && (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY)) {
+            if (p1?.action == Intent.ACTION_USER_PRESENT && (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY)) {
                 // show notification if above usage goal
-                if (calculateMinutesUntilBedtime(bedtimeGoal) <= 60 && !usageWithin45Seconds(p0, now)) {
+                val dailyUsageGoal = getStudyVariable(p0, INT_SMARTPHONE_USAGE_LIMIT_GOAL, 0L)
+                val dailyUsage = getDailyUsage(p0, "INT2 onReceive()")
+
+                if (calculateMinutesUntilBedtime(bedtimeGoal) <= 60 && !usageWithin45Seconds(p0, now, previousEventTimestamp)) {
                     if (p0 != null) {
                         val largeIcon = BitmapFactory.decodeResource(p0.resources, R.drawable.drowsy)
 
-                        val notificationBuilder = Notification.Builder(p0, channelId)
+                        val notificationBuilder = Notification.Builder(p0, channelIdINT2ImportantNotifications)
                             .setContentTitle("Smartphone Interventions")
                             .setContentText("Bedtime near, put your phone away!")
                             .setSmallIcon(R.drawable.bedtime2) // Set your app icon here
@@ -195,13 +188,14 @@ open class INT2Service : BaselineService() {
                         val notification: Notification = notificationBuilder.build()
 
                         notificationManager.notify(bedtimeNotificationId, notification)
+                        return
                     }
                 }
-                else if (dailyUsage > dailyUsageGoal && !usageWithin45Seconds(p0, now)) {
+                if (dailyUsage > dailyUsageGoal && !usageWithin45Seconds(p0, now, previousEventTimestamp)) {
                     dailyUsageGoalDiff = dailyUsageGoal - dailyUsage
                     if (p0 != null) {
                         val largeIcon = BitmapFactory.decodeResource(p0.resources, R.drawable.alert)
-                        val notificationBuilder = Notification.Builder(p0, channelId)
+                        val notificationBuilder = Notification.Builder(p0, channelIdINT2ImportantNotifications)
                             .setContentTitle("Smartphone Interventions")
                             .setContentText(
                                 "Exceeded daily goal ${
@@ -222,32 +216,23 @@ open class INT2Service : BaselineService() {
                 // within an hour of bedtime goal
                 // show a notification
                 // if no "alerts" then just show usage notification
-                else {
-                    if (p0 != null) {
-                        val notificationBuilder = Notification.Builder(p0, channelId)
-                            .setContentTitle("Smartphone Interventions")
-                            .setContentText("Today you have used your phone for ${formatTime(dailyUsage)}")
-                            .setSmallIcon(R.drawable.goal_reached) // Set your app icon here
-                            .setColorized(true)
-                            .setColor(ContextCompat.getColor(p0, R.color.teal_300))
+                if (p0 != null) {
+                    val notificationBuilder = Notification.Builder(p0, channelIdINT2ImportantNotifications)
+                        .setContentTitle("Smartphone Interventions")
+                        .setContentText("Today you have used your phone for ${formatTime(dailyUsage)}")
+                        .setSmallIcon(R.drawable.goal_reached) // Set your app icon here
+                        .setColorized(true)
+                        .setColor(ContextCompat.getColor(p0, R.color.blue_500))
 
-                        val notification = notificationBuilder.build()
-                        notificationManager.notify(usageNotificationId, notification)
-                    }
-                    if (getCurrentDay() == getDayFromMillis(now)) {
-                        dailyUsage += (now - previousEventTimestamp)
-                    }
-                    else {
-                        dailyUsage = (now - previousEventTimestamp)
-                    }
-                    lastUsageTimestamp = now
-                    storeDailyUsage(dailyUsage, p0)
-                    storeLastDailyUsageTime(now, p0)
+                    val notification = notificationBuilder.build()
+                    notificationManager.notify(usageNotificationId, notification)
                 }
+                //lastUsageTimestamp = now
+                //storeDailyUsage(dailyUsage, p0)
+                //storeLastDailyUsageTime(now, p0)
+
             }
 
-            // this has to occur last because it updates timestamps etc.
-            super.onReceive(p0, p1) // Retain functionality from Service A
         }
     }
 
@@ -258,8 +243,7 @@ open class INT2Service : BaselineService() {
     }
 
     // within 45 seconds continues previous use, no further disruptions after unlock
-    fun usageWithin45Seconds(c : Context?, time : Long) : Boolean {
-        lastUsageTimestamp = getDailyUsage(c)
-        return((time - lastUsageTimestamp) < 45000)
+    fun usageWithin45Seconds(c : Context?, time : Long, previous : Long) : Boolean {
+        return((time - previous) < 45000)
     }
 }
