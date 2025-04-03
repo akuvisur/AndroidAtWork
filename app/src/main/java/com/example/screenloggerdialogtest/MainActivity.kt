@@ -753,8 +753,8 @@ class MainActivity : FragmentActivity() {
         }
 
         private fun setSmartphoneUsageInputElement(inflater: LayoutInflater, container: ViewGroup?, parentLayout: LinearLayout, studyState: Int, studyDay: Int) {
-            if (isAdded && context != null) {
-                clearTodayUsage(requireContext()) // Safe to use requireContext()
+            if (!isAdded || context == null) {
+                return
             } else {
                 Log.w("Fragment", "Fragment not attached yet, skipping clearTodayUsage")
             }
@@ -816,8 +816,8 @@ class MainActivity : FragmentActivity() {
         }
 
         private fun setDataVerificationElement(inflater: LayoutInflater, container: ViewGroup?, parentLayout: LinearLayout, studyState: Int, studyDay : Int) {
-            if (isAdded && context != null) {
-                clearTodayUsage(requireContext()) // Safe to use requireContext()
+            if (!isAdded || context == null) {
+                return
             } else {
                 Log.w("Fragment", "Fragment not attached yet, skipping clearTodayUsage")
             }

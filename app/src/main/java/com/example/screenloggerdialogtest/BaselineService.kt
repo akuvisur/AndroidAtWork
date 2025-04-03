@@ -126,8 +126,8 @@ open class BaselineService : Service() {
             unregisterReceiver(screenStateReceiver)
         }
         if (::heartbeat.isInitialized) heartbeat.stopHeartbeat()
-
-        notificationManager.cancel(1)
+        notificationManager = getSystemService(NotificationManager::class.java)
+        if (::notificationManager.isInitialized) notificationManager.cancel(1)
     }
 
     open inner class ScreenStateReceiver : BroadcastReceiver() {

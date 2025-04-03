@@ -149,7 +149,8 @@ open class INT2Service : Service() {
         if (::INT2Receiver.isInitialized) {
             unregisterReceiver(INT2Receiver)
         }
-        notificationManager.cancel(1)
+        notificationManager = getSystemService(NotificationManager::class.java)
+        if (::notificationManager.isInitialized) notificationManager.cancel(1)
     }
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -168,7 +169,7 @@ open class INT2Service : Service() {
                 previousEventType = type
             }
 
-            if (p1?.action == Intent.ACTION_USER_PRESENT && (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY)) {
+            if (p1?.action == Intent.ACTION_USER_PRESENT && (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY) && !usageWithin45Seconds(p0, now, previousEventTimestamp)) {
                 // show notification if above usage goal
                 val dailyUsageGoal = getStudyVariable(p0, INT_SMARTPHONE_USAGE_LIMIT_GOAL, 0L)
                 val dailyUsage = getDailyUsage(p0, "INT2 onReceive()")

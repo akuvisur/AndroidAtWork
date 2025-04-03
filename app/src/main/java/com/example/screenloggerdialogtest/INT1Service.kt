@@ -136,7 +136,8 @@ class INT1Service : Service() {
         if (::INT1Receiver.isInitialized) {
             unregisterReceiver(INT1Receiver)
         }
-        notificationManager.cancel(1)
+        notificationManager = getSystemService(NotificationManager::class.java)
+        if (::notificationManager.isInitialized) notificationManager.cancel(1)
     }
 
     inner class INT1ScreenReceiver : BroadcastReceiver() {
