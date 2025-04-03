@@ -17,7 +17,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Settings"
+        android:text="Settings v0.3 03-04-2025"
         android:textSize="24dp"
         android:textStyle="bold"
         />
