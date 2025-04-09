@@ -482,6 +482,8 @@ class MainActivity : FragmentActivity() {
                 }
                 reduceUsageText.text = "Move the slider to select between 10% and 50% goal in reduction of smartphone use"
 
+                val bedTimeGoal = getStudyVariable(requireContext(), BEDTIME_GOAL, BEDTIME_GOAL_DEFAULT_VALUE)
+                if (bedTimeGoal != BEDTIME_GOAL_DEFAULT_VALUE) bedTimeInput.setText(convertMinutesToBedtime(getStudyVariable(requireContext(), BEDTIME_GOAL, BEDTIME_GOAL_DEFAULT_VALUE)))
                 bedTimeInput.setOnClickListener {
                     val calendar = Calendar.getInstance()
                     val hour = calendar.get(Calendar.HOUR_OF_DAY)
@@ -496,8 +498,12 @@ class MainActivity : FragmentActivity() {
                             )
                         )
                     }, hour, minute, true)
+                    timePicker.setOnDismissListener {
+                        setStudyVariable(requireContext(), BEDTIME_GOAL, parseBedtimeToMinutes(bedTimeInput.text.toString()))
+                    }
                     timePicker.show()
                 }
+
 
                 enableOverlayButton = inflaterView.findViewById(R.id.enableOverlayButton)
                 enableOverlayButton.setOnClickListener {
@@ -1125,6 +1131,9 @@ class MainActivity : FragmentActivity() {
         private lateinit var settingsGoalLayout : LinearLayout
         private lateinit var settingsDeviceidText : TextView
 
+        private lateinit var settingsBedLayout : LinearLayout
+        private lateinit var settingsBedtimeInput : EditText
+
         private lateinit var testDialogButtonGoal : Button
         private lateinit var testDialogButtonBed : Button
 
@@ -1155,6 +1164,8 @@ class MainActivity : FragmentActivity() {
             settingsDeviceidText = view.findViewById(R.id.settingsDeviceId)
             clearSharedPreferencesButton = view.findViewById(R.id.clearSharedPreferences)
             clearDailyUsageButton = view.findViewById(R.id.clearDailyUsage)
+            settingsBedtimeInput = view.findViewById(R.id.settingsBedtimeInput)
+            settingsBedLayout = view.findViewById(R.id.settingsBedLayout)
 
             feedbackButton.setOnClickListener {
                 showFeedbackDialog()
@@ -1205,6 +1216,31 @@ class MainActivity : FragmentActivity() {
                     Log.d("Slider", "User stopped interacting, final value: $value")
                 }
             })
+
+
+            settingsBedtimeInput.setOnClickListener {
+                val calendar = Calendar.getInstance()
+                val hour = calendar.get(Calendar.HOUR_OF_DAY)
+                val minute = calendar.get(Calendar.MINUTE)
+
+                val timePicker = TimePickerDialog(requireContext(), { _, selectedHour, selectedMinute ->
+                    settingsBedtimeInput.setText(
+                        String.format(
+                            "%02dh %02dm",
+                            selectedHour,
+                            selectedMinute
+                        )
+                    )
+                }, hour, minute, true)
+
+                timePicker.setOnDismissListener {
+                    setStudyVariable(requireContext(), BEDTIME_GOAL, parseBedtimeToMinutes(settingsBedtimeInput.text.toString()))
+
+                }
+                timePicker.show()
+
+            }
+            settingsBedtimeInput.setText(convertMinutesToBedtime(getStudyVariable(requireContext(), BEDTIME_GOAL, BEDTIME_GOAL_DEFAULT_VALUE)))
 
             settingsDeviceidText.text = String.format(
                 settingsDeviceidText.context.getString(R.string.settings_deviceid_text),
@@ -1342,6 +1378,7 @@ class MainActivity : FragmentActivity() {
 
             if (getStudyState(requireContext()) < 4) {
                 settingsGoalLayout.visibility = View.GONE
+                settingsBedLayout.visibility = View.GONE
             }
 
             return view

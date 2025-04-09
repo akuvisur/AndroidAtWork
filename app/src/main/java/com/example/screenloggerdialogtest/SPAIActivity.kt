@@ -35,7 +35,7 @@ class SPAIActivity : AppCompatActivity() {
         "SPAI20" to "My life would be joyless hadn’t there been smartphone",
         "SPAI21" to "Surfing the smartphone has exercised negative effects on my physical health.",
         "SPAI22" to "I try to spend less time on smartphone, but the efforts were in vain",
-        "SPAI23" to "I make it a habit to use smartphone and the sleep quality and total sleep time decreased",
+        "SPAI23" to "My smartphone use is a habit and as a result my sleep quality and overall sleep time has decreased.",
         "SPAI24" to "I need to spend an increasing amount of time on smartphone to achieve same satisfaction as before",
         "SPAI25" to "I cannot have meal without smartphone use",
         "SPAI26" to "I feel tired on daytime due to late-night use of smartphone"

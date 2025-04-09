@@ -84,7 +84,6 @@ class INT1Service : Service() {
         Log.d("SERVICE_LOGIC", "INT1 starting")
 
         dailyUsageGoal = getStudyVariable(this, INT_SMARTPHONE_USAGE_LIMIT_GOAL, 0L)
-        bedtimeGoal = getStudyVariable(this, BEDTIME_GOAL, BEDTIME_GOAL_DEFAULT_VALUE)
 
         uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
             FirebaseUtils.FirebaseDataLoggingObject(event = "INT1_SERVICE_STARTED"))
@@ -146,6 +145,7 @@ class INT1Service : Service() {
         override fun onReceive(p0: Context?, p1: Intent?) {
 
             val now = System.currentTimeMillis()
+            bedtimeGoal = getStudyVariable(p0, BEDTIME_GOAL, BEDTIME_GOAL_DEFAULT_VALUE)
 
             val (ts, type) = getPreviousEvent(p0)
             previousEventTimestamp = ts

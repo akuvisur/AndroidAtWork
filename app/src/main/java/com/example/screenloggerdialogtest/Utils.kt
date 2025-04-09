@@ -14,13 +14,9 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
-import android.view.animation.Animation
-import android.view.animation.AnimationUtils
 import android.widget.Button
-import android.widget.EditText
 import android.widget.Toast
 import androidx.core.content.ContextCompat
-import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.time.LocalTime
 import java.util.Calendar
@@ -30,6 +26,22 @@ import java.util.Locale
 const val BASELINE_DURATION = 14
 const val INT1_DURATION = 7
 const val INT2_DURATION = 21
+
+const val CONTINUOUS_USAGE_NOTIFICATION_TIMELIMIT = 60 * 10 * 1000L
+val CONTINUOUS_USAGE_TEXT = arrayOf(
+    "You've been on your phone for %s minutes. Consider taking a short break!",
+    "Time flies! You've already spent %s minutes on your phone. Maybe it's time to look up?",
+    "Are you still being productive? You've used your phone for %s minutes.",
+    "Take a moment to stretch and rest your eyes. You've been using your phone for %s minutes.",
+    "Consider setting your phone aside for a bit. You've used it for %s minutes.",
+    "You've reached %s minutes of continuous screen time. How about engaging in an off-screen activity?",
+    "Your screen time since you opened your phone is %s minutes. Remember to balance your online and offline time!",
+    "You've been using your phone for %s minutes. Is it time to recharge yourself as well?",
+    "Take a break from the screen. You've used your phone for %s minutes.",
+    "You've accumulated %s minutes of continuous screen time. How about a quick walk or chat with someone nearby?",
+    "Did you have something else to do? You just spent %s minutes on your phone."
+)
+
 
 const val DEBUG = true
 
@@ -60,7 +72,7 @@ const val STUDY_COMPLETE_TIMESTAMP: String = "STUDY_COMPLETE_TIMESTAMP"
 
 const val STUDY_DIALOG_LASTSHOWN_TIMESTAMP: String = "STUDY_DIALOG_LASTSHOWN_TIMESTAMP"
 
-const val BEDTIME_GOAL_DEFAULT_VALUE: Int = 22
+const val BEDTIME_GOAL_DEFAULT_VALUE: Int = 22*60
 
 fun showClearConfirmationDialog(context: Context?) {
     context?.let {
@@ -659,6 +671,13 @@ fun parseBedtimeToMinutes(input : String): Int {
     }
     return(0)
 }
+
+fun convertMinutesToBedtime(minutes: Int): String {
+    val hours = minutes / 60
+    val remainingMinutes = minutes % 60
+    return "${hours}h ${remainingMinutes}m"
+}
+
 
 fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
     val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager

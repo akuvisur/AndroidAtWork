@@ -9,16 +9,16 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.BitmapFactory
-import android.icu.util.Calendar
 import android.media.AudioAttributes
 import android.media.RingtoneManager
+import android.os.CountDownTimer
 import android.os.IBinder
 import android.util.Log
+import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.example.screenloggerdialogtest.FirebaseUtils.ScreenEvent
 import com.example.screenloggerdialogtest.FirebaseUtils.getCurrentUserUID
 import com.example.screenloggerdialogtest.FirebaseUtils.uploadFirebaseEntry
-import java.util.Date
+import java.util.Random
 
 
 /**
@@ -159,14 +159,31 @@ open class INT2Service : Service() {
 
     open inner class INT2ScreenReceiver : BroadcastReceiver() {
         var now : Long = 0L
+        private var timer: CountDownTimer? = null
+        private var timerCount = 0
+
         override fun onReceive(p0: Context?, p1: Intent?) {
             // Additional functionality for Service B
             now = System.currentTimeMillis()
+            bedtimeGoal = getStudyVariable(p0, BEDTIME_GOAL, BEDTIME_GOAL_DEFAULT_VALUE)
 
             if (previousEventTimestamp < 1) {
                 val (ts, type) = getPreviousEvent(p0)
                 previousEventTimestamp = ts
                 previousEventType = type
+            }
+
+            // clean old notifications when turning screen off
+            if (p1?.action == Intent.ACTION_SCREEN_OFF) {
+                if (::notificationManager.isInitialized) {
+                    notificationManager.cancel(bedtimeNotificationId)
+                    notificationManager.cancel(usageNotificationId)
+                }
+                cancelUsageTimer()
+            }
+
+            if (p1?.action == Intent.ACTION_USER_PRESENT) {
+                if (p0 != null) startUsageTimer(p0)
             }
 
             if (p1?.action == Intent.ACTION_USER_PRESENT && (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY) && !usageWithin45Seconds(p0, now, previousEventTimestamp)) {
@@ -217,10 +234,11 @@ open class INT2Service : Service() {
                 // within an hour of bedtime goal
                 // show a notification
                 // if no "alerts" then just show usage notification
-                if (p0 != null) {
+                else if (p0 != null) {
+                    dailyUsageGoalDiff = dailyUsageGoal - dailyUsage
                     val notificationBuilder = Notification.Builder(p0, channelIdINT2ImportantNotifications)
                         .setContentTitle("Smartphone Interventions")
-                        .setContentText("Today you have used your phone for ${formatTime(dailyUsage)}")
+                        .setContentText("Screen time today ${formatTime(dailyUsage)} ${if (dailyUsageGoalDiff > 0) "(${formatTime(dailyUsageGoalDiff)} left)" else "(Exceeded daily usage)"}")
                         .setSmallIcon(R.drawable.goal_reached) // Set your app icon here
                         .setColorized(true)
                         .setColor(ContextCompat.getColor(p0, R.color.blue_500))
@@ -228,14 +246,43 @@ open class INT2Service : Service() {
                     val notification = notificationBuilder.build()
                     notificationManager.notify(usageNotificationId, notification)
                 }
-                //lastUsageTimestamp = now
-                //storeDailyUsage(dailyUsage, p0)
-                //storeLastDailyUsageTime(now, p0)
-
             }
+        }
 
+        private fun startUsageTimer(c : Context) {
+            timer?.cancel() // Cancel any existing timer
+            timer = object : CountDownTimer(CONTINUOUS_USAGE_NOTIFICATION_TIMELIMIT*6, CONTINUOUS_USAGE_NOTIFICATION_TIMELIMIT) {
+                override fun onTick(millisUntilFinished: Long) {
+                    if (timerCount > 0) sendUsageNotification(c)
+                    timerCount++
+                }
+                override fun onFinish() {
+                }
+            }.start()
+        }
+
+        private fun cancelUsageTimer() {
+            timer?.cancel()
+            timer = null
+            timerCount = 0
+        }
+
+        private fun sendUsageNotification(c : Context) {
+            val actualMinutes = timerCount * 10
+            val randomMessage = CONTINUOUS_USAGE_TEXT[Random().nextInt(CONTINUOUS_USAGE_TEXT.size)]
+            val formattedMessage = String.format(randomMessage, actualMinutes)
+
+            val notificationBuilder = Notification.Builder(c, channelIdINT2ImportantNotifications)
+                .setContentTitle("Smartphone Interventions")
+                .setContentText(formattedMessage)
+                .setStyle(Notification.BigTextStyle().bigText(formattedMessage))
+                .setSmallIcon(R.drawable.goal_reached) // Set your app icon here
+            val notification = notificationBuilder.build()
+            notificationManager.notify(usageNotificationId, notification)
         }
     }
+
+
 
     fun formatTime(ms: Long): String {
         val hours = ms / 3600000
