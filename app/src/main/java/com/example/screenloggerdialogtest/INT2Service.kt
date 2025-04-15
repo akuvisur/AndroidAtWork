@@ -228,6 +228,7 @@ open class INT2Service : Service() {
                             .setColor(ContextCompat.getColor(p0, R.color.yellow))
 
                         val notification = notificationBuilder.build()
+                        if (!::notificationManager.isInitialized) notificationManager = getSystemService(NotificationManager::class.java)
                         notificationManager.notify(usageNotificationId, notification)
                     }
                 }
@@ -244,6 +245,7 @@ open class INT2Service : Service() {
                         .setColor(ContextCompat.getColor(p0, R.color.blue_500))
 
                     val notification = notificationBuilder.build()
+                    if (!::notificationManager.isInitialized) notificationManager = getSystemService(NotificationManager::class.java)
                     notificationManager.notify(usageNotificationId, notification)
                 }
             }
@@ -278,6 +280,7 @@ open class INT2Service : Service() {
                 .setStyle(Notification.BigTextStyle().bigText(formattedMessage))
                 .setSmallIcon(R.drawable.goal_reached) // Set your app icon here
             val notification = notificationBuilder.build()
+            if (!::notificationManager.isInitialized) notificationManager = getSystemService(NotificationManager::class.java)
             notificationManager.notify(usageNotificationId, notification)
         }
     }

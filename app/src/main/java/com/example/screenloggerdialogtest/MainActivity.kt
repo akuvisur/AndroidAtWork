@@ -889,6 +889,7 @@ class MainActivity : FragmentActivity() {
                             .alpha(1f) // Fade in to fully opaque
                             .setDuration(500) // Duration of the fade-in animation in milliseconds
                             .start()
+
                     }
 
                 }
