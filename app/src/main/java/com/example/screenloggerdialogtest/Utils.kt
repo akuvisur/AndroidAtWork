@@ -645,7 +645,6 @@ fun formatTimestampToReadableTime(timestamp: Long): String {
     )
 }
 
-
 fun calculateMinutesUntilBedtime(bedtimeInMinutes: Int): Int {
     val now = LocalTime.now()
     val currentMinutes = (now.hour * 60) + now.minute
@@ -653,6 +652,8 @@ fun calculateMinutesUntilBedtime(bedtimeInMinutes: Int): Int {
         bedtimeInMinutes - currentMinutes
     } else {
         // If bedtime is on the next day
+        // calculate time to next midnight, then add bedtime minutes
+        // this also works for e.g., 1AM bedtime.
         (1440 - currentMinutes) + bedtimeInMinutes
     }
     return minutesUntilBedtime

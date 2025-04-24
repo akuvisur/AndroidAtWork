@@ -55,6 +55,11 @@ class TSRQActivity : AppCompatActivity() {
         "TSRQ19" to "It's a challenge to learn how to spend less time on my smartphone."
     )
 
+    /*
+        Autonomous Regulation: 2, 3, 7, 10, 13, 16, 18, 19
+        Controlled Regulation: 1, 4, 5, 6, 8, 9, 11, 12, 14, 15, 17
+     */
+
     private val responses = mutableMapOf<String, TSRQAnswer>()
     private lateinit var submitButton: Button
 
