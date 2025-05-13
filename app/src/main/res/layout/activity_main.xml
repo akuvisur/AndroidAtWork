@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -8,18 +7,12 @@
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        style="@style/Theme.AppCompat.Light">
+        android:layout_height="wrap_content">
 
         <com.google.android.material.tabs.TabItem
             android:text="Info"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"/>
-
-         <com.google.android.material.tabs.TabItem
-             android:text="Data"
-             android:layout_height="wrap_content"
-             android:layout_width="wrap_content"/>
 
         <com.google.android.material.tabs.TabItem
             android:text="Settings"
@@ -28,50 +21,6 @@
 
     </com.google.android.material.tabs.TabLayout>
 
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:elevation="4dp"
-        android:background="@drawable/linear_layout_background"
-        android:layout_margin="4dp"
-        android:paddingBottom="8dp"
-        >
-
-        <com.google.android.material.slider.Slider
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:valueFrom="0"
-            android:valueTo="4"
-            android:stepSize="1"
-            android:value="0"
-            app:labelBehavior="gone"
-            android:layout_marginBottom="0dp"
-            android:layout_marginTop="0dp"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp"
-            android:id="@+id/studyPhaseSlider"
-            android:theme="@style/Theme.MaterialComponents.DayNight.DarkActionBar"
-            app:trackColor="@color/blue_gray_200"
-            app:trackColorActive="@color/blue_gray_200"
-            app:tickColorInactive="@color/blue_gray_500"
-            app:thumbColor="@color/blue_gray_700"
-            app:tickRadiusInactive="5sp"
-            />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/studyPhaseText"
-            android:text="Study start"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:paddingLeft="12dp"
-            android:textColor="@color/black"
-            android:layout_marginBottom="0dp"/>
-
-    </LinearLayout>
 
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/viewPager"

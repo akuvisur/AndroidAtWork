@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
+import android.os.CountDownTimer
 import android.os.Handler
 import android.os.IBinder
 import android.util.Log
@@ -68,7 +69,6 @@ const val MULTIPLE_SCREEN_EVENT_DELAY : Int = 1000
 
 open class BaselineService : Service() {
     private lateinit var screenStateReceiver: ScreenStateReceiver
-    private lateinit var heartbeat: HeartbeatBeater
     private var receiverRegistered : Boolean = false
 
     private lateinit var notificationManager : NotificationManager
@@ -84,17 +84,14 @@ open class BaselineService : Service() {
 
         notificationManager.createNotificationChannel(channel)
         val notification: Notification = Notification.Builder(this, channelId)
-            .setContentTitle("Smartphone Interventions")
-            .setContentText("Baseline monitoring")
+            .setContentTitle("AndroidAtWork")
+            .setContentText("Monitoring smartphone use")
             .setSmallIcon(android.R.drawable.ic_popup_sync) // Set your app icon here
             .setColorized(true)
             .setColor(ContextCompat.getColor(this, R.color.teal_500))
             .build()
 
         startForeground(1, notification)
-
-        uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
-            FirebaseUtils.FirebaseDataLoggingObject(event = "BASELINE_SERVICE_STARTED"))
 
         screenStateReceiver = ScreenStateReceiver()
         val filter = IntentFilter().apply {
@@ -107,9 +104,6 @@ open class BaselineService : Service() {
             receiverRegistered = true
         }
 
-        heartbeat = HeartbeatBeater(this)
-        heartbeat.startHeartbeat()
-
         return START_STICKY // Or other flags depending on your use case
     }
 
@@ -119,13 +113,11 @@ open class BaselineService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
-            FirebaseUtils.FirebaseDataLoggingObject(event = "BASELINE_SERVICE_STOPPED"))
 
         if (::screenStateReceiver.isInitialized) {
             unregisterReceiver(screenStateReceiver)
         }
-        if (::heartbeat.isInitialized) heartbeat.stopHeartbeat()
+
         notificationManager = getSystemService(NotificationManager::class.java)
         if (::notificationManager.isInitialized) notificationManager.cancel(1)
     }
@@ -136,6 +128,11 @@ open class BaselineService : Service() {
         var previousEventTimestamp : Long = 0L
         lateinit var previousEventType : String
         private var lastScreenEvent : Long = 0L
+
+        private var sessionStartTimestamp : Long = 0L
+
+        private var timer: CountDownTimer? = null
+        private var timerCount = 0
 
         override fun onReceive(p0: Context?, p1: Intent?) {
             lastScreenEvent = System.currentTimeMillis()
@@ -192,6 +189,29 @@ open class BaselineService : Service() {
                 }
 
             }
+
+        }
+
+        private fun startUsageTimer(c : Context) {
+            timer?.cancel() // Cancel any existing timer
+            timer = object : CountDownTimer(CONTINUOUS_USAGE_NOTIFICATION_TIMELIMIT*6, CONTINUOUS_USAGE_NOTIFICATION_TIMELIMIT) {
+                override fun onTick(millisUntilFinished: Long) {
+                    if (timerCount > 0) sendUsageEsm(c)
+                    timerCount++
+                }
+                override fun onFinish() {
+                }
+            }.start()
+        }
+
+        private fun cancelUsageTimer() {
+            timer?.cancel()
+            timer = null
+            timerCount = 0
+        }
+
+        private fun sendUsageEsm(c : Context) {
+
         }
 
         private fun uploadEvent(eventType : String, time : Long, c : Context?) {
@@ -213,72 +233,5 @@ open class BaselineService : Service() {
             putPreviousEvent(time, type, c)
         }
     }
-
-    class HeartbeatBeater (context: Context) {
-
-        private var c : Context
-        private val HB_NOTIFICATION_ID : String = "HB_NOTIFICATION_ID"
-        private val HB_NOTIFICATION_CHANNEL_NAME : String = "HB_NOTIFICATION_CHANNEL_NAME"
-        private val HB_NOTIFICATION_NUMBER = 123123
-
-        private var notificationManager: NotificationManager
-        private var notificationChannel : NotificationChannel
-
-        private val handler = Handler()
-
-        init {
-            c = context
-            notificationManager = context.getSystemService(NotificationManager::class.java)
-            notificationChannel = NotificationChannel(HB_NOTIFICATION_ID, HB_NOTIFICATION_CHANNEL_NAME, NotificationManager.IMPORTANCE_LOW)
-            notificationManager.createNotificationChannel(notificationChannel)
-        }
-
-        // Runnable to create a Heartbeat every hour
-        private val heartbeatRunnable = object : Runnable {
-            override fun run() {
-                storeBeat()
-                // Schedule the next heartbeat in one hour
-                handler.postDelayed(this, TimeUnit.HOURS.toMillis(1))
-            }
-        }
-
-        // Function to start the heartbeat
-        fun startHeartbeat() {
-            handler.post(heartbeatRunnable)
-        }
-
-        // Function to stop the heartbeat (if necessary)
-        fun stopHeartbeat() {
-            handler.removeCallbacks(heartbeatRunnable)
-        }
-
-        fun storeBeat() {
-
-            val studyDay = calculateStudyPeriodDay(BASELINE_START_TIMESTAMP, c)
-
-            val notification: Notification = Notification.Builder(c, HB_NOTIFICATION_ID)
-                .setContentTitle("Android Interventions Updates")
-                .setContentText("Its currently day ${studyDay} of the study.")
-                .setSmallIcon(android.R.drawable.ic_popup_sync)
-                .setColorized(true)
-                .setColor(ContextCompat.getColor(c, R.color.deep_purple_200))
-                .build()
-            notificationManager.notify(HB_NOTIFICATION_NUMBER, notification)
-
-            val heartbeat = Heartbeat(timestamp = System.currentTimeMillis())
-            FirebaseUtils.sendEntryToDatabase(
-                path = "/users/${getCurrentUserUID()}/heartbeat/${heartbeat.timestamp}",
-                data = heartbeat,
-                onSuccess = {
-                },
-                onFailure = { exception ->
-                }
-            )
-        }
-    }
-
-    private data class Heartbeat(
-        val timestamp: Long = 0L
-    )
 
 }

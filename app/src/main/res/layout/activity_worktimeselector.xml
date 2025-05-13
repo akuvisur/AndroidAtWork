@@ -1,9 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp">
+
+
+    <!-- Add interval button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/addIntervalButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Add New Interval"
+        android:textSize="16sp"
+        android:textColor="@color/white"
+        android:backgroundTint="@color/blue_500"
+        app:icon="@android:drawable/ic_input_add"
+        app:iconGravity="textStart"
+        app:iconPadding="8dp"
+        app:iconTint="@color/white" />
 
     <!-- Scrollable container for intervals -->
     <ScrollView
@@ -18,10 +34,5 @@
             android:layout_height="wrap_content" />
     </ScrollView>
 
-    <!-- Add interval button -->
-    <Button
-        android:id="@+id/addIntervalButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Add Interval" />
+
 </LinearLayout>

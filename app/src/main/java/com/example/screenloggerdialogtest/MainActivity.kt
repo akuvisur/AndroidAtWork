@@ -1,70 +1,37 @@
 package com.example.screenloggerdialogtest
 
+import android.accessibilityservice.AccessibilityService
 import android.annotation.SuppressLint
-import android.app.TimePickerDialog
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.graphics.Paint
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
-import android.text.Editable
-import android.text.TextWatcher
+import android.text.TextUtils
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
 import android.widget.Button
-import android.widget.EditText
 import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.Spinner
-import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
-import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.example.screenloggerdialogtest.FirebaseUtils.getCurrentUserUID
-import com.example.screenloggerdialogtest.FirebaseUtils.uploadFeedback
 import com.example.screenloggerdialogtest.FirebaseUtils.uploadFirebaseEntry
-import com.github.mikephil.charting.charts.BarChart
-import com.github.mikephil.charting.components.LimitLine
-import com.github.mikephil.charting.components.XAxis
-import com.github.mikephil.charting.components.YAxis
-import com.github.mikephil.charting.data.BarData
-import com.github.mikephil.charting.data.BarDataSet
-import com.github.mikephil.charting.data.BarEntry
-import com.github.mikephil.charting.formatter.ValueFormatter
 import com.google.android.material.slider.Slider
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
-import java.net.URLEncoder
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Calendar
-import kotlin.math.min
 
 class MainActivity : FragmentActivity() {
 
-    private var study_state : Int = 0
-
-    private lateinit var mainAdapter : ViewPagerAdapter
-    private lateinit var viewPager : ViewPager2
-
-    private lateinit var studyPhaseSlider : Slider
-    private lateinit var studyPhaseText : TextView
-    private var studyPhaseSliderValue : Float = 0.0f
+    lateinit var mainAdapter : ViewPagerAdapter
+    lateinit var viewPager : ViewPager2
 
     companion object {
         const val REQUEST_CODE_OVERLAY = 100 // Arbitrary value for overlay permission callback
@@ -90,13 +57,6 @@ class MainActivity : FragmentActivity() {
     override fun onResume() {
         super.onResume()
 
-        uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
-            FirebaseUtils.FirebaseDataLoggingObject(event = "MAIN_ACTIVITY_RESUMED"))
-
-        studyPhaseSlider = findViewById(R.id.studyPhaseSlider)
-        studyPhaseSlider.isEnabled = false
-        studyPhaseText = findViewById(R.id.studyPhaseText)
-
         viewPager = findViewById<ViewPager2>(R.id.viewPager)
         val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
 
@@ -109,49 +69,10 @@ class MainActivity : FragmentActivity() {
                     tab.text = "Info"
                 }
                 1 -> {
-                    tab.text = "Data"
-                }
-                2 -> {
                     tab.text = "Settings"
                 }
             }
         }.attach()
-
-        /*
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                // this launches the permission request
-                ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), REQUEST_CODE_NOTIFICATION)
-            }
-        } else {
-            true // For Android versions below 13, permissions are granted by default
-        }
-        */
-
-        study_state = getStudyState(this)
-
-        studyPhaseText.text = "Study phase: " + when (study_state) {
-            STUDY_STATE_FIRST_LAUNCH -> "Start"
-            STUDY_STATE_CONSENT_GIVEN -> "User input required before baseline"
-            STUDY_STATE_BASELINE_ONGOING -> "Baseline"
-            STUDY_STATE_POST_BASELINE -> "User input required before Intervention #1"
-            STUDY_STATE_INT1 -> "Intervention #1"
-            STUDY_STATE_POST_INT1 -> "User input required before Intervention #2"
-            STUDY_STATE_INT2 -> "Intervention #2"
-            STUDY_STATE_POST_INT2_SURVEY_REQUIRED -> "Post Intervention 2 - Survey responses required"
-            STUDY_STATE_COMPLETE -> "Study complete"
-            else -> "Unknown state"
-        }
-
-        studyPhaseSliderValue = when {
-            study_state < STUDY_STATE_BASELINE_ONGOING -> 0f
-            study_state < STUDY_STATE_INT1 -> 1f
-            study_state < STUDY_STATE_INT2 -> 2f
-            study_state <= STUDY_STATE_POST_INT2_SURVEY_REQUIRED -> 3f
-            study_state <= STUDY_STATE_COMPLETE -> 4f
-            else -> 0f
-        }
-        studyPhaseSlider.value = studyPhaseSliderValue
 
     }
 
@@ -165,16 +86,16 @@ class MainActivity : FragmentActivity() {
         startActivity(intent)
     }
 
+    fun setViewPagerPage(page : Int) {
+        viewPager.currentItem = page
+    }
+
     override fun onStop() {
         super.onStop()
-        uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
-            FirebaseUtils.FirebaseDataLoggingObject(event = "MAIN_ACTIVITY_STOPPED"))
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
-            FirebaseUtils.FirebaseDataLoggingObject(event = "MAIN_ACTIVITY_DESTROYED"))
     }
 
     @Deprecated("Deprecated in Java")
@@ -200,7 +121,6 @@ class MainActivity : FragmentActivity() {
     class ViewPagerAdapter(fragmentActivity: FragmentActivity) : FragmentStateAdapter(fragmentActivity) {
         private val fragments: List<Fragment> = listOf(
             InfoFragment(),
-            DataCollectedFragment(),
             SettingsFragment()
         )
 
@@ -216,34 +136,16 @@ class MainActivity : FragmentActivity() {
     class InfoFragment : Fragment() {
         private lateinit var inflaterView : View
 
-        private lateinit var startOnboardingButton: Button
         private lateinit var allowNotificationButton: Button
         private lateinit var disableBatteryManagementButton: Button
-        private lateinit var consentSpaiButton: Button
-        private lateinit var consentSASButton: Button
+
         private lateinit var startBaselineButton: Button
         private lateinit var allowNotificationIcon: ImageView
-        private lateinit var consentSpaiIcon: ImageView
-        private lateinit var consentSASIcon: ImageView
 
-        private lateinit var baselineProgressSlider: Slider
+        private lateinit var studyProgressSlider: Slider
 
-        private lateinit var tsrqButton : Button
-        private lateinit var averageUsageText: TextView
-        private lateinit var reduceUsageSlider: Slider
-        private lateinit var reduceUsageText: TextView
-        private lateinit var bedTimeInput : EditText
         private lateinit var enableOverlayButton: Button
         private  lateinit var intervention1TestButton: Button
-        private lateinit var startInterventionButton: Button
-
-        private lateinit var intervention1ProgressSlider: Slider
-        private lateinit var startIntervention2Button: Button
-        private lateinit var intervention2ProgressSlider: Slider
-        private lateinit var postStudyExitSurveyButton: Button
-        private lateinit var postStudySpaiButton: Button
-        private lateinit var postStudySASButton: Button
-        private lateinit var completeStudyButton: Button
 
         private val POST_NOTIFICATIONS_PERMISSION : String = "android.permission.POST_NOTIFICATIONS"
 
@@ -253,663 +155,64 @@ class MainActivity : FragmentActivity() {
             savedInstanceState: Bundle?
         ): View {
 
-            uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
-                FirebaseUtils.FirebaseDataLoggingObject(event = "MAIN_ACTIVITY_CREATED"))
-
             checkServicesRunning(requireContext())
+            // go to settings tab if they are not set correctly
 
-            val studyStateVars = getStudyStateVariables(requireContext())
+            Toast.makeText(requireContext(), "Checking settings..", Toast.LENGTH_SHORT).show()
 
-            val studyState = getStudyState(requireContext())
-            if (studyState == STUDY_STATE_FIRST_LAUNCH) {
-                inflaterView = inflater.inflate(R.layout.first_launch_layout, container, false)
-
-                startOnboardingButton = inflaterView.findViewById<Button>(R.id.startOnboardingButton)
-                startOnboardingButton.setOnClickListener {
-                    val intent = Intent(activity, OnboardingActivity::class.java)
-                    startActivity(intent)
+            Handler(Looper.getMainLooper()).postDelayed({
+                if (!checkSettingsAndRun()) {
+                    (activity as? MainActivity)?.setViewPagerPage(2)
+                    Toast.makeText(requireContext(), "Please make sure all settings are correctly enabled", Toast.LENGTH_LONG).show()
                 }
+            }, 1000)
+
+            // Actions for baseline ongoing
+            // e.g., initialize baseline tracking, display tracking progress
+            inflaterView = inflater.inflate(R.layout.data_collection_ongoing, container, false)
+
+            /*
+            val baselineDay = calculateStudyPeriodDay(BASELINE_START_TIMESTAMP, requireContext())
+            if (baselineDay > BASELINE_DURATION) {
+                setStudyState(requireContext(), STUDY_STATE_POST_BASELINE)
+                (requireActivity() as MainActivity).refreshUI()
             }
 
-            else if (studyState == STUDY_STATE_CONSENT_GIVEN) {
-                // Additional actions after consent is given
-                // e.g., prepare the app for baseline tracking, show notification prompt
-                inflaterView = inflater.inflate(R.layout.settings_layout, container, false)
+             */
 
-                allowNotificationButton = inflaterView.findViewById(R.id.allowNotificationButton)
-                disableBatteryManagementButton = inflaterView.findViewById(R.id.disableBatteryManagementButton)
-                consentSpaiButton = inflaterView.findViewById(R.id.consentSpaiButton)
-                consentSASButton = inflaterView.findViewById(R.id.consentSASButton)
-                startBaselineButton = inflaterView.findViewById(R.id.startBaselineButton)
-                allowNotificationIcon = inflaterView.findViewById(R.id.allowNotificationIcon)
-                consentSpaiIcon = inflaterView.findViewById(R.id.spaiIcon)
-                consentSASIcon = inflaterView.findViewById(R.id.sasIcon)
+            checkAndStartService(BaselineService::class.java)
 
-                var notificationsAllowed : Boolean = false
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    if (ContextCompat.checkSelfPermission(
-                            requireContext(),
-                            POST_NOTIFICATIONS_PERMISSION
-                        ) != PackageManager.PERMISSION_GRANTED
-                    ) {
-                        ActivityCompat.requestPermissions(
-                            requireActivity(),
-                            arrayOf(POST_NOTIFICATIONS_PERMISSION),
-                            100
-                        )
-                    } else {
-                        notificationsAllowed = true
-                        allowNotificationIcon.isVisible = true
-                        allowNotificationButton.setBackgroundColor(
-                            ContextCompat.getColor(
-                                requireContext(),
-                                R.color.blue_gray_200
-                            )
-                        )
-                        allowNotificationButton.setTextColor(
-                            ContextCompat.getColor(
-                                requireContext(),
-                                R.color.blue_gray_600
-                            )
-                        )
-                        checkEnableConsentButton(studyStateVars, notificationsAllowed)
-                    }
-                    allowNotificationButton.setOnClickListener {
-                        ActivityCompat.requestPermissions(requireActivity(), arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), REQUEST_CODE_NOTIFICATION)
-                    }
-                }
-                else {
-                    notificationsAllowed = NotificationManagerCompat.from(requireContext()).areNotificationsEnabled();
-                    allowNotificationButton.setOnClickListener {
-                        val intent = Intent()
-                        intent.setAction(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-                        intent.putExtra(Settings.EXTRA_APP_PACKAGE, requireContext().packageName)
-                        requireContext().startActivity(intent)
-                    }
-                }
-                allowNotificationIcon.isVisible = notificationsAllowed
-                allowNotificationButton.isEnabled = !notificationsAllowed
-
-                disableBatteryManagementButton.setOnClickListener {
-                    val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-                    startActivity(intent)
-                    Toast.makeText(requireContext(), "Please find Android Smartphone Interventions and disable battery management. Select 'all applications' if have trouble finding it!", Toast.LENGTH_LONG).show()
-                }
-
-                consentSpaiButton.setOnClickListener {
-                    val intent = Intent(activity, SPAIActivity::class.java)
-                    intent.putExtra("source", "consent_given")
-                    startActivity(intent)
-                }
-
-                if (studyStateVars[SPAI_1_SUBMITTED] == 1) {
-                    consentSpaiIcon.visibility = View.VISIBLE
-                    disableConsentButton(consentSpaiButton)
-                } else {
-                    consentSpaiIcon.visibility = View.GONE
-                }
-
-                consentSASButton.setOnClickListener {
-                    val intent = Intent(activity, SASSVActivity::class.java)
-                    intent.putExtra("source", "consent_given")
-                    startActivity(intent)
-                }
-
-                if (studyStateVars[SASSV_1_SUBMITTED] == 1) {
-                    consentSASIcon.visibility = View.VISIBLE
-                    disableConsentButton(consentSASButton)
-                } else {
-                    consentSASIcon.visibility = View.GONE
-                }
-
-                startBaselineButton.setOnClickListener {
-                    setStudyState(requireContext(), STUDY_STATE_BASELINE_ONGOING)
-                    setStudyTimestamp(requireContext(), BASELINE_START_TIMESTAMP, System.currentTimeMillis())
-                    (requireActivity() as MainActivity).refreshUI()
-                }
-
-                checkEnableConsentButton(studyStateVars, notificationsAllowed)
-
-            }
-
-            else if (studyState == STUDY_STATE_BASELINE_ONGOING) {
-                // Actions for baseline ongoing
-                // e.g., initialize baseline tracking, display tracking progress
-                inflaterView = inflater.inflate(R.layout.baseline_ongoing_layout, container, false)
-
-                val baselineDay = calculateStudyPeriodDay(BASELINE_START_TIMESTAMP, requireContext())
-                if (baselineDay > BASELINE_DURATION) {
-                    setStudyState(requireContext(), STUDY_STATE_POST_BASELINE)
-                    (requireActivity() as MainActivity).refreshUI()
-                }
-
-                stopService(requireContext(), INT2Service::class.java)
-                stopService(requireContext(), INT1Service::class.java)
-                checkAndStartService(BaselineService::class.java)
-
-                FirebaseUtils.fetchUsageTotal(LocalDateTime.now()) { usage ->
-                    Log.d("FIREBASE", "Total Usage All Days: $usage")
-                }
-
-                baselineProgressSlider = inflaterView.findViewById(R.id.baselineProgressSlider)
-                baselineProgressSlider.value = min(baselineDay.toFloat(), BASELINE_DURATION.toFloat())
-
-                if (baselineDay > 0) setDataVerificationElement(
-                    inflater,
-                    container,
-                    inflaterView.findViewById<LinearLayout>(R.id.baseline_ongoing_layout),
-                    studyState,
-                    baselineDay // only relevant during baseline, use 2+ or something else on different calls
-                )
-
-            }
-
-            else if (studyState == STUDY_STATE_POST_BASELINE) {
-                checkAndStartService(BaselineService::class.java)
-
-                // Actions for post-baseline phase
-                // e.g., gather baseline data, prepare for intervention
-                inflaterView = inflater.inflate(R.layout.post_baseline_layout, container, false)
-
-                tsrqButton = inflaterView.findViewById(R.id.tsrqButton)
-                averageUsageText = inflaterView.findViewById(R.id.averageUsageText)
-                reduceUsageSlider = inflaterView.findViewById(R.id.settingsReduceUsageSlider)
-                reduceUsageText = inflaterView.findViewById(R.id.reduceUsageText)
-                bedTimeInput = inflaterView.findViewById(R.id.bedtimeInput)
-                enableOverlayButton = inflaterView.findViewById(R.id.enableOverlayButton)
-                intervention1TestButton = inflaterView.findViewById(R.id.intervention1TestButton)
-                startInterventionButton = inflaterView.findViewById(R.id.startInterventionButton)
-
-                tsrqButton.setOnClickListener {
-                    val intent = Intent(activity, TSRQActivity::class.java)
-                    startActivity(intent)
-                }
-
-                val tsrqSubmitted = studyStateVars[TSRQ_SUBMITTED] == 1
-                if (tsrqSubmitted) {
-                    tsrqButton.isEnabled = false
-                    tsrqButton.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue_200))
-                    tsrqButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue_600))
-                }
-
-                var usageAverage = 0L
-                FirebaseUtils.fetchUsageTotal(LocalDateTime.now()) { usage ->
-                    val totalUsageAllDays = usage.values.sum()
-                    val averageUsageMillis = if (usage.isNotEmpty()) totalUsageAllDays / usage.size else 0L
-
-                    val hours = averageUsageMillis / (1000 * 60 * 60)
-                    val minutes = (averageUsageMillis / (1000 * 60)) % 60
-
-                    val usageFormatted = String.format("%02d:%02d", hours, minutes)
-                    val usageText = String.format(
-                        averageUsageText.context.getString(R.string.daily_usage),
-                        usageFormatted
-                    )
-                    averageUsageText.text = usageText
-                    usageAverage = averageUsageMillis
-                    setStudyVariable(requireContext(), BASELINE_USAGE_AVERAGE, usageAverage)
-                }
-
-                reduceUsageSlider.setLabelFormatter {
-                    value -> "-${value.toInt()}%"
-                }
-
-                var reduceUsageTouched = false
-                var reducedUsageMillis = 0L
-
-                reduceUsageSlider.addOnChangeListener { slider, value, _ ->
-                    // Convert the slider value to a percentage (negative)
-                    val percentageReduction = value.toInt()
-
-                    // Calculate the reduced usage in milliseconds
-                    reducedUsageMillis = usageAverage * (100 - percentageReduction) / 100
-
-                    // Convert reduced usage to HH:mm format
-                    val hours = reducedUsageMillis / (1000 * 60 * 60)
-                    val minutes = (reducedUsageMillis / (1000 * 60)) % 60
-                    val reducedUsageFormatted = String.format("%02dh %02dm", hours, minutes)
-
-                    // Update the TextView with the reduced usage
-                    reduceUsageText.text = String.format(
-                        reduceUsageText.context.getString(R.string.usage_limit_text),
-                        reducedUsageFormatted
-                    )
-                    reduceUsageTouched = true
-                }
-                reduceUsageText.text = "Move the slider to select between 10% and 50% goal in reduction of smartphone use"
-
-                val bedTimeGoal = getStudyVariable(requireContext(), BEDTIME_GOAL, BEDTIME_GOAL_DEFAULT_VALUE)
-                if (bedTimeGoal != BEDTIME_GOAL_DEFAULT_VALUE) bedTimeInput.setText(convertMinutesToBedtime(getStudyVariable(requireContext(), BEDTIME_GOAL, BEDTIME_GOAL_DEFAULT_VALUE)))
-                bedTimeInput.setOnClickListener {
-                    val calendar = Calendar.getInstance()
-                    val hour = calendar.get(Calendar.HOUR_OF_DAY)
-                    val minute = calendar.get(Calendar.MINUTE)
-
-                    val timePicker = TimePickerDialog(requireContext(), { _, selectedHour, selectedMinute ->
-                        bedTimeInput.setText(
-                            String.format(
-                                "%02dh %02dm",
-                                selectedHour,
-                                selectedMinute
-                            )
-                        )
-                    }, hour, minute, true)
-                    timePicker.setOnDismissListener {
-                        setStudyVariable(requireContext(), BEDTIME_GOAL, parseBedtimeToMinutes(bedTimeInput.text.toString()))
-                    }
-                    timePicker.show()
-                }
-
-
-                enableOverlayButton = inflaterView.findViewById(R.id.enableOverlayButton)
-                enableOverlayButton.setOnClickListener {
-                    (requireActivity() as MainActivity).requestOverlayPermission()
-                }
-
-                var overlaysAllowed = false
-                if (Settings.canDrawOverlays(requireContext())) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        overlaysAllowed = true
-                        // button disabled if already enabled
-                        disableINT1Button(enableOverlayButton)
-                    }
-                    else {
-                        Log.d("MAIN:ONCREATE", "SDK level too low")
-                    }
-                }
-
-                var interventionTested = false
-                intervention1TestButton.setOnClickListener {
-                    UnlockDialog().showDialog(requireContext(), 0,0,0,0, DIALOG_TYPE_GOAL_EXCEEDED, true)
-                    interventionTested = true
-                }
-                intervention1TestButton.isEnabled = overlaysAllowed
-
-                startInterventionButton.setOnClickListener {
-                    Log.d("MAIN", bedTimeInput.text.toString())
-                    if (overlaysAllowed && bedTimeInput.text.isNotEmpty() && reduceUsageTouched && interventionTested && tsrqSubmitted ) {
-                        val c = requireContext()
-                        setStudyState(c, STUDY_STATE_INT1)
-                        setStudyVariable(c, BASELINE_USAGE_AVERAGE, usageAverage)
-                        setStudyVariable(c, INT_SMARTPHONE_USAGE_LIMIT_GOAL, reducedUsageMillis)
-                        setStudyVariable(c, INT_SMARTPHONE_USAGE_LIMIT_PERCENTAGE, reduceUsageSlider.value.toInt())
-                        setStudyVariable(c, BEDTIME_GOAL, parseBedtimeToMinutes(bedTimeInput.text.toString()))
-                        setStudyTimestamp(c, INT1_START_TIMESTAMP, System.currentTimeMillis())
-
-                        stopService(requireContext(), BaselineService::class.java)
-
-                        (requireActivity() as MainActivity).refreshUI()
-                    }
-                    // prompt user to do the missing thing!
-                    else {
-                        if (!overlaysAllowed) {
-                            Toast.makeText(requireContext(), "Please allow overlays before starting Intervention Phase #1", Toast.LENGTH_SHORT).show()
-                        }
-                        else if (bedTimeInput.text.isEmpty()) {
-                            Toast.makeText(requireContext(), "Please give your preferred bedtime before starting Intervention Phase #1", Toast.LENGTH_SHORT).show()
-                        }
-                        else if (!reduceUsageTouched) {
-                            Toast.makeText(requireContext(), "Please set a smartphone usage goal before starting Intervention Phase #1", Toast.LENGTH_SHORT).show()
-                        }
-                        else if (!interventionTested) {
-                            Toast.makeText(requireContext(), "Please test the intervention screen before starting Intervention Phase #1", Toast.LENGTH_SHORT).show()
-                        }
-                        else if (!tsrqSubmitted) {
-                            Toast.makeText(requireContext(), "Please fill the questionnaire", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
-
-            }
-
-            else if (studyState == STUDY_STATE_INT1) {
-                // e.g., initiate intervention routines, set up reminders
-                inflaterView = inflater.inflate(R.layout.intervention1_layout, container, false)
-
-                // INT1 requires overlay permission
-                if (Settings.canDrawOverlays(requireContext())) {
-                    if (!isServiceRunning(requireContext(), INT1Service::class.java)) {
-                        val intent = Intent(requireContext(), INT1Service::class.java) // Build the intent for the service
-                        (requireActivity() as MainActivity).startForegroundService(intent)
-                    }
-                    else {
-                        Log.d("MAIN:ONCREATE", "SDK level too low")
-                    }
-                } else {
-                    // this prompts user to the settings screen to enable overlay
-                    Toast.makeText(requireContext(), "Please enable overlay permission", Toast.LENGTH_LONG).show()
-                    (requireActivity() as MainActivity).requestOverlayPermission()
-                }
-
-                val int1Day = calculateStudyPeriodDay(INT1_START_TIMESTAMP, requireContext())
-                if (int1Day > INT1_DURATION) {
-                    setStudyState(requireContext(), STUDY_STATE_POST_INT1)
-                    (requireActivity() as MainActivity).refreshUI()
-                }
-
-                checkAndStartService(BaselineService::class.java)
-                checkAndStartService(INT1Service::class.java)
-                checkAndStartService(INT2Service::class.java)
-
-                intervention1ProgressSlider = inflaterView.findViewById(R.id.intervention1ProgressSlider)
-                intervention1ProgressSlider.value = min(int1Day.toFloat(), INT1_DURATION.toFloat())
-
-                FirebaseUtils.fetchPreviousDayEstimate { estimateMinutes ->
-                    if (estimateMinutes == null) {
-                        // If the estimate does not exist, show the usage input element
-                        Log.d("estimate", "estimate does not exist for yesterday")
-                        setSmartphoneUsageInputElement(
-                            inflater,
-                            container,
-                            inflaterView.findViewById<LinearLayout>(R.id.intervention1_layout),
-                            studyState,
-                            1000 // only relevant during baseline, use 2+ or something else on different calls
-                        )
-
-                    } else {
-                        Log.d("estimate", "yesterdays estimate is " + estimateMinutes)
-                        // If the estimate exists, show the data verification element
-                        setDataVerificationElement(
-                            inflater,
-                            container,
-                            inflaterView.findViewById<LinearLayout>(R.id.intervention1_layout),
-                            studyState,
-                            1000 // only relevant during baseline, use 2+ or something else on different calls
-                        )
-                    }
-                }
-
-            }
-
-            else if (studyState == STUDY_STATE_POST_INT1) {
-                // Actions after Intervention Phase 1
-                // e.g., prompt user feedback on phase, analyze results
-                inflaterView = inflater.inflate(R.layout.post_int1_layout, container, false)
-
-                startIntervention2Button = inflaterView.findViewById(R.id.startIntervention2Button)
-                startIntervention2Button.setOnClickListener {
-                    setStudyState(requireContext(), STUDY_STATE_INT2)
-                    setStudyTimestamp(requireContext(), INT2_START_TIMESTAMP, System.currentTimeMillis())
-
-                    val goalData = hashMapOf(
-                        INT2_START_TIMESTAMP to System.currentTimeMillis(),
-                        "ts" to System.currentTimeMillis()
-                    )
-
-                    checkAndStartService(INT1Service::class.java)
-
-                    (requireActivity() as MainActivity).refreshUI()
-                }
-            }
-
-            else if (studyState == STUDY_STATE_INT2) {
-                // Actions for Intervention Phase 2
-                // e.g., adjust intervention parameters, set up next steps
-                inflaterView = inflater.inflate(R.layout.intervention2_layout, container, false)
-
-                val int2Day = calculateStudyPeriodDay(INT2_START_TIMESTAMP, requireContext())
-                if (int2Day > INT2_DURATION) {
-                    setStudyState(requireContext(), STUDY_STATE_POST_INT2_SURVEY_REQUIRED)
-                    (requireActivity() as MainActivity).refreshUI()
-                }
-
-                checkAndStartService(BaselineService::class.java)
-                stopService(requireContext(), INT1Service::class.java)
-                checkAndStartService(INT2Service::class.java)
-
-                intervention2ProgressSlider = inflaterView.findViewById(R.id.intervention2ProgressSlider)
-
-                val safeInt2Day = if (int2Day < 1) 1 else int2Day
-                intervention2ProgressSlider.value = min(safeInt2Day.toFloat(), INT2_DURATION.toFloat())
-
-                FirebaseUtils.fetchPreviousDayEstimate { estimateMinutes ->
-                    if (estimateMinutes == null) {
-                        // If the estimate does not exist, show the usage input element
-                        Log.d("estimate", "estimate does not exist for yesterday")
-                        setSmartphoneUsageInputElement(
-                            inflater,
-                            container,
-                            inflaterView.findViewById<LinearLayout>(R.id.intervention2_layout),
-                            studyState,
-                            1000 // only relevant during baseline, use 2+ or something else on different calls
-                        )
-
-                    } else {
-                        Log.d("estimate", "yesterdays estimate is " + estimateMinutes)
-                        // If the estimate exists, show the data verification element
-                        setDataVerificationElement(
-                            inflater,
-                            container,
-                            inflaterView.findViewById<LinearLayout>(R.id.intervention2_layout),
-                            studyState,
-                            1000 // only relevant during baseline, use 2+ or something else on different calls
-                        )
-                    }
-                }
-            }
-
-            else if (studyState == STUDY_STATE_POST_INT2_SURVEY_REQUIRED) {
-                stopService(requireContext(), INT2Service::class.java)
-                stopService(requireContext(), INT1Service::class.java)
-                stopService(requireContext(), BaselineService::class.java)
-
-                // Actions for post Intervention Phase 2 survey
-                // e.g., collect survey data, prepare for final analysis
-                inflaterView = inflater.inflate(R.layout.post_int2_survey_required_layout, container, false)
-
-                postStudyExitSurveyButton = inflaterView.findViewById(R.id.postStudyExitSurveyButton)
-                postStudySpaiButton  = inflaterView.findViewById(R.id.postStudySpaiButton)
-                postStudySASButton = inflaterView.findViewById(R.id.postStudySASSVButton)
-                completeStudyButton = inflaterView.findViewById(R.id.completeStudyButton)
-
-                postStudyExitSurveyButton.setOnClickListener {
-                    val sharedPreferences = requireActivity().getSharedPreferences(STUDY_STATE_SHAREDPREFS, Context.MODE_PRIVATE)
-                    val identification = sharedPreferences.getString("identification", "") ?: ""
-                    val prefilledUrl = getString(R.string.exit_survey_forms_link) +
-                            URLEncoder.encode(identification, "UTF-8")
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(prefilledUrl))
-                    startActivity(intent)
-                }
-
-                postStudySpaiButton.setOnClickListener {
-                    val intent = Intent(activity, SPAIActivity::class.java)
-                    intent.putExtra("source", "post_study")
-                    startActivity(intent)
-                }
-
-                if (studyStateVars[SPAI_2_SUBMITTED] == 1) {
-                    postStudySpaiButton.visibility = View.GONE
-                    postStudySpaiButton.isEnabled = false
-                }
-
-                postStudySASButton.setOnClickListener {
-                    val intent = Intent(activity, SASSVActivity::class.java)
-                    intent.putExtra("source", "post_study")
-                    startActivity(intent)
-                }
-
-                if (studyStateVars[SASSV_2_SUBMITTED] == 1) {
-                    postStudySASButton.visibility = View.GONE
-                    postStudySASButton.isEnabled = false
-                }
-
-                completeStudyButton.setOnClickListener {
-                    setStudyState(requireContext(), STUDY_STATE_COMPLETE)
-                    setStudyTimestamp(requireContext(), STUDY_COMPLETE_TIMESTAMP, System.currentTimeMillis())
-
-                    (requireActivity() as MainActivity).refreshUI()
-                }
-
-            }
-
-            else if (studyState == STUDY_STATE_COMPLETE) {
-                // Actions for study completion
-                // e.g., show summary, provide exit message, share results
-                inflaterView = inflater.inflate(R.layout.complete_layout, container, false)
-            } else {
-                // Optional fallback layout and actions
-                inflaterView = inflater.inflate(R.layout.fragment_info, container, false)
-            }
+            studyProgressSlider = inflaterView.findViewById(R.id.studyProgressSlider)
+            //studyProgressSlider.value = min(baselineDay.toFloat(), BASELINE_DURATION.toFloat())
+            studyProgressSlider.value = 1F
 
             return inflaterView
         }
 
-        private fun setSmartphoneUsageInputElement(inflater: LayoutInflater, container: ViewGroup?, parentLayout: LinearLayout, studyState: Int, studyDay: Int) {
-            if (!isAdded || context == null) {
-                return
-            } else {
-                Log.w("Fragment", "Fragment not attached yet, skipping clearTodayUsage")
+        private fun checkSettingsAndRun(): Boolean {
+
+            if (!isAccessibilityServiceEnabled(requireContext(), ApplicationTrackingService::class.java)) {
+                return false
             }
+            // TODO check notification permission
+            // TODO check overlay permission
 
-            val usageInputLayout = inflater.inflate(R.layout.data_estimation_layout, container, false)
+            // TODO If everything is OK run services
 
-            val submitButton = usageInputLayout.findViewById<Button>(R.id.submitUsageButton)
-            val usageInputField = usageInputLayout.findViewById<EditText>(R.id.usageInputField)
-            val usageQuestionText = usageInputLayout.findViewById<TextView>(R.id.usageQuestionText)
-
-            val (buttonColor, textColor, editTextTintColor) = when (studyState) {
-                2 -> Triple(R.color.teal_500, R.color.teal_800, R.color.teal_500)
-                4 -> Triple(R.color.blue_500, R.color.blue_800, R.color.blue_500)
-                6 -> Triple(R.color.deep_purple_500, R.color.deep_purple_800, R.color.deep_purple_500)
-                else -> Triple(R.color.blue_gray_500, R.color.blue_800, R.color.blue_gray_500)
-            }
-
-            submitButton.backgroundTintList = ContextCompat.getColorStateList(requireContext(), buttonColor)
-            usageQuestionText.setTextColor(ContextCompat.getColor(requireContext(), textColor))
-            usageInputField.backgroundTintList = ContextCompat.getColorStateList(requireContext(), editTextTintColor)
-
-            // Set click listener for the submit button
-            submitButton.setOnClickListener {
-                val usageInput = usageInputField.text.toString()
-                if (usageInput.isNotEmpty()) {
-                    usageInputLayout.animate()
-                        .alpha(0f)
-                        .setDuration(500) // Duration of the fade-out animation in milliseconds
-                        .withEndAction {
-                            parentLayout.removeView(usageInputLayout)
-                            setDataVerificationElement(inflater, container, parentLayout, studyState, studyDay)
-                        }
-                        .start()
-                    val usageMinutes = usageInput.toIntOrNull()
-                    if (usageMinutes != null) {
-                        // Handle the input, e.g., store it in Firebase or update UI
-                        Log.d("UsageInput", "User input: $usageMinutes minutes")
-                        FirebaseUtils.storePreviousDayEstimate(usageMinutes)
-
-                    } else {
-                        Toast.makeText(requireContext(), "Please input a number in minutes", Toast.LENGTH_SHORT).show()
-                        Log.e("UsageInput", "Invalid input: not a number")
-                    }
-                } else {
-                    Log.e("UsageInput", "Input is empty")
-                    Toast.makeText(requireContext(), "Please input a number in minutes", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            // Add the usage input layout to the parent layout if studyDay > 0
-            if (studyDay > 0) {
-                parentLayout.addView(usageInputLayout)
-                usageInputLayout.alpha = 0f // Start with fully transparent
-                usageInputLayout.animate()
-                    .alpha(1f) // Fade in to fully opaque
-                    .setDuration(500) // Duration of the fade-in animation in milliseconds
-                    .start()
-            }
+            return false
         }
 
-        private fun setDataVerificationElement(inflater: LayoutInflater, container: ViewGroup?, parentLayout: LinearLayout, studyState: Int, studyDay : Int) {
-            if (!isAdded || context == null) {
-                return
-            } else {
-                Log.w("Fragment", "Fragment not attached yet, skipping clearTodayUsage")
-            }
-            val dataVerificationLayout = inflater.inflate(R.layout.data_verification_layout, container, false)
+        fun isAccessibilityServiceEnabled(context: Context, serviceClass: Class<out AccessibilityService>): Boolean {
+            val expectedComponentName = ComponentName(context, serviceClass)
+            val enabledServices = Settings.Secure.getString(
+                context.contentResolver,
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+            ) ?: return false
 
-            val positiveButton = dataVerificationLayout.findViewById<Button>(R.id.dataVerificationPositiveButton)
-            val negativeButton = dataVerificationLayout.findViewById<Button>(R.id.dataVerificationNegativeButton)
-            val text = dataVerificationLayout.findViewById<TextView>(R.id.usageInfoText)
+            val colonSplitter = TextUtils.SimpleStringSplitter(':')
+            colonSplitter.setString(enabledServices)
 
-            val (positiveColor, negativeColor, textColor) = when (studyState) {
-                2 -> Triple(R.color.teal_500, R.color.teal_700, R.color.teal_800)
-                4 -> Triple(R.color.blue_500, R.color.blue_700, R.color.blue_800)
-                6 -> Triple(R.color.deep_purple_500, R.color.deep_purple_700, R.color.deep_purple_800)
-                else -> Triple(R.color.blue_gray_500, R.color.blue_700, R.color.blue_800)
-            }
-
-            positiveButton.backgroundTintList = ContextCompat.getColorStateList(requireContext(), positiveColor)
-            negativeButton.backgroundTintList = ContextCompat.getColorStateList(requireContext(), negativeColor)
-            text.setTextColor(ContextCompat.getColor(requireContext(), textColor))
-
-            FirebaseUtils.fetchUsageTotal(LocalDateTime.now()) { usage ->
-                val previousDayDate = LocalDateTime.now().minusDays(1).toLocalDate().toString()
-                val previousDayUsageMillis = usage[previousDayDate] ?: 0L
-                val hours = previousDayUsageMillis / (1000 * 60 * 60)
-                val minutes = (previousDayUsageMillis / (1000 * 60)) % 60
-                val usageFormatted = String.format("%dh %dmin", hours, minutes)
-                Log.d("Verification", "Previous day's usage: $usageFormatted")
-                text.text = String.format(text.context.getString(R.string.usage_info_text), usageFormatted)
-
-                FirebaseUtils.fetchVerificationStatusForPreviousDay { isVerified ->
-                    if (isVerified == true) {
-                        Log.d("Verification", "yesterday IS verified as true")
-                        positiveButton.visibility = View.GONE
-                        negativeButton.visibility = View.GONE
-                        fadeOutAndRemoveButtons(positiveButton, negativeButton)
-                        removeVerificationPrompt(text)
-                    } else if (isVerified == false) {
-                        Log.d("Verification", "yesterday IS verified as false")
-                        positiveButton.visibility = View.GONE
-                        negativeButton.visibility = View.GONE
-                        removeVerificationPrompt(text)
-                        addDataWasErrorText(text)
-                    }
-                    else if (isVerified == null) {
-                        // Set click listeners for both buttons
-                        Log.d("Verification", "yesterday not yet verified")
-                        positiveButton.setOnClickListener {
-                            FirebaseUtils.storeVerificationStatusForPreviousDay(true)
-                            removeVerificationPrompt(text)
-                            fadeOutAndRemoveButtons(positiveButton, negativeButton)
-                        }
-                        negativeButton.setOnClickListener {
-                            FirebaseUtils.storeVerificationStatusForPreviousDay(false)
-                            removeVerificationPrompt(text)
-                            fadeOutAndRemoveButtons(positiveButton, negativeButton)
-                        }
-                    }
-                    // Add the data verification layout to the parent layout if studyDay > 0
-                    if (studyDay > 0) {
-                        parentLayout.addView(dataVerificationLayout)
-                        dataVerificationLayout.alpha = 0f // Start with fully transparent
-                        dataVerificationLayout.animate()
-                            .alpha(1f) // Fade in to fully opaque
-                            .setDuration(500) // Duration of the fade-in animation in milliseconds
-                            .start()
-
-                    }
-
-                }
-            }
-
-        }
-
-        private fun fadeOutAndRemoveButtons(vararg buttons: Button) {
-            buttons.forEach { button ->
-                button.animate()
-                    .alpha(0f)
-                    .setDuration(500) // Duration of the fade-out animation in milliseconds
-                    .withEndAction {
-                        button.visibility = View.GONE // Hide the button after the animation
-                        (button.parent as? ViewGroup)?.removeView(button) // Remove the button from the layout
-                    }
-            }
-        }
-        private fun removeVerificationPrompt(textView: TextView) {
-            textView.text = textView.text.toString().replace(", does this information seem correct?", ".").trim()
-        }
-
-        private fun addDataWasErrorText(textView: TextView) {
-            textView.text = textView.text.toString() + ". Yesterday was flagged to contain incorrect information."
+            return colonSplitter.any { ComponentName.unflattenFromString(it) == expectedComponentName }
         }
 
         private fun checkAndStartService(serviceClass: Class<*>) {
@@ -928,217 +231,11 @@ class MainActivity : FragmentActivity() {
             Log.d("ServiceManager", "${serviceClass.simpleName} asked to be stopped (is not necessarily running).")
         }
 
-        private fun checkEnableConsentButton(studyStateVars : Map<String, Number?>, notificationsAllowed : Boolean) {
-            if (!((studyStateVars[SASSV_1_SUBMITTED] == 1) && (studyStateVars[SPAI_1_SUBMITTED] ==1) && notificationsAllowed)) {
-                disableConsentButton(startBaselineButton)
-            }
-            else {
-                enableConsentButton(startBaselineButton)
-            }
-        }
-
-        private fun disableConsentButton(b : Button) {
-            b.isEnabled = false
-            b.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue_gray_200))
-            b.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue_gray_600))
-        }
-
-        private fun enableConsentButton(b : Button) {
-            b.isEnabled = true
-            b.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue_gray_700))
-            b.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue_gray_50))
-        }
-
-        private fun disableINT1Button(b : Button) {
-            b.isEnabled = false
-            b.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue_200))
-            b.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue_600))
-        }
-
-    }
-
-    class DataCollectedFragment : Fragment() {
-        private lateinit var inflaterView : View
-        private lateinit var usageBarChart : BarChart
-
-        override fun onCreateView(
-            inflater: LayoutInflater, container: ViewGroup?,
-            savedInstanceState: Bundle?
-        ): View {
-
-            val baselineDay = calculateStudyPeriodDay(BASELINE_START_TIMESTAMP, requireContext())
-
-            if (baselineDay < 2) {
-                inflaterView = inflater.inflate(R.layout.fragment_data_collected_empty, container, false)
-                return inflaterView
-            }
-            else {
-                inflaterView = inflater.inflate(R.layout.fragment_data_collected, container, false)
-
-                usageBarChart = inflaterView.findViewById( R.id.dailyUsageBarChart)
-
-                FirebaseUtils.fetchUsageTotal(LocalDateTime.now()) { usage ->
-                    val studyState = getStudyState(requireContext())
-                    val baselineUsageAverage : Long = getStudyVariable(requireContext(), BASELINE_USAGE_AVERAGE, 0L)
-                    val usageGoal : Int = getStudyVariable(requireContext(), INT_SMARTPHONE_USAGE_LIMIT_PERCENTAGE, 20)
-
-                    val entries = mutableListOf<BarEntry>()
-                    val today = LocalDate.now()
-                    val startDate = today  // Start today
-                    val endDate = today.minusWeeks(2)    // Two weeks behind
-                    val dates =
-                        mutableListOf<Pair<LocalDate, Float>>()  // To store dates and corresponding usage in minutes
-
-                    var currentDate = startDate
-                    while (!currentDate.isBefore(endDate)) {
-                        val usageInMillis = usage[currentDate.toString()]
-
-                        // If there is usage data for this date, create a BarEntry
-                        if (usageInMillis != null) {
-                            // Convert the usage from milliseconds to minutes
-                            val minutes = (usageInMillis / 60000).toFloat() // Convert to minutes
-                            val p = Pair(currentDate, minutes)
-                            dates.add(p)
-                        } else {
-                            dates.add(Pair(currentDate, 0F))
-                            //Log.d("DATE_DEBUG_DUMP", "No usage found for $currentDate")
-                        }
-                        // Move to the next date
-                        currentDate = currentDate.minusDays(1)
-                    }
-                    val sortedDates = dates.sortedBy { it.first }  // Sorting by the LocalDate
-
-                    // Create BarEntry from sorted data
-                    for (entry in sortedDates) {
-                        val date = entry.first
-                        val minutes = entry.second
-                        val barEntry = BarEntry(date.dayOfYear.toFloat(), minutes)
-                        entries.add(barEntry)
-                    }
-
-                    // Create a BarDataSet
-                    val barDataSet = BarDataSet(entries, "")
-
-                    val colorRes = when (studyState) {
-                        2, 3 -> R.color.teal_500
-                        4, 5 -> R.color.blue_500
-                        in 6..8 -> R.color.deep_purple_500
-                        else -> R.color.blue_gray_500 // Default color if needed
-                    }
-
-                    barDataSet.color = resources.getColor(colorRes, null)
-
-                    val customValueFormatter = object : ValueFormatter() {
-                        override fun getFormattedValue(value: Float): String {
-                            // Format the value to an integer (no decimals) and add "m" at the end
-                            return String.format("%d m", value.toInt())
-                        }
-                    }
-                    barDataSet.valueFormatter = customValueFormatter
-
-                    // Set up BarData
-                    val barData = BarData(barDataSet)
-                    barData.barWidth = 0.8f // Set bar width
-
-                    // Configure the chart
-                    usageBarChart.data = barData
-                    usageBarChart.description.text =
-                        "Smartphone usage data from past two weeks (in minutes)"
-                    usageBarChart.description.textSize = 14f // Optional: Adjust text size
-                    usageBarChart.description.setPosition(
-                        usageBarChart.width / 2f,
-                        30f
-                    ) // Adjust X and Y position (pixels)
-                    usageBarChart.description.textAlign =
-                        Paint.Align.CENTER // Align the text to the center
-                    usageBarChart.setFitBars(true) // Make the bars fit into the chart view
-
-                    // Customize the X-Axis
-                    val xAxis: XAxis = usageBarChart.xAxis
-                    xAxis.position = XAxis.XAxisPosition.BOTTOM
-                    xAxis.granularity = 1f // One interval per bar
-                    xAxis.setDrawGridLines(false)
-
-                    val dateValueFormatter = object : ValueFormatter() {
-                        override fun getFormattedValue(value: Float): String {
-                            // Convert the 'value' (day of the year) into a LocalDate (assume the current year)
-                            val currentYear = LocalDate.now().year // Get the current year
-                            val dayOfYear = value.toInt() // 'value' is the day of the year (Float to Int)
-
-                            // Create the corresponding LocalDate for the given day of the year
-                            val date = LocalDate.ofYearDay(currentYear, dayOfYear)
-
-                            // Format the LocalDate to include day and month in "DD-MM" format
-                            val formatter = DateTimeFormatter.ofPattern("dd-MM") // "dd-MM" for day and month
-                            return date.format(formatter) // Format the LocalDate to show "DD-MM"
-                        }
-                    }
-                    xAxis.valueFormatter = dateValueFormatter
-
-                    // Customize the Y-Axis (optional)
-                    val yAxis = usageBarChart.axisLeft
-                    yAxis.axisMinimum = 0f // Optional: Set minimum value for the axis
-                    yAxis.granularity = 1f // Optional: Set the interval between labels
-                    yAxis.textSize = 12f // Optional: Adjust text size
-
-                    val yAxisRight: YAxis = usageBarChart.axisRight
-                    yAxisRight.isEnabled = false // Disable right Y-Axis
-
-                    if (studyState in 4..8) {
-                        val baselineLine = LimitLine(baselineUsageAverage.toFloat() / 60000, "Baseline Avg").apply {
-                            lineWidth = 2f
-                            lineColor = resources.getColor(R.color.red, null)
-                            labelPosition = LimitLine.LimitLabelPosition.LEFT_TOP // Position the label to the left
-                            textSize = 12f // Customize the label text size if needed
-                        }
-
-                        val goalLine = LimitLine((baselineUsageAverage * (1 - usageGoal / 100f) / 60000), "Usage Goal").apply {
-                            lineWidth = 2f
-                            lineColor = resources.getColor(R.color.green, null)
-                            labelPosition = LimitLine.LimitLabelPosition.LEFT_TOP // Position the label to the left
-                            textSize = 12f // Customize the label text size if needed
-                        }
-
-                        val yAxis = usageBarChart.axisLeft // Adjust for your chart setup
-                        yAxis.addLimitLine(baselineLine)
-                        yAxis.addLimitLine(goalLine)
-
-                        Log.d("CHARTING", "Add baseline: ${baselineLine.limit} and goal: ${goalLine.limit}")
-                    }
-                    // Refresh the chart
-                    usageBarChart.invalidate() // Refresh chart with new data
-                }
-                return inflaterView
-            }
-        }
-
     }
 
     // settings fragment is always the same
     // some fields are disabled field.isEnabled = false prior to INT1
     class SettingsFragment : Fragment() {
-        private lateinit var feedbackButton: Button
-
-        private lateinit var studyStateSpinner: Spinner
-        private lateinit var settingsReduceUsageSlider: Slider
-        private lateinit var settingsReduceUsageText : TextView
-        private lateinit var settingsLayout : LinearLayout
-        private lateinit var passkeyEditText : EditText
-        private lateinit var passkeyText : TextView
-        private lateinit var settingsGoalLayout : LinearLayout
-        private lateinit var settingsDeviceidText : TextView
-
-        private lateinit var settingsBedLayout : LinearLayout
-        private lateinit var settingsBedtimeInput : EditText
-
-        private lateinit var testDialogButtonGoal : Button
-        private lateinit var testDialogButtonBed : Button
-
-        private lateinit var clearSharedPreferencesButton : Button
-        private lateinit var clearDailyUsageButton : Button
-
-        private var isUserInteracting = false
-        private var usageAverage = 0L
 
         @SuppressLint("StringFormatInvalid", "DefaultLocale")
         override fun onCreateView(
@@ -1146,262 +243,11 @@ class MainActivity : FragmentActivity() {
             savedInstanceState: Bundle?
         ): View? {
             // Inflate the layout for this fragment
-            val view = inflater.inflate(R.layout.fragment_settings, container, false)
-
-            feedbackButton = view.findViewById(R.id.settingsQuestionButton)
-
-            settingsReduceUsageSlider = view.findViewById(R.id.settingsReduceUsageSlider)
-            settingsReduceUsageText = view.findViewById(R.id.settingsReduceUsageText)
-            settingsLayout = view.findViewById(R.id.settingsHiddenLayout)
-            passkeyEditText = view.findViewById<EditText>(R.id.passkeyEditText)
-            passkeyText = view.findViewById(R.id.passkeyText)
-            settingsGoalLayout = view.findViewById(R.id.settingsGoalLayout)
-            testDialogButtonGoal = view.findViewById(R.id.settingsTestDialogGoal)
-            testDialogButtonBed = view.findViewById(R.id.settingsTestDialogBed)
-            settingsDeviceidText = view.findViewById(R.id.settingsDeviceId)
-            clearSharedPreferencesButton = view.findViewById(R.id.clearSharedPreferences)
-            clearDailyUsageButton = view.findViewById(R.id.clearDailyUsage)
-            settingsBedtimeInput = view.findViewById(R.id.settingsBedtimeInput)
-            settingsBedLayout = view.findViewById(R.id.settingsBedLayout)
-
-            feedbackButton.setOnClickListener {
-                showFeedbackDialog()
-            }
-
-            usageAverage = getStudyVariable(requireContext(), BASELINE_USAGE_AVERAGE, 0L)
-
-            settingsReduceUsageSlider.setLabelFormatter {
-                    value -> "-${value.toInt()}%"
-            }
-
-            val usageGoal = getStudyVariable(requireContext(), INT_SMARTPHONE_USAGE_LIMIT_PERCENTAGE, 10)
-            settingsReduceUsageSlider.value = usageGoal.toFloat()
-            settingsReduceUsageSlider.setLabelFormatter {
-                    value -> "-${value.toInt()}%"
-            }
-
-            var reducedUsageMillis = 0L
-            settingsReduceUsageSlider.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
-                override fun onStartTrackingTouch(slider: Slider) {
-                    // No action needed here
-                }
-
-                override fun onStopTrackingTouch(slider: Slider) {
-                    // Perform the action when the user stops interacting with the slider
-                    val value = slider.value
-
-                    // Convert the slider value to a percentage (negative)
-                    val percentageReduction = value.toInt()
-
-                    // Calculate the reduced usage in milliseconds
-                    reducedUsageMillis = usageAverage * (100 - percentageReduction) / 100
-
-                    // Convert reduced usage to HH:mm format
-                    val hours = reducedUsageMillis / (1000 * 60 * 60)
-                    val minutes = (reducedUsageMillis / (1000 * 60)) % 60
-                    val reducedUsageFormatted = String.format("%02dh %02dm", hours, minutes)
-
-                    settingsReduceUsageText.text = String.format(
-                        settingsReduceUsageText.context.getString(R.string.usage_limit_text),
-                        reducedUsageFormatted
-                    )
-
-                    // update values here automatically
-                    setStudyVariable(requireContext(), INT_SMARTPHONE_USAGE_LIMIT_GOAL, reducedUsageMillis)
-                    setStudyVariable(requireContext(), INT_SMARTPHONE_USAGE_LIMIT_PERCENTAGE, value.toInt())
-                    // Do something with the value
-                    Log.d("Slider", "User stopped interacting, final value: $value")
-                }
-            })
-
-
-            settingsBedtimeInput.setOnClickListener {
-                val calendar = Calendar.getInstance()
-                val hour = calendar.get(Calendar.HOUR_OF_DAY)
-                val minute = calendar.get(Calendar.MINUTE)
-
-                val timePicker = TimePickerDialog(requireContext(), { _, selectedHour, selectedMinute ->
-                    settingsBedtimeInput.setText(
-                        String.format(
-                            "%02dh %02dm",
-                            selectedHour,
-                            selectedMinute
-                        )
-                    )
-                }, hour, minute, true)
-
-                timePicker.setOnDismissListener {
-                    setStudyVariable(requireContext(), BEDTIME_GOAL, parseBedtimeToMinutes(settingsBedtimeInput.text.toString()))
-
-                }
-                timePicker.show()
-
-            }
-            settingsBedtimeInput.setText(convertMinutesToBedtime(getStudyVariable(requireContext(), BEDTIME_GOAL, BEDTIME_GOAL_DEFAULT_VALUE)))
-
-            settingsDeviceidText.text = String.format(
-                settingsDeviceidText.context.getString(R.string.settings_deviceid_text),
-                FirebaseUtils.getCurrentUserUID().toString()
-            )
-
-            // Find the button using the inflated view
-            val startOnboardingButton: Button = view.findViewById(R.id.startOnBoardingButton)
-            startOnboardingButton.setOnClickListener {
-                // Start the MainActivity for onboarding
-                val intent = Intent(activity, OnboardingActivity::class.java)
-                startActivity(intent)
-            }
-
-            val spaiButton: Button = view.findViewById(R.id.SPAI)
-            spaiButton.setOnClickListener {
-                // Start the MainActivity for onboarding
-                val intent = Intent(activity, SPAIActivity::class.java)
-                startActivity(intent)
-            }
-
-            val sasButton : Button = view.findViewById(R.id.SAS_SV)
-            sasButton.setOnClickListener {
-                // Start the MainActivity for onboarding
-                val intent = Intent(activity, SASSVActivity::class.java)
-                startActivity(intent)
-            }
-
-            val tsrqButton : Button = view.findViewById(R.id.settingsTSRQ)
-            tsrqButton.setOnClickListener {
-                // Start the MainActivity for onboarding
-                val intent = Intent(activity, TSRQActivity::class.java)
-                startActivity(intent)
-            }
-
-
-            studyStateSpinner = view.findViewById<Spinner>(R.id.study_state_spinner)
-
-            // Array of study states with descriptions
-            val studyStates = arrayOf(
-                "0 - Onboarding",
-                "1 - Pre-baseline",
-                "2 - Baseline",
-                "3 - Pre-INT1",
-                "4 - INT1",
-                "5 - Post-INT1",
-                "6 - INT2",
-                "7 - Post-INT2",
-                "8 - Study Complete"
-            )
-
-            // Set up the ArrayAdapter
-            val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, studyStates)
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            studyStateSpinner.adapter = adapter
-
-            studyStateSpinner.setOnTouchListener { _, _ ->
-                isUserInteracting = true
-                false // Allow the touch event to propagate
-            }
-            studyStateSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                    if (isUserInteracting) {
-                        val selectedState = position // Store the selected index (0-8)
-                        // Optional: Show a Toast message for demonstration
-                        setStudyState(requireContext(), selectedState)
-                        (requireActivity() as MainActivity).refreshUI()
-                        // Reset the interaction flag
-                        isUserInteracting = false
-                    }
-
-                }
-
-                override fun onNothingSelected(parent: AdapterView<*>) {
-                    // Do nothing, or handle if needed
-                }
-            }
-            studyStateSpinner.setSelection(getStudyState(requireContext()))
-
-            testDialogButtonGoal.setOnClickListener {
-                UnlockDialog().showDialog(
-                    requireContext(),
-                    0,
-                    0,
-                    0,
-                    0,
-                    DIALOG_TYPE_GOAL_EXCEEDED,
-                    true
-                )
-            }
-
-            testDialogButtonBed.setOnClickListener {
-                UnlockDialog().showDialog(
-                    requireContext(),
-                    0,
-                    0,
-                    0,
-                    0,
-                    DIALOG_TYPE_BEDTIME,
-                    true
-                )
-            }
-
-            clearSharedPreferencesButton.setOnClickListener {
-                showClearConfirmationDialog(requireContext())
-            }
-
-            clearDailyUsageButton.setOnClickListener {
-                clearTodayUsage(requireContext())
-            }
-
-            // Set settings content to hidden unless passkey is entered
-            settingsLayout.visibility = View.GONE
-
-            passkeyEditText.setText("")
-            passkeyEditText.addTextChangedListener(object : TextWatcher {
-                override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
-                }
-
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                }
-
-                override fun afterTextChanged(s: Editable?) {
-                    if (s.toString() == SETTINGS_PASSKEY) {
-                        // Passkey is correct
-                        settingsLayout.visibility = View.VISIBLE
-                        passkeyText.text = "Passkey correct!"
-                    }
-                    else {
-                        settingsLayout.visibility = View.GONE
-                        passkeyText.text = "Enter passkey:"
-                    }
-                }
-            })
-
-            if (getStudyState(requireContext()) < 4) {
-                settingsGoalLayout.visibility = View.GONE
-                settingsBedLayout.visibility = View.GONE
-            }
+            val view = inflater.inflate(R.layout.settings_layout, container, false)
 
             return view
         }
 
-        fun showFeedbackDialog() {
-            val builder: AlertDialog.Builder = AlertDialog.Builder(requireContext())
-            builder.setTitle("Feedback")
-
-            val input = EditText(requireContext())
-            builder.setView(input)
-
-            builder.setPositiveButton("Submit") { dialog, which ->
-                val feedback = input.text.toString()
-                uploadFeedback("/users/${getCurrentUserUID()}/feedback/${System.currentTimeMillis()}",
-                    FirebaseUtils.FirebaseFeedbackDataObject(feedback = feedback))
-                Toast.makeText(requireContext(), "Feedback sent!", Toast.LENGTH_SHORT).show()
-            }
-
-            builder.setNegativeButton("Cancel") { dialog, which ->
-                dialog.cancel()
-            }
-
-            builder.show()
-        }
     }
-
 
 }

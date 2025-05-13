@@ -5,27 +5,36 @@
     android:layout_height="wrap_content"
     android:padding="8dp">
 
-    <!-- Start time button -->
-    <Button
-        android:id="@+id/startTimeButton"
-        android:layout_width="0dp"
-        android:layout_weight="1"
-        android:text="Start"
-        android:layout_height="wrap_content" />
-
-    <!-- End time button -->
-    <Button
-        android:id="@+id/endTimeButton"
-        android:layout_width="0dp"
-        android:layout_weight="1"
-        android:text="End"
-        android:layout_height="wrap_content" />
-
-    <!-- Delete button -->
-    <ImageButton
-        android:id="@+id/deleteButton"
-        android:src="@android:drawable/ic_menu_delete"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:contentDescription="Delete" />
+        android:elevation="4dp"
+        android:background="@drawable/linear_layout_background"
+        android:layout_margin="0dp"
+        android:padding="4dp">
+        <!-- Start time button -->
+        <Button
+            android:id="@+id/startTimeButton"
+            android:layout_width="wrap_content"
+            android:layout_weight="1"
+            android:text="Start"
+            android:layout_height="wrap_content" />
+
+        <!-- End time button -->
+        <Button
+            android:id="@+id/endTimeButton"
+            android:layout_width="wrap_content"
+            android:layout_weight="1"
+            android:text="End"
+            android:layout_height="wrap_content" />
+
+        <!-- Delete button -->
+        <ImageButton
+            android:id="@+id/deleteButton"
+            android:src="@android:drawable/ic_menu_delete"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="Delete" />
+    </LinearLayout>
 </LinearLayout>

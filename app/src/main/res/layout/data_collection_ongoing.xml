@@ -13,7 +13,7 @@
         android:id="@+id/currentPhaseText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="BASELINE"
+        android:text="DATA COLLECTION"
         android:textSize="32sp"
         android:textStyle="bold"
         android:textColor="@color/teal_600"
@@ -22,11 +22,11 @@
 
     <!-- Slider for Baseline Day -->
     <com.google.android.material.slider.Slider
-        android:id="@+id/baselineProgressSlider"
+        android:id="@+id/studyProgressSlider"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:valueFrom="1"
-        android:valueTo="14"
+        android:valueTo="7"
         android:stepSize="1"
         android:value="1"
         app:labelBehavior="floating"
@@ -46,7 +46,7 @@
         android:id="@+id/bottomText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="* Please complete 14 days of baseline measurements."
+        android:text="* Please complete seven days of data collection."
         android:textSize="14sp"
         android:textStyle="italic"
         android:layout_gravity="center_horizontal"

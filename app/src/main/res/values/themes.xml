@@ -1,9 +1,14 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="Theme.ScreenLoggerDialogTest" parent="android:Theme.Material.Light.NoActionBar" />
-
-    <style name="Theme.AppCompat.Light" parent="android:Theme.Material.Light.NoActionBar" />
-
+    <style name="Theme.ScreenLoggerDialogTest" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <!-- Optional: Customize your colors -->
+        <item name="colorPrimary">@color/blue_500</item>
+        <item name="colorPrimaryVariant">@color/blue_700</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorSecondary">@color/teal_200</item>
+        <item name="colorOnSecondary">@android:color/white</item>
+        <item name="colorSurface">@android:color/white</item>
+        <item name="colorOnBackground">@android:color/black</item>
+    </style>
 
 </resources>

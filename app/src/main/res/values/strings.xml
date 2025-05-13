@@ -1,93 +1,7 @@
 <resources>
-    <string name="app_name">Android Smartphone Interventions</string>
+    <string name="app_name">AndroidAtWork</string>
 
-    # smartphone addiction inventory (SPAI)
-    <string name="spai_text">The Smartphone Addiction Inventory (SPAI) was developed to assess smartphone addiction. \n
-        The inventory contains 26 questions on a 4-point Likert scale. \n
-
-        You can click SUBMIT once all questions are responded to.\n
-        \n
-        Please select how much you agree or disagree with each question:\n
-        1 = strongly disagree 2 = somewhat disagree, 3 = somewhat agree and 4 = strongly agree \n
-    </string>
-    <string name="spai_title">Smartphone Addiction Inventory (SPAI)</string>
-
-    # sas sv
-    <string name="sassv_text1">
-        The Smartphone Addiction Scale can be used to identify potential high-risk groups for smartphone addiction. It contains ten 6-point Likert scale items.\n
-        You can click SUBMIT once all questions are responded to.
-    </string>
-    <string name="sassv_text2">
-        Please select how much you agree or disagree with each question.\n
-        1 = strongly disagree 2 = disagree, 3 = weakly disagree, 4 = weakly agree, 5 = agree, 6 = strongly agree
-    </string>
-    <string name="sassv_title">
-        Smartphone Addiction Scale-Short Version (SAS-SV)
-    </string>
-
-    # tsrq
-    <string name="tsrq_text1">
-        The TSRQ concerns why people engage in some healthy behavior, enter treatment for a condition, try to change an unhealthy behavior, follow a treatment regimen, or engage in some other health-relevant behavior.. It contains nineteen 7-point Likert scale items.\n
-        You can click SUBMIT once all questions are responded to.
-    </string>
-    <string name="tsrq_text2">
-        Please select how much you agree or disagree with each question.\n
-        1 = not at all true .. 4 = somewhat true .. 7 = very true
-    </string>
-    <string name="tsrq_title">
-        Treatment Self-Regulation Questionnaire(TSRQ)
-    </string>
-
-    # onboarding consent
-    <string name="consent_agree">Do you consent to these terms?</string>
-
-    <string name="consent_start">This consent form part of the process of informed consent. It should give you the basic idea of what the research is about and what your participation will involve. If you would like more detail about something mentioned here, or information not included here, please ask. Please take the time to read this form carefully and to understand any accompanying information.</string>
-    <string name="consent_purpose">This study investigates daily smartphone use, effectiveness of smartphone usage intervention methods, and the impact of smartphone usage on sleep quality.</string>
-    <string name="consent_datacollection">This study will last approximately 6 weeks. We will collect smartphone usage data from the screen sensor, logging times when smartphone screen is unlocked. You will be requested to answer questionnaires using this application. All collected data is stored anonymously using Google Firebase. You can access your own data from your smartphone. We will also request each participant to provide sleep quality data after the study period through the Fitbit API. You will be provided with a Fitbit Versa 3 device for this study if you do not own one. This device is required to be returned after the study has concluded.</string>
-    <string name="consent_contact_information">This research is conducted by University of Oulu. The responsible researcher is Dr. Aku Visuri (aku.visuri@oulu.fi)</string>
-    <string name="consent_participation">In no way does this waive your legal rights nor release the investigators, sponsors, or involved institutions from their legal and professional responsibilities. You are free to not answer specific items or questions in interviews or on questionnaires. You are free to withdraw from the study at any time without penalty. Your continued participation should be as informed as your initial consent, so you should feel free to ask for clarification or new information throughout your participation. If you have further questions concerning matters related to this research, please contact the researcher. We retain the possibility to retract your participation in case of any technical difficulties emerge, and will inform you in case it happens.</string>
-
-
-    # onboarding information
-    <string name="information_study_phases">This study consists of three phases. Before starting each phase, you will receive a notification and need to interact with this application to start that study phase.</string>
-    <string name="information_study_phases1_1">
-        The baseline phase lasts for 14 days, during which this application monitors your smartphone use through screen events; it tracks when the screen of your smartphone is ON, OFF, or in the UNLOCKED state. During baseline you will be shown how much you used your phone according to collected data, and asked to verify the data each morning.\n
-        You will see the following persistent notification in your notification tray to indicate that the monitoring service is running
-    </string>
-    <string name="information_study_phases1_2">
-        If you *do not* see this notification, it means the application has been automatically shut down. In this case, please restart this application manually from its launcher icon.
-    </string>
-    <string name="information_study_phases2">
-        Before the first intervention phase (INT1), you will be asked to fill a motivation survey, how much you wish to reduce your daily smartphone usage, and what is your typical bedtime. \n
-        During INT1, you will receive notifications that inform you about your daily smartphone use, and will receive a popup screen after unlocking your phone if you 1) have exceeded your daily goal or 2) close to your bedtime.\n
-        This popup prompts you to either ignore it, or cease using your smartphone. The goal of INT1 is to serve as an initial prompt for helping you reduce your smartphone use.\n
-        In addition to showing much you have used your smartphone, you are also asked to first give an estimate on each day.\n
-        INT1 lasts for 7 days.
-    </string>
-    <string name="information_study_phases3">
-        Before moving from INT1 to INT2, you will again be asked for verification.\n
-        During INT2, you will no longer receive the popup after unlocking, but will still receive information about your smartphone usage. You will be expected to use this information to help you reduce your smartphone use, or keep it within your designated goal.\n
-        INT2 lasts three weeks, after which this study concludes.\n
-        After INT2 you will be asked to again fill two surveys, and will be asked to answer a brief exit questionnaire about the study and the intervention mechanisms.\n
-        Finally, you will receive the Prolific study completion code, if you require one.
-    </string>
-
-    # data verification
-    <string name="usage_info_text">You used your smartphone for %1$s yesterday, does this information seem correct?</string>
-
-
-    # addiction scales info
-    <string name="addiction_scales_text">
-        Step 3: Please answer the following two questionnaires related to identifying and measuring smartphone addiction.
-    </string>
-
-    # after baseline
-    <string name="daily_usage">Step 2: Your average daily smartphone usage during baseline tracking was: %1$s</string>
-    <string name="smartphone_usage_goal">GOAL: How much do you wish to reduce your daily smartphone usage? (Select a value between -10% to -50%)</string>
-    <string name="usage_limit_text">New usage limit is: %1$s</string>
-    <string name="bedtime_input">Step 3: When is your usual bedtime during the week (Sunday-Thursday)? If you dont have a typical bedtime, input a time when you would wish to go to bed normally.</string>
     <string name="overlay_permission_and_test">Overlay permission is required to draw the the UI after phone unlock during Intervention phase #1. Click below to test what the screen looks like.</string>
-    <string name="post_int1_information">During Intervention #2, you will no longer receive screens after unlocking your phone when you exceed your smartphone usage limit goal.</string>
 
     # popup screen (int1) - Unlocked due to impending bedtime
     <string name="dialog_bedtime_info">Your bedtime is nearing. If you think using your phone is really important, please tell us the purpose of why you are using it.</string>
@@ -96,11 +10,8 @@
 
     <string name="settings_deviceid_text">Device id: %s</string>
 
-    # Link for exit survey
-    <string name="exit_survey_forms_link"><![CDATA[https://docs.google.com/forms/d/e/1FAIpQLSftjU6w5QAfj3g7y3Tu_A0gr3Ftx-ABy04DvnDeEtUZIY039A/viewform?usp=pp_url&entry.376538456=]]></string>
-    <string name="usage_question_text">Please estimate how much (in minutes) you used your smartphone yesterday.</string>
-    <string name="start_baseline_text">Instruction text goes here.</string>
     <string name="title_activity_work_time_selector">WorkTimeSelectorActivity</string>
+    <string name="accessibility_service_description">This application tracks foreground applicatin changes when you are using your smartphone.</string>
 
 
 </resources>
