@@ -19,7 +19,8 @@
             android:layout_width="wrap_content"
             android:layout_weight="1"
             android:text="Start"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"/>
 
         <!-- End time button -->
         <Button
@@ -27,7 +28,8 @@
             android:layout_width="wrap_content"
             android:layout_weight="1"
             android:text="End"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"/>
 
         <!-- Delete button -->
         <ImageButton
@@ -35,6 +37,7 @@
             android:src="@android:drawable/ic_menu_delete"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:contentDescription="Delete" />
+            android:contentDescription="Delete"
+            android:layout_margin="8dp"/>
     </LinearLayout>
 </LinearLayout>

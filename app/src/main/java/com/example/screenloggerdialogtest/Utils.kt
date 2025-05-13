@@ -724,6 +724,7 @@ private const val KEY_WORK_INTERVALS = "work_intervals"
 fun saveWorkIntervals(context: Context?, intervals: List<TimeInterval>) {
     val sharedPrefs = getStudyStateSharedPreferences(context)
     val json = Gson().toJson(intervals)
+    Log.d("work_intervals", json.toString())
     sharedPrefs?.edit()?.putString(KEY_WORK_INTERVALS, json)?.apply()
 }
 

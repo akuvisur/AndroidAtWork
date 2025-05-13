@@ -136,10 +136,11 @@ class MainActivity : FragmentActivity() {
     class InfoFragment : Fragment() {
         private lateinit var inflaterView : View
 
+        private lateinit var worktimeButton : Button
+
         private lateinit var allowNotificationButton: Button
         private lateinit var disableBatteryManagementButton: Button
 
-        private lateinit var startBaselineButton: Button
         private lateinit var allowNotificationIcon: ImageView
 
         private lateinit var studyProgressSlider: Slider
@@ -171,6 +172,11 @@ class MainActivity : FragmentActivity() {
             // e.g., initialize baseline tracking, display tracking progress
             inflaterView = inflater.inflate(R.layout.data_collection_ongoing, container, false)
 
+            worktimeButton = inflaterView.findViewById(R.id.editWorkTimeButton)
+            worktimeButton.setOnClickListener {
+                val intent = Intent(requireContext(), WorkTimeSelectorActivity::class.java)
+                startActivity(intent)
+            }
             /*
             val baselineDay = calculateStudyPeriodDay(BASELINE_START_TIMESTAMP, requireContext())
             if (baselineDay > BASELINE_DURATION) {

@@ -6,7 +6,34 @@
     android:layout_height="match_parent"
     android:padding="16dp">
 
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="4dp"
+        android:background="@drawable/linear_layout_background"
+        android:layout_margin="0dp"
+        android:padding="4dp">
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/blue_500"
+            android:text="Instructions go here."
+            android:textSize="16sp"
+            android:layout_margin="4dp"
+            />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/blue_500"
+            android:text="Use the back button to return to the AndroidAtWork application when finished"
+            android:textSize="16sp"
+            android:layout_margin="4dp"
+            />
+
+    </LinearLayout>
     <!-- Add interval button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/addIntervalButton"
