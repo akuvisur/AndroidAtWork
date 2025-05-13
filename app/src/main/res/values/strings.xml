@@ -99,7 +99,8 @@
     # Link for exit survey
     <string name="exit_survey_forms_link"><![CDATA[https://docs.google.com/forms/d/e/1FAIpQLSftjU6w5QAfj3g7y3Tu_A0gr3Ftx-ABy04DvnDeEtUZIY039A/viewform?usp=pp_url&entry.376538456=]]></string>
     <string name="usage_question_text">Please estimate how much (in minutes) you used your smartphone yesterday.</string>
-    <string name="start_baseline_text">During this study, please start the application each morning and answer a question about your previous days smartphone use. This also ensures the application is always running throughout the day.</string>
+    <string name="start_baseline_text">Instruction text goes here.</string>
+    <string name="title_activity_work_time_selector">WorkTimeSelectorActivity</string>
 
 
 </resources>

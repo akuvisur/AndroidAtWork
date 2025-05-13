@@ -9,8 +9,6 @@ import android.graphics.Paint
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
@@ -36,7 +34,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
-import com.example.screenloggerdialogtest.FirebaseUtils.deleteYesterdaysUsageEstimate
 import com.example.screenloggerdialogtest.FirebaseUtils.getCurrentUserUID
 import com.example.screenloggerdialogtest.FirebaseUtils.uploadFeedback
 import com.example.screenloggerdialogtest.FirebaseUtils.uploadFirebaseEntry
@@ -51,7 +48,6 @@ import com.github.mikephil.charting.formatter.ValueFormatter
 import com.google.android.material.slider.Slider
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
-import com.google.firebase.Firebase
 import java.net.URLEncoder
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -278,7 +274,7 @@ class MainActivity : FragmentActivity() {
             else if (studyState == STUDY_STATE_CONSENT_GIVEN) {
                 // Additional actions after consent is given
                 // e.g., prepare the app for baseline tracking, show notification prompt
-                inflaterView = inflater.inflate(R.layout.consent_given_layout, container, false)
+                inflaterView = inflater.inflate(R.layout.settings_layout, container, false)
 
                 allowNotificationButton = inflaterView.findViewById(R.id.allowNotificationButton)
                 disableBatteryManagementButton = inflaterView.findViewById(R.id.disableBatteryManagementButton)

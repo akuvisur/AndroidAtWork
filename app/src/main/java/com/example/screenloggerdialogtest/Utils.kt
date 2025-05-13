@@ -17,6 +17,8 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import java.text.SimpleDateFormat
 import java.time.LocalTime
 import java.util.Calendar
@@ -706,3 +708,30 @@ fun checkServicesRunning(context: Context) {
         Log.d("ServiceStatus", "${serviceClass.simpleName} is running: $isServiceRunning")
     }
 }
+
+
+// Worktime intervals
+/*
+// Save
+saveWorkIntervals(this, listOf(TimeInterval("08:00", "12:00")))
+
+// Fetch
+val savedIntervals = getWorkIntervals(this)
+
+ */
+private const val KEY_WORK_INTERVALS = "work_intervals"
+
+fun saveWorkIntervals(context: Context?, intervals: List<TimeInterval>) {
+    val sharedPrefs = getStudyStateSharedPreferences(context)
+    val json = Gson().toJson(intervals)
+    sharedPrefs?.edit()?.putString(KEY_WORK_INTERVALS, json)?.apply()
+}
+
+fun getWorkIntervals(context: Context?): List<TimeInterval> {
+    val sharedPrefs = getStudyStateSharedPreferences(context)
+    val json = sharedPrefs?.getString(KEY_WORK_INTERVALS, null) ?: return emptyList()
+    val type = object : TypeToken<List<TimeInterval>>() {}.type
+    return Gson().fromJson(json, type)
+}
+
+data class TimeInterval(val start: String, val end: String)
