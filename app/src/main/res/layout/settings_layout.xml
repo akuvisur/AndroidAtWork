@@ -105,9 +105,16 @@
                         android:layout_width="0dp"
                         android:layout_weight="1"
                         android:layout_height="wrap_content"
-                        android:text="Step 3: Give accessibility service for this application to ensure tracking"
+                        android:text="Step 3: Grant accessibility permission"
                         android:textSize="16sp"
                         android:textColor="@color/blue_gray_700" />
+
+                    <ImageView
+                        android:id="@+id/allowAccessibilityImageView"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_checkmark"
+                        android:visibility="invisible"/>
 
                     <Button
                         android:id="@+id/accessibilityServiceRequestButton"
@@ -124,6 +131,45 @@
                     android:textStyle="italic"
                     android:textSize="12sp"
                     android:text="Accessibility services is required for application tracking"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingTop="16dp">
+
+                    <TextView
+                        android:id="@+id/overlayInstructionText"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:text="Step 4: Grant overlay permission"
+                        android:textSize="16sp"
+                        android:textColor="@color/blue_gray_700" />
+
+                    <ImageView
+                        android:id="@+id/allowOverlayImageView"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_checkmark"
+                        android:visibility="invisible"/>
+
+                    <Button
+                        android:id="@+id/overlayRequestButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ALLOW"
+                        android:textColor="@color/blue_gray_50"
+                        android:backgroundTint="@color/blue_gray_500"/>
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textStyle="italic"
+                    android:textSize="12sp"
+                    android:text="Overlay permission is required to draw ESM questionnaires on top of other applications."/>
 
                 <LinearLayout
                     android:layout_width="match_parent"

@@ -693,8 +693,7 @@ fun checkServicesRunning(context: Context) {
 
     val serviceClasses = listOf(
         BaselineService::class.java,
-        INT1Service::class.java,
-        INT2Service::class.java
+        ApplicationTrackingService::class.java
     )
 
     for (serviceClass in serviceClasses) {

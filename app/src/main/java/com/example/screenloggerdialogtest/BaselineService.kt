@@ -163,10 +163,7 @@ open class BaselineService : Service() {
                     if (previousEventType == "ACTION_USER_PRESENT") {
                         var diff = System.currentTimeMillis() - previousEventTimestamp
                         if (diff > 3_600_000) diff = 0
-                        val du = getDailyUsage(p0, "BaseLineService onReceive()")
 
-                        storeDailyUsage(du+diff, p0)
-                        Log.d("BASELINE", "Daily usage: $du diff/duration: $diff")
                     }
                     // Screen turned off
                     Log.d("ScreenStateReceiver", "Screen OFF")

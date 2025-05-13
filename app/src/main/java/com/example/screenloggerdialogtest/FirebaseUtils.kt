@@ -328,9 +328,14 @@ object FirebaseUtils {
         )
     }
 
-    data class FirebaseDataLoggingObject(
-        val event: String
+    open class FirebaseDataLoggingObject(
+        open val event: String
     )
+
+    data class FirebaseForegroundApplicationObject(
+        val ev2 : String = "APP_FOREGROUND", // Default event type for foreground app change
+        val packageName: String
+    ) : FirebaseDataLoggingObject(ev2)
 
     fun uploadFeedback(path : String, data : FirebaseFeedbackDataObject) {
         sendEntryToDatabase(

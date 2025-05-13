@@ -85,9 +85,6 @@ class INT1Service : Service() {
 
         dailyUsageGoal = getStudyVariable(this, INT_SMARTPHONE_USAGE_LIMIT_GOAL, 0L)
 
-        uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
-            FirebaseUtils.FirebaseDataLoggingObject(event = "INT1_SERVICE_STARTED"))
-
         INT1Receiver = INT1ScreenReceiver()
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_USER_PRESENT)

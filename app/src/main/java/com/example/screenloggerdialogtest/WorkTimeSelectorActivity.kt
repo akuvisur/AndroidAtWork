@@ -2,11 +2,14 @@ package com.example.screenloggerdialogtest
 
 import android.app.TimePickerDialog
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.screenloggerdialogtest.FirebaseUtils.getCurrentUserUID
+import com.example.screenloggerdialogtest.FirebaseUtils.sendEntryToDatabase
 import java.util.Calendar
 
 class WorkTimeSelectorActivity : AppCompatActivity() {
@@ -54,6 +57,15 @@ class WorkTimeSelectorActivity : AppCompatActivity() {
         // store intervals
         updateIntervalList()
         saveWorkIntervals(this, intervalList)
+
+        val uid = getCurrentUserUID()
+        sendEntryToDatabase(
+            "/users/$uid/time_interval",
+            intervalList,
+            onSuccess = { /* optional: handle success */ },
+            onFailure = { exception ->
+            Log.d("firebase", exception.toString())/* optional: handle failure */ }
+        )
     }
 
     // Add a new interval row dynamically

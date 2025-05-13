@@ -5,7 +5,9 @@ import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -18,6 +20,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
@@ -49,6 +52,7 @@ class MainActivity : FragmentActivity() {
             },
             onFailure = { errorMessage ->
                 //Toast.makeText(this, "Authentication failed: $errorMessage", Toast.LENGTH_LONG).show()
+                Log.d("firebase", errorMessage.toString())
             }
         )
     }
@@ -155,8 +159,6 @@ class MainActivity : FragmentActivity() {
             inflater: LayoutInflater, container: ViewGroup?,
             savedInstanceState: Bundle?
         ): View {
-
-            checkServicesRunning(requireContext())
             // go to settings tab if they are not set correctly
 
             Toast.makeText(requireContext(), "Checking settings..", Toast.LENGTH_SHORT).show()
@@ -197,15 +199,35 @@ class MainActivity : FragmentActivity() {
 
         private fun checkSettingsAndRun(): Boolean {
 
-            if (!isAccessibilityServiceEnabled(requireContext(), ApplicationTrackingService::class.java)) {
+            val c = requireContext()
+            // 1. Accessibility
+            if (!isAccessibilityServiceEnabled(c, ApplicationTrackingService::class.java)) {
+                stopService(c, BaselineService::class.java)
                 return false
             }
-            // TODO check notification permission
-            // TODO check overlay permission
+
+            // 2. Notification permission (Android 13+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(c, android.Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                    stopService(c, BaselineService::class.java)
+                    return false
+                }
+            }
+
+            // 3. Overlay permission
+            if (!Settings.canDrawOverlays(c)) {
+                stopService(c, BaselineService::class.java)
+                return false
+            }
 
             // TODO If everything is OK run services
+            checkServicesRunning(requireContext())
 
-            return false
+            checkAndStartService(BaselineService::class.java)
+            //checkAndStartService(ApplicationTrackingService::class.java)
+
+            return true
         }
 
         fun isAccessibilityServiceEnabled(context: Context, serviceClass: Class<out AccessibilityService>): Boolean {
@@ -247,11 +269,71 @@ class MainActivity : FragmentActivity() {
         override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
             savedInstanceState: Bundle?
-        ): View? {
-            // Inflate the layout for this fragment
+        ): View {
             val view = inflater.inflate(R.layout.settings_layout, container, false)
 
+            // === NOTIFICATION PERMISSION ===
+            val notificationButton = view.findViewById<Button>(R.id.allowNotificationButton)
+            val notificationIcon = view.findViewById<ImageView>(R.id.allowNotificationIcon)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val granted = ContextCompat.checkSelfPermission(
+                    requireContext(), android.Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+                notificationIcon.visibility = if (granted) View.VISIBLE else View.INVISIBLE
+                notificationButton.isEnabled = !granted
+                notificationButton.alpha = if (granted) 1.0f else 0.5f
+                notificationButton.setOnClickListener {
+                    requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1001)
+                }
+            } else {
+                // Permission not needed on Android 12 and below
+                notificationIcon.visibility = View.VISIBLE
+                notificationButton.isEnabled = false
+                notificationButton.alpha = 0.5f
+            }
+
+            // === OVERLAY PERMISSION ===
+            val overlayButton = view.findViewById<Button>(R.id.overlayRequestButton)
+            val overlayIcon = view.findViewById<ImageView>(R.id.allowOverlayImageView)
+            if (Settings.canDrawOverlays(requireContext())) {
+                overlayIcon.visibility = View.VISIBLE
+                overlayButton.isEnabled = false
+                overlayButton.alpha = 0.5f
+            } else {
+                overlayIcon.visibility = View.INVISIBLE
+                overlayIcon.alpha = 1.0f
+                overlayButton.setOnClickListener {
+                    val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:${requireContext().packageName}"))
+                    startActivity(intent)
+                }
+            }
+
+            // === ACCESSIBILITY SERVICE ===
+            val accessibilityButton = view.findViewById<Button>(R.id.accessibilityServiceRequestButton)
+            val accessibilityIcon = view.findViewById<ImageView>(R.id.allowAccessibilityImageView)
+            if (isAccessibilityServiceEnabled(requireContext(), ApplicationTrackingService::class.java)) {
+                accessibilityIcon.visibility = View.VISIBLE
+                accessibilityButton.isEnabled = false
+                accessibilityButton.alpha = 0.5f
+            } else {
+                accessibilityIcon.visibility = View.INVISIBLE
+                accessibilityButton.alpha = 1.0f
+                accessibilityButton.setOnClickListener {
+                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                }
+            }
+
             return view
+        }
+
+        private fun isAccessibilityServiceEnabled(context: Context, serviceClass: Class<*>): Boolean {
+            val expectedId = "${context.packageName}/${serviceClass.name}"
+            val enabledServices = Settings.Secure.getString(
+                context.contentResolver,
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+            ) ?: return false
+            return enabledServices.split(':').any { it.equals(expectedId, ignoreCase = true) }
         }
 
     }
