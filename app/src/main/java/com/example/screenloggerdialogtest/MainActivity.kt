@@ -183,7 +183,7 @@ class MainActivity : FragmentActivity() {
             val bottomText = inflaterView.findViewById<TextView>(R.id.bottomText)
 
             if (studyDay > 7) {
-                bottomText.text = "Study is now complete."
+                bottomText.text = "* Study is now complete."
             } else {
                 bottomText.text = "* Please complete seven days of data collection."
             }
@@ -194,10 +194,10 @@ class MainActivity : FragmentActivity() {
 
             if (savedIntervals.isEmpty()) {
                 // No work hours are selected, show instruction text
-                selectedWorkHoursText.text = "Please add work hours by tapping the button below."
+                selectedWorkHoursText.text = "Please add work hours by clicking the button below."
             } else {
                 // Work hours are selected, show current selected work hours
-                selectedWorkHoursText.text = ""
+                selectedWorkHoursText.text = "You can edit your work hours by clicking the button below"
             }
 
             return inflaterView
@@ -371,6 +371,7 @@ class MainActivity : FragmentActivity() {
             if (isAccessibilityServiceEnabled(requireContext(), ApplicationTrackingService::class.java)) {
                 // If the service is enabled, check if the notification is visible
                 accessibilityServiceText.text = "Accessibility service is ENABLED but may not be ACTIVE unless the 'Tracking foreground apps' notification is visible. Please double-check that you see the notification. If you do not see it, please turn the accessibility service off and on again."
+                accessibilityServiceText.setTextColor(ContextCompat.getColor(requireContext(), R.color.red))
             } else {
                 // If the service is not enabled
                 accessibilityServiceText.text = "Accessibility services is required for application tracking. Please enable the service in accessibility settings ."
