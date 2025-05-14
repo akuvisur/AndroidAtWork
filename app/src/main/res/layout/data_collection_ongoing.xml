@@ -50,7 +50,8 @@
         android:textSize="14sp"
         android:textStyle="italic"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="24dp" />
+        android:layout_marginTop="24dp"
+        android:textAlignment="center"/>
 
     <Button
         android:layout_width="wrap_content"
@@ -58,9 +59,18 @@
         android:backgroundTint="@color/teal_500"
         android:textColor="@color/white"
         android:textSize="16sp"
-        android:text="edit worktimes"
-        android:padding="8dp"
+        android:text="edit work hours"
+        android:padding="16dp"
         android:layout_marginTop="8dp"
         android:id="@+id/editWorkTimeButton"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Current selected work hours:"
+        android:textSize="14dp"
+        android:textAlignment="center"
+        android:id="@+id/selectedWorkHoursText"
+        android:padding="4dp"/>
 
 </LinearLayout>

@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:gravity="center_horizontal">
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
 
         <LinearLayout
             android:orientation="vertical"
@@ -39,8 +44,9 @@
 
                     <ImageView
                         android:id="@+id/allowNotificationIcon"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:padding="4dp"
                         android:src="@drawable/ic_checkmark"
                         android:visibility="invisible"/>
 
@@ -48,7 +54,7 @@
                         android:id="@+id/allowNotificationButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="ALLOW"
+                        android:text="check"
                         android:textColor="@color/blue_gray_50"
                         android:backgroundTint="@color/blue_gray_500"/>
                 </LinearLayout>
@@ -77,11 +83,19 @@
                         android:textSize="16sp"
                         android:textColor="@color/blue_gray_700" />
 
+                    <ImageView
+                        android:id="@+id/allowBattery"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_question_mark"
+                        android:padding="4dp"
+                        android:visibility="visible"/>
+
                     <Button
                         android:id="@+id/disableBatteryManagementButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="DISABLE"
+                        android:text="check"
                         android:textColor="@color/blue_gray_50"
                         android:backgroundTint="@color/blue_gray_500"/>
                 </LinearLayout>
@@ -111,16 +125,17 @@
 
                     <ImageView
                         android:id="@+id/allowAccessibilityImageView"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_checkmark"
-                        android:visibility="invisible"/>
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_notification_important"
+                        android:visibility="invisible"
+                        android:padding="4dp"/>
 
                     <Button
                         android:id="@+id/accessibilityServiceRequestButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="ALLOW"
+                        android:text="check"
                         android:textColor="@color/blue_gray_50"
                         android:backgroundTint="@color/blue_gray_500"/>
                 </LinearLayout>
@@ -130,7 +145,8 @@
                     android:layout_height="wrap_content"
                     android:textStyle="italic"
                     android:textSize="12sp"
-                    android:text="Accessibility services is required for application tracking"/>
+                    android:id="@+id/accessibilityServiceText"
+                    android:text="Accessibility services is required for application tracking. If you dont see a 'Tracking foreground apps' notification please turn the accessibility service off and on again."/>
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -150,8 +166,9 @@
 
                     <ImageView
                         android:id="@+id/allowOverlayImageView"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:padding="4dp"
                         android:src="@drawable/ic_checkmark"
                         android:visibility="invisible"/>
 
@@ -159,7 +176,7 @@
                         android:id="@+id/overlayRequestButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="ALLOW"
+                        android:text="check"
                         android:textColor="@color/blue_gray_50"
                         android:backgroundTint="@color/blue_gray_500"/>
                 </LinearLayout>
@@ -200,7 +217,27 @@
 
             </LinearLayout>
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:textSize="14sp"
+                android:text="Once all steps are complete, click 'Start Data Collection' to begin the services. If you encounter any issues, re-check the settings and restart the services using the same button."
+                />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:id="@+id/startServicesButton"
+                android:text="start data collection"
+                android:backgroundTint="@color/blue_gray_500"
+                android:textColor="@color/white"
+                android:padding="16dp"
+                android:layout_margin="8dp"/>
+
         </LinearLayout>
 
-</LinearLayout>
+    </LinearLayout>
 
+</ScrollView>

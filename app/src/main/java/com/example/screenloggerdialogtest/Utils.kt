@@ -719,12 +719,23 @@ val savedIntervals = getWorkIntervals(this)
 
  */
 private const val KEY_WORK_INTERVALS = "work_intervals"
+private const val KEY_STUDY_STARTED_TIMESTAMP = "study_started_timestamp"
 
 fun saveWorkIntervals(context: Context?, intervals: List<TimeInterval>) {
-    val sharedPrefs = getStudyStateSharedPreferences(context)
+    val sharedPrefs = getStudyStateSharedPreferences(context) ?: return
     val json = Gson().toJson(intervals)
-    Log.d("work_intervals", json.toString())
-    sharedPrefs?.edit()?.putString(KEY_WORK_INTERVALS, json)?.apply()
+    Log.d("work_intervals", json)
+
+    with(sharedPrefs.edit()) {
+        putString(KEY_WORK_INTERVALS, json)
+
+        // Save start timestamp if not already set
+        if (!sharedPrefs.contains(KEY_STUDY_STARTED_TIMESTAMP)) {
+            putLong(KEY_STUDY_STARTED_TIMESTAMP, System.currentTimeMillis())
+        }
+
+        apply()
+    }
 }
 
 fun getWorkIntervals(context: Context?): List<TimeInterval> {
@@ -733,5 +744,46 @@ fun getWorkIntervals(context: Context?): List<TimeInterval> {
     val type = object : TypeToken<List<TimeInterval>>() {}.type
     return Gson().fromJson(json, type)
 }
+
+private const val KEY_LAST_RESUME = "lastResume"
+fun saveLastResume(context: Context?, timestamp: Long) {
+    val sharedPrefs = getStudyStateSharedPreferences(context) ?: return
+    with(sharedPrefs.edit()) {
+        putLong(KEY_LAST_RESUME, timestamp)
+        apply()
+    }
+}
+
+// Get the last resume timestamp
+fun getLastResume(context: Context?): Long {
+    val sharedPrefs = getStudyStateSharedPreferences(context)
+    return sharedPrefs?.getLong(KEY_LAST_RESUME, 0) ?: 0
+}
+
+fun getStudyStartedTimestamp(context: Context?): Long? {
+    val timestamp = getStudyStateSharedPreferences(context)
+        ?.getLong(KEY_STUDY_STARTED_TIMESTAMP, -1L) ?: -1L
+    return if (timestamp != -1L) timestamp else null
+}
+
+fun calculateStudyDay(context: Context?): Int {
+    val startTimestamp = getStudyStartedTimestamp(context) ?: return -1
+    val now = System.currentTimeMillis()
+    val elapsed = now - startTimestamp
+
+    return (elapsed / (24 * 60 * 60 * 1000)).toInt()
+}
+
+private const val KEY_PARTICIPANT_ID = "participant_id"
+
+fun saveParticipantId(context: Context, id: String) {
+    val prefs = getStudyStateSharedPreferences(context)
+    prefs?.edit()?.putString(KEY_PARTICIPANT_ID, id)?.apply()
+}
+
+fun getParticipantId(context: Context): String? {
+    return getStudyStateSharedPreferences(context)?.getString(KEY_PARTICIPANT_ID, "")
+}
+
 
 data class TimeInterval(val start: String, val end: String)

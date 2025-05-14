@@ -17,19 +17,22 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AlphaAnimation
 import android.widget.Button
+import android.widget.EditText
+import android.widget.GridLayout
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
-import com.example.screenloggerdialogtest.FirebaseUtils.getCurrentUserUID
-import com.example.screenloggerdialogtest.FirebaseUtils.uploadFirebaseEntry
 import com.google.android.material.slider.Slider
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import kotlin.math.min
 
 class MainActivity : FragmentActivity() {
 
@@ -45,21 +48,6 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
-
-        FirebaseUtils.authenticateUser(
-            onSuccess = { uid ->
-                //Toast.makeText(this, "Authentication succeeded! UID: $uid", Toast.LENGTH_SHORT).show()
-            },
-            onFailure = { errorMessage ->
-                //Toast.makeText(this, "Authentication failed: $errorMessage", Toast.LENGTH_LONG).show()
-                Log.d("firebase", errorMessage.toString())
-            }
-        )
-    }
-
-    @SuppressLint("SetTextI18n")
-    override fun onResume() {
-        super.onResume()
 
         viewPager = findViewById<ViewPager2>(R.id.viewPager)
         val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
@@ -78,16 +66,25 @@ class MainActivity : FragmentActivity() {
             }
         }.attach()
 
+        FirebaseUtils.authenticateUser(
+            onSuccess = { uid ->
+                //Toast.makeText(this, "Authentication succeeded! UID: $uid", Toast.LENGTH_SHORT).show()
+            },
+            onFailure = { errorMessage ->
+                //Toast.makeText(this, "Authentication failed: $errorMessage", Toast.LENGTH_LONG).show()
+                Log.d("firebase", errorMessage.toString())
+            }
+        )
+    }
+
+    private var lastResume : Long = 0
+    @SuppressLint("SetTextI18n")
+    override fun onResume() {
+        super.onResume()
     }
 
     fun refreshUI() {
         this.recreate()
-    }
-
-   private fun requestOverlayPermission() {
-        val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        startActivity(intent)
     }
 
     fun setViewPagerPage(page : Int) {
@@ -105,6 +102,8 @@ class MainActivity : FragmentActivity() {
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+
+        Toast.makeText(this, "Returning to this activity", Toast.LENGTH_SHORT).show()
 
         if (requestCode == REQUEST_CODE_OVERLAY) {
             if (Settings.canDrawOverlays(this)) {
@@ -140,19 +139,8 @@ class MainActivity : FragmentActivity() {
     class InfoFragment : Fragment() {
         private lateinit var inflaterView : View
 
-        private lateinit var worktimeButton : Button
-
-        private lateinit var allowNotificationButton: Button
-        private lateinit var disableBatteryManagementButton: Button
-
-        private lateinit var allowNotificationIcon: ImageView
-
+        private lateinit var workHourButton : Button
         private lateinit var studyProgressSlider: Slider
-
-        private lateinit var enableOverlayButton: Button
-        private  lateinit var intervention1TestButton: Button
-
-        private val POST_NOTIFICATIONS_PERMISSION : String = "android.permission.POST_NOTIFICATIONS"
 
         @SuppressLint("NewApi", "DefaultLocale")
         override fun onCreateView(
@@ -161,44 +149,66 @@ class MainActivity : FragmentActivity() {
         ): View {
             // go to settings tab if they are not set correctly
 
-            Toast.makeText(requireContext(), "Checking settings..", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Checking settings, please wait..", Toast.LENGTH_SHORT).show()
 
             Handler(Looper.getMainLooper()).postDelayed({
                 if (!checkSettingsAndRun()) {
                     (activity as? MainActivity)?.setViewPagerPage(2)
                     Toast.makeText(requireContext(), "Please make sure all settings are correctly enabled", Toast.LENGTH_LONG).show()
                 }
-            }, 1000)
+                else {
+                    Toast.makeText(requireContext(), "Settings OK", Toast.LENGTH_SHORT).show()
+                }
+            }, 5000)
 
             // Actions for baseline ongoing
             // e.g., initialize baseline tracking, display tracking progress
             inflaterView = inflater.inflate(R.layout.data_collection_ongoing, container, false)
 
-            worktimeButton = inflaterView.findViewById(R.id.editWorkTimeButton)
-            worktimeButton.setOnClickListener {
+            workHourButton = inflaterView.findViewById(R.id.editWorkTimeButton)
+            workHourButton.setOnClickListener {
                 val intent = Intent(requireContext(), WorkTimeSelectorActivity::class.java)
+                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
                 startActivity(intent)
             }
-            /*
-            val baselineDay = calculateStudyPeriodDay(BASELINE_START_TIMESTAMP, requireContext())
-            if (baselineDay > BASELINE_DURATION) {
-                setStudyState(requireContext(), STUDY_STATE_POST_BASELINE)
-                (requireActivity() as MainActivity).refreshUI()
-            }
-
-             */
-
-            checkAndStartService(BaselineService::class.java)
 
             studyProgressSlider = inflaterView.findViewById(R.id.studyProgressSlider)
-            //studyProgressSlider.value = min(baselineDay.toFloat(), BASELINE_DURATION.toFloat())
             studyProgressSlider.value = 1F
+
+            val studyDay = calculateStudyDay(requireContext())
+            if (studyDay > 0) {
+                studyProgressSlider.value = min(studyDay, 7).toFloat()
+            }
+
+            val bottomText = inflaterView.findViewById<TextView>(R.id.bottomText)
+
+            if (studyDay > 7) {
+                bottomText.text = "Study is now complete."
+            } else {
+                bottomText.text = "* Please complete seven days of data collection."
+            }
+
+            val selectedWorkHoursText = inflaterView.findViewById<TextView>(R.id.selectedWorkHoursText)
+            // Check if there are any selected work hours
+            val savedIntervals = getWorkIntervals(context)
+
+            if (savedIntervals.isEmpty()) {
+                // No work hours are selected, show instruction text
+                selectedWorkHoursText.text = "Please add work hours by tapping the button below."
+            } else {
+                // Work hours are selected, show current selected work hours
+                selectedWorkHoursText.text = ""
+            }
 
             return inflaterView
         }
 
         private fun checkSettingsAndRun(): Boolean {
 
+            if (context == null || !isAdded) {
+                // Fragment is not attached or context is null, skip operation
+                return false
+            }
             val c = requireContext()
             // 1. Accessibility
             if (!isAccessibilityServiceEnabled(c, ApplicationTrackingService::class.java)) {
@@ -221,11 +231,8 @@ class MainActivity : FragmentActivity() {
                 return false
             }
 
-            // TODO If everything is OK run services
             checkServicesRunning(requireContext())
-
             checkAndStartService(BaselineService::class.java)
-            //checkAndStartService(ApplicationTrackingService::class.java)
 
             return true
         }
@@ -265,66 +272,155 @@ class MainActivity : FragmentActivity() {
     // some fields are disabled field.isEnabled = false prior to INT1
     class SettingsFragment : Fragment() {
 
+        // Fragment-level variables for UI elements
+        private lateinit var notificationButton: Button
+        private lateinit var notificationIcon: ImageView
+        private lateinit var batteryButton: Button
+        private lateinit var batteryIcon: ImageView
+        private lateinit var overlayButton: Button
+        private lateinit var overlayIcon: ImageView
+        private lateinit var accessibilityServiceText : TextView
+        private lateinit var accessibilityButton: Button
+        private lateinit var accessibilityIcon: ImageView
+        private lateinit var participantInput: EditText
+        private lateinit var startServicesButton: Button
+
         @SuppressLint("StringFormatInvalid", "DefaultLocale")
         override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
             savedInstanceState: Bundle?
-        ): View {
+        ): View? {
             val view = inflater.inflate(R.layout.settings_layout, container, false)
 
+            // Initialize UI elements
+            notificationButton = view.findViewById(R.id.allowNotificationButton)
+            notificationIcon = view.findViewById(R.id.allowNotificationIcon)
+            batteryButton = view.findViewById(R.id.disableBatteryManagementButton)
+            batteryIcon = view.findViewById(R.id.allowBattery)
+            overlayButton = view.findViewById(R.id.overlayRequestButton)
+            overlayIcon = view.findViewById(R.id.allowOverlayImageView)
+            accessibilityServiceText = view.findViewById(R.id.accessibilityServiceText)
+            accessibilityButton = view.findViewById(R.id.accessibilityServiceRequestButton)
+            accessibilityIcon = view.findViewById(R.id.allowAccessibilityImageView)
+            participantInput = view.findViewById(R.id.participantIdInput)
+            startServicesButton = view.findViewById(R.id.startServicesButton)
+
+            // Set participant ID if available
+            participantInput.setText(getParticipantId(requireContext()))
+
+            // Set OnFocusChangeListener for participant input
+            participantInput.setOnFocusChangeListener { _, hasFocus ->
+                if (!hasFocus) {
+                    val input = participantInput.text.toString().trim()
+                    if (input.isNotEmpty()) {
+                        saveParticipantId(requireContext(), input)
+
+                        val path = "/users/${FirebaseUtils.getCurrentUserUID()}/participant_id/${System.currentTimeMillis()}"
+                        val data = FirebaseUtils.FirebaseParticipantIdObject(participantId = input)
+                        FirebaseUtils.uploadFirebaseEntry(path, data)
+                    }
+                }
+            }
+
+            return view
+        }
+
+        override fun onResume() {
+            super.onResume()
+
             // === NOTIFICATION PERMISSION ===
-            val notificationButton = view.findViewById<Button>(R.id.allowNotificationButton)
-            val notificationIcon = view.findViewById<ImageView>(R.id.allowNotificationIcon)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 val granted = ContextCompat.checkSelfPermission(
                     requireContext(), android.Manifest.permission.POST_NOTIFICATIONS
                 ) == PackageManager.PERMISSION_GRANTED
                 notificationIcon.visibility = if (granted) View.VISIBLE else View.INVISIBLE
-                notificationButton.isEnabled = !granted
                 notificationButton.alpha = if (granted) 1.0f else 0.5f
-                notificationButton.setOnClickListener {
-                    requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1001)
-                }
             } else {
                 // Permission not needed on Android 12 and below
                 notificationIcon.visibility = View.VISIBLE
-                notificationButton.isEnabled = false
-                notificationButton.alpha = 0.5f
+            }
+
+            notificationButton.setOnClickListener {
+                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1001)
+            }
+
+            // === BATTERY OPTIMIZATION ===
+            batteryIcon.visibility = View.VISIBLE
+            batteryIcon.setOnClickListener {
+                Toast.makeText(
+                    requireContext(),
+                    "Due to Android limitations, this app cannot verify if battery optimizations are disabled. Please check manually in settings.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+
+            batteryButton.setOnClickListener {
+                val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                startActivity(intent)
             }
 
             // === OVERLAY PERMISSION ===
-            val overlayButton = view.findViewById<Button>(R.id.overlayRequestButton)
-            val overlayIcon = view.findViewById<ImageView>(R.id.allowOverlayImageView)
-            if (Settings.canDrawOverlays(requireContext())) {
-                overlayIcon.visibility = View.VISIBLE
-                overlayButton.isEnabled = false
-                overlayButton.alpha = 0.5f
-            } else {
-                overlayIcon.visibility = View.INVISIBLE
-                overlayIcon.alpha = 1.0f
-                overlayButton.setOnClickListener {
-                    val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        Uri.parse("package:${requireContext().packageName}"))
-                    startActivity(intent)
-                }
+            overlayIcon.visibility = if (Settings.canDrawOverlays(requireContext())) View.VISIBLE else View.INVISIBLE
+            overlayButton.setOnClickListener {
+                val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:${requireContext().packageName}"))
+                startActivity(intent)
             }
 
             // === ACCESSIBILITY SERVICE ===
-            val accessibilityButton = view.findViewById<Button>(R.id.accessibilityServiceRequestButton)
-            val accessibilityIcon = view.findViewById<ImageView>(R.id.allowAccessibilityImageView)
             if (isAccessibilityServiceEnabled(requireContext(), ApplicationTrackingService::class.java)) {
-                accessibilityIcon.visibility = View.VISIBLE
-                accessibilityButton.isEnabled = false
-                accessibilityButton.alpha = 0.5f
+                // If the service is enabled, check if the notification is visible
+                accessibilityServiceText.text = "Accessibility service is ENABLED but may not be ACTIVE unless the 'Tracking foreground apps' notification is visible. Please double-check that you see the notification. If you do not see it, please turn the accessibility service off and on again."
             } else {
-                accessibilityIcon.visibility = View.INVISIBLE
-                accessibilityButton.alpha = 1.0f
-                accessibilityButton.setOnClickListener {
-                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                }
+                // If the service is not enabled
+                accessibilityServiceText.text = "Accessibility services is required for application tracking. Please enable the service in accessibility settings ."
             }
 
-            return view
+            if (isAccessibilityServiceEnabled(requireContext(), ApplicationTrackingService::class.java)) {
+                accessibilityIcon.visibility = View.VISIBLE
+            } else {
+                accessibilityIcon.visibility = View.INVISIBLE
+            }
+
+            accessibilityButton.setOnClickListener {
+                Toast.makeText(requireContext(), "Please allow accessibility service. If you do not see a notification appear, try turning the switch off and back on.", Toast.LENGTH_LONG).show()
+                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            }
+
+            // === START SERVICES BUTTON ===
+            startServicesButton.setOnClickListener {
+                // Disable the button and start animation
+                startServicesButton.isEnabled = false
+                val fadeOut = AlphaAnimation(1f, 0.5f)
+                fadeOut.duration = 150
+                fadeOut.fillAfter = true
+                startServicesButton.startAnimation(fadeOut)
+
+                // Start the service
+                val intent = Intent(requireContext(), BaselineService::class.java)
+                (requireActivity() as MainActivity).startForegroundService(intent)
+
+                // Re-enable the button after 1 second
+                startServicesButton.postDelayed({
+                    if (participantInput.text.isEmpty()) {
+                        Toast.makeText(requireContext(), "Input participant number", Toast.LENGTH_SHORT).show()
+                    } else if (isServiceRunning(requireContext(), BaselineService::class.java)) {
+                        if (isAccessibilityServiceEnabled(requireContext(), ApplicationTrackingService::class.java)) {
+                            Toast.makeText(requireContext(), "Everything seems OK - you should now see two notifications from AndroidAtWork", Toast.LENGTH_LONG).show()
+                        } else {
+                            Toast.makeText(requireContext(), "Accessibility service not enabled.", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        Toast.makeText(requireContext(), "Baseline service not active. Check notification permission.", Toast.LENGTH_SHORT).show()
+                    }
+
+                    startServicesButton.isEnabled = true
+                    val fadeIn = AlphaAnimation(0.5f, 1f)
+                    fadeIn.duration = 150
+                    fadeIn.fillAfter = true
+                    startServicesButton.startAnimation(fadeIn)
+                }, 1000) // 1000ms delay
+            }
         }
 
         private fun isAccessibilityServiceEnabled(context: Context, serviceClass: Class<*>): Boolean {
@@ -337,5 +433,6 @@ class MainActivity : FragmentActivity() {
         }
 
     }
+
 
 }
