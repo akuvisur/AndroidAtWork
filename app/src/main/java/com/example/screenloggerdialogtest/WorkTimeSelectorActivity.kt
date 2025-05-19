@@ -60,7 +60,7 @@ class WorkTimeSelectorActivity : AppCompatActivity() {
 
         val uid = getCurrentUserUID()
         sendEntryToDatabase(
-            "/users/$uid/time_interval",
+            "/users/$uid/time_interval/${System.currentTimeMillis()}",
             intervalList,
             onSuccess = { /* optional: handle success */ },
             onFailure = { exception ->

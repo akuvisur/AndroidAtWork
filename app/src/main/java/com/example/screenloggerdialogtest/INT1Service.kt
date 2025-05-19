@@ -10,9 +10,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.IBinder
 import android.util.Log
-import androidx.core.app.ServiceCompat.startForeground
 import androidx.core.content.ContextCompat
-import androidx.core.content.ContextCompat.getSystemService
 import com.example.screenloggerdialogtest.FirebaseUtils.ScreenEvent
 import com.example.screenloggerdialogtest.FirebaseUtils.getCurrentUserUID
 import com.example.screenloggerdialogtest.FirebaseUtils.uploadFirebaseEntry
@@ -160,12 +158,12 @@ class INT1Service : Service() {
                 // Prioritise showing the bedtime dialog
                 if (calculateMinutesUntilBedtime(bedtimeGoal) <= 60 && !usageWithin45Seconds(p0, now, previousEventTimestamp)) {
                     dialog = UnlockDialog()
-                    dialog.showDialog(p0, now, bedtimeGoal, dailyUsage, dailyUsageGoal, DIALOG_TYPE_BEDTIME, false)
+                    dialog.showDialog(p0, now, bedtimeGoal, dailyUsage, dailyUsageGoal, DIALOG_TYPE_USAGE_INITIATED, false)
                     return
                 }
                 if (dailyUsage > dailyUsageGoal && !usageWithin45Seconds(p0, now, previousEventTimestamp)) {
                     dialog = UnlockDialog()
-                    dialog.showDialog(p0, now, bedtimeGoal, dailyUsage, dailyUsageGoal, DIALOG_TYPE_GOAL_EXCEEDED, false)
+                    dialog.showDialog(p0, now, bedtimeGoal, dailyUsage, dailyUsageGoal, DIALOG_TYPE_USAGE_CONTINUED, false)
                 }
             }
             else if (p1?.action == Intent.ACTION_SCREEN_OFF) {

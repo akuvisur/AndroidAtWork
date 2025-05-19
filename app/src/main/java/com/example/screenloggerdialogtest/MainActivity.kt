@@ -20,7 +20,6 @@ import android.view.ViewGroup
 import android.view.animation.AlphaAnimation
 import android.widget.Button
 import android.widget.EditText
-import android.widget.GridLayout
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -165,12 +164,13 @@ class MainActivity : FragmentActivity() {
             // e.g., initialize baseline tracking, display tracking progress
             inflaterView = inflater.inflate(R.layout.data_collection_ongoing, container, false)
 
+            /*
             workHourButton = inflaterView.findViewById(R.id.editWorkTimeButton)
             workHourButton.setOnClickListener {
                 val intent = Intent(requireContext(), WorkTimeSelectorActivity::class.java)
                 intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
                 startActivity(intent)
-            }
+            }*/
 
             studyProgressSlider = inflaterView.findViewById(R.id.studyProgressSlider)
             studyProgressSlider.value = 1F
@@ -188,6 +188,7 @@ class MainActivity : FragmentActivity() {
                 bottomText.text = "* Please complete seven days of data collection."
             }
 
+            /*
             val selectedWorkHoursText = inflaterView.findViewById<TextView>(R.id.selectedWorkHoursText)
             // Check if there are any selected work hours
             val savedIntervals = getWorkIntervals(context)
@@ -199,6 +200,8 @@ class MainActivity : FragmentActivity() {
                 // Work hours are selected, show current selected work hours
                 selectedWorkHoursText.text = "You can edit your work hours by clicking the button below"
             }
+
+             */
 
             return inflaterView
         }
@@ -285,6 +288,8 @@ class MainActivity : FragmentActivity() {
         private lateinit var participantInput: EditText
         private lateinit var startServicesButton: Button
 
+        private lateinit var testDialogButton : Button
+
         @SuppressLint("StringFormatInvalid", "DefaultLocale")
         override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
@@ -304,6 +309,7 @@ class MainActivity : FragmentActivity() {
             accessibilityIcon = view.findViewById(R.id.allowAccessibilityImageView)
             participantInput = view.findViewById(R.id.participantIdInput)
             startServicesButton = view.findViewById(R.id.startServicesButton)
+            testDialogButton = view.findViewById(R.id.settings_test_dialog_button)
 
             // Set participant ID if available
             participantInput.setText(getParticipantId(requireContext()))
@@ -420,7 +426,15 @@ class MainActivity : FragmentActivity() {
                     fadeIn.duration = 150
                     fadeIn.fillAfter = true
                     startServicesButton.startAnimation(fadeIn)
+
+                    (activity as? MainActivity)?.setViewPagerPage(1)
+
                 }, 1000) // 1000ms delay
+            }
+
+            testDialogButton.setOnClickListener {
+                val dialog = UnlockDialog()
+                dialog.showDialog(context, System.currentTimeMillis(), 0, 0, 1, DIALOG_TYPE_USAGE_INITIATED, false)
             }
         }
 

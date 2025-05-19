@@ -7,6 +7,7 @@ import android.content.Context
 import android.graphics.Color
 import android.os.Build
 import android.os.CountDownTimer
+import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
@@ -24,6 +25,8 @@ class ApplicationTrackingService : AccessibilityService() {
 
     private var resolvedNotificationColor: Int = Color.BLUE
 
+    private var lastApplicationEvent : Long = 0L
+
     override fun onServiceConnected() {
         super.onServiceConnected()
         resolvedNotificationColor = ContextCompat.getColor(this, R.color.blue_500)
@@ -31,11 +34,12 @@ class ApplicationTrackingService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+        val now = System.currentTimeMillis()
+        if (event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && (now - lastApplicationEvent) > MULTIPLE_SCREEN_EVENT_DELAY) {
             val packageName = event.packageName?.toString()
             packageName?.let {
                 //Toast.makeText(this, "Foreground app: $it", Toast.LENGTH_SHORT).show()
-
+                //Log.d("application_tracking", packageName)
                 val entryPath = "/users/${getCurrentUserUID()}/foreground_apps/${System.currentTimeMillis()}"
                 val data = FirebaseUtils.FirebaseForegroundApplicationObject(packageName = it)
 
@@ -47,6 +51,7 @@ class ApplicationTrackingService : AccessibilityService() {
                 showNotification()
             }
         }
+        lastApplicationEvent = System.currentTimeMillis()
     }
 
 

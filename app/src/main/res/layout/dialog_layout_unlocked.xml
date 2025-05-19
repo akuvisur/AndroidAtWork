@@ -1,31 +1,13 @@
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@color/white">
 
     <!-- Top banner -->
-    <ImageView
-        android:id="@+id/topBanner"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scaleType="fitStart"
-        android:src="@drawable/unlocked"
-        android:paddingStart="48dp"
-        android:paddingEnd="48dp"
-        android:layout_alignParentTop="true" />
-
-    <ImageView
-        android:id="@+id/bottomBanner"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scaleType="fitEnd"
-        android:src="@drawable/unlocked_bottom"
-        android:paddingStart="0dp"
-        android:paddingEnd="0dp"
-        android:layout_alignParentBottom="true" />
 
     <!-- TextView for more information -->
+
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -35,7 +17,7 @@
         android:id="@+id/infoText"
         android:layout_marginLeft="24dp"
         android:layout_marginRight="24dp"
-        android:layout_marginTop="100dp"
+        android:layout_marginTop="20dp"
         >
 
         <TextView
@@ -52,7 +34,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_margin="16dp"
+        android:layout_margin="8dp"
         android:id="@+id/buttonLayout"
         android:layout_below="@id/infoText">
 
@@ -63,40 +45,40 @@
             android:orientation="horizontal">
 
             <Button
-                android:id="@+id/contextHomeButton"
+                android:id="@+id/whatdoink_communication"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="4dp"
-                android:text="At home"
+                android:text="communication"
                 android:textSize="12sp"
                 android:backgroundTint="@color/blue_800"
                 android:textColor="@android:color/white"
                 android:background="@drawable/dialog_corners" />
 
             <Button
-                android:id="@+id/contextWorkButton"
+                android:id="@+id/whatdoink_leisure"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="4dp"
-                android:text="At work"
+                android:text="Leisure"
                 android:textSize="12sp"
                 android:backgroundTint="@color/blue_700"
                 android:textColor="@android:color/white"
                 android:background="@drawable/dialog_corners" />
 
             <Button
-                android:id="@+id/contextCommuteButton"
+                android:id="@+id/whatdoink_utilities"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="4dp"
                 android:textSize="12sp"
-                android:text="Commuting"
+                android:text="Utilities"
                 android:backgroundTint="@color/blue_600"
                 android:textColor="@android:color/white"
                 android:background="@drawable/dialog_corners" />
 
             <Button
-                android:id="@+id/contextOtherButton"
+                android:id="@+id/whatdoink_other"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="4dp"
@@ -108,80 +90,92 @@
 
         </LinearLayout>
 
-        <!-- Second row with 3 buttons -->
+        <!-- Second row with four buttons -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
             <Button
-                android:id="@+id/productiveButton"
+                android:id="@+id/purpose_work"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"
-                android:text="Productive"
+                android:text="Work"
                 android:textSize="12sp"
                 android:backgroundTint="@color/deep_purple_700"
                 android:textColor="@android:color/white"
                 android:background="@drawable/dialog_corners" />
 
             <Button
-                android:id="@+id/leisureButton"
+                android:id="@+id/purpose_personal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"
-                android:text="Leisure"
+                android:text="Personal"
                 android:textSize="12sp"
                 android:backgroundTint="@color/deep_purple_500"
                 android:textColor="@android:color/white"
                 android:background="@drawable/dialog_corners" />
 
             <Button
-                android:id="@+id/otherButton"
+                android:id="@+id/purpose_mix"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"
                 android:textSize="12sp"
-                android:text="Other"
+                android:text="Mix of both"
+                android:backgroundTint="@color/deep_purple_300"
+                android:textColor="@android:color/white"
+                android:background="@drawable/dialog_corners" />
+
+            <Button
+                android:id="@+id/purpose_not_applicable"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:textSize="12sp"
+                android:text="Not applicable"
                 android:backgroundTint="@color/deep_purple_300"
                 android:textColor="@android:color/white"
                 android:background="@drawable/dialog_corners" />
 
         </LinearLayout>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Did you receive a notification that prompted you to use your phone?"
-            android:textColor="@color/black"
-            android:textSize="14sp"
-            android:paddingLeft="12dp"
-            />
-
-        <!-- Third row with 2 buttons -->
+        <!-- Third row with three buttons -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
             <Button
-                android:id="@+id/selfInitiatedButton"
+                android:id="@+id/trigger_external"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"
                 android:textSize="12sp"
-                android:text="Self-Initiated"
+                android:text="External nudge"
                 android:backgroundTint="@color/teal_700"
                 android:textColor="@android:color/white"
                 android:background="@drawable/dialog_corners" />
 
             <Button
-                android:id="@+id/notificationInitiatedButton"
+                android:id="@+id/trigger_inner"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"
-                android:text="Notification-Initiated"
+                android:text="Inner motivation"
                 android:backgroundTint="@color/teal_500"
+                android:textColor="@android:color/white"
+                android:background="@drawable/dialog_corners" />
+
+            <Button
+                android:id="@+id/trigger_noreason"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:text="No reason"
+                android:backgroundTint="@color/teal_300"
                 android:textColor="@android:color/white"
                 android:background="@drawable/dialog_corners" />
 
@@ -189,18 +183,108 @@
 
     </LinearLayout>
 
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/buttonLayout"
-        android:layout_marginTop="12dp"
-        android:textSize="14sp"
-        android:padding="4dp"
-        android:layout_marginLeft="8dp"
-        android:textColor="@color/black"
-        android:text="Please select one option from each row, then click submit to continue phone use. Or Skip if you dont have time to answer now. \n\nOr close your phone screen if you decide it is not important to use it right now."
-        />
+        android:orientation="vertical"
+        android:layout_below="@+id/buttonLayout"
+        android:id="@+id/dialogExtraQuestionLayout"
+        android:padding="8dp">
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="How in control do you feel of this phone use session?"/>
+
+        <com.google.android.material.slider.Slider
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:tooltipText="Please select a value for how in control are you"
+            android:value="4"
+            android:valueFrom="1"
+            android:valueTo="7"
+            android:stepSize="1"
+            app:labelBehavior="floating"
+            android:layout_marginTop="16dp"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            app:trackColor="@color/teal_200"
+            app:trackColorActive="@color/teal_200"
+            app:tickColorInactive="@color/teal_500"
+            app:tickRadiusInactive="5sp"
+            app:tickRadiusActive="5sp"
+            app:thumbColor="@color/teal_800"
+            />
+
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/infoLayout"
+        android:orientation="vertical"
+        android:layout_below="@id/dialogExtraQuestionLayout"
+        android:padding="8dp">
+    <!-- Step 1 Header -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="2dp"
+        android:text="@string/step1_header"
+        android:textColor="@color/blue_gray_600"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <!-- Step 1 Options -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="4dp"
+        android:text="@string/step1_options"
+        android:textColor="@color/blue_gray_600"
+        android:textSize="14sp" />
+
+        <!--
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="2dp"
+        android:text="@string/step2_header"
+        android:textColor="@color/blue_gray_900"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="4dp"
+        android:text="@string/step2_options"
+        android:textColor="@color/blue_gray_900"
+        android:textSize="14sp" />
+        -->
+
+    <!-- Step 3 Header -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="2dp"
+        android:text="@string/step3_header"
+        android:textColor="@color/blue_gray_600"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <!-- Step 3 Options -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="4dp"
+        android:text="@string/step3_options"
+        android:textColor="@color/blue_gray_600"
+        android:textSize="14sp" />
+
+
+    </LinearLayout>
     <!-- Close button -->
     <Button
         android:id="@+id/closeButton"

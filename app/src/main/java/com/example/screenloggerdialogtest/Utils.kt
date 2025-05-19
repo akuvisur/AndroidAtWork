@@ -15,8 +15,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
+import androidx.transition.Visibility
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.text.SimpleDateFormat
@@ -297,8 +300,8 @@ Dialog generation for INT1 phase
 
  */
 
-const val DIALOG_TYPE_BEDTIME : String = "DIALOG_TYPE_BEDTIME"
-const val DIALOG_TYPE_GOAL_EXCEEDED : String = "DIALOG_TYPE_GOAL_EXCEEDED"
+const val DIALOG_TYPE_USAGE_INITIATED : String = "DIALOG_TYPE_USAGE_INITIATED"
+const val DIALOG_TYPE_USAGE_CONTINUED : String = "DIALOG_TYPE_USAGE_CONTINUED"
 
 const val DIALOG_RESPONSE_SUBMITTED : String = "DIALOG_RESPONSE_SUBMITTED"
 const val DIALOG_RESPONSE_IGNORED : String = "DIALOG_RESPONSE_IGNORED"
@@ -316,24 +319,30 @@ class UnlockDialog {
     private lateinit var closeButton : Button
     private lateinit var submitButton : Button
 
-    private lateinit var contextHomeButton: Button
-    private lateinit var contextWorkButton: Button
-    private lateinit var contextCommuteButton: Button
-    private lateinit var contextOtherButton: Button
-    private lateinit var workSchoolButton: Button
-    private lateinit var leisureButton: Button
-    private lateinit var otherButton: Button
-    private lateinit var selfInitiatedButton: Button
-    private lateinit var notificationInitiatedButton: Button
+    private lateinit var extraQuestionLayout : LinearLayout
+
+    private lateinit var whatdoinkCommunicationButton: Button
+    private lateinit var whatdoinkLeisureButton: Button
+    private lateinit var whatdoinkUtilitiesButton: Button
+    private lateinit var whatdoinkOtherButton: Button
+
+    private lateinit var purposeWorkButton: Button
+    private lateinit var purposePersonalButton: Button
+    private lateinit var purposeMixButton: Button
+    private lateinit var purposeNotApplicableButton: Button
+
+    private lateinit var triggerExternalButton: Button
+    private lateinit var triggerInnerButton: Button
+    private lateinit var triggerNoReasonButton: Button
 
     private val row1 by lazy {
-        listOf(contextHomeButton, contextWorkButton, contextCommuteButton, contextOtherButton)
+        listOf(whatdoinkCommunicationButton, whatdoinkLeisureButton, whatdoinkUtilitiesButton, whatdoinkOtherButton)
     }
     private val row2 by lazy {
-        listOf(workSchoolButton, leisureButton, otherButton)
+        listOf(purposeWorkButton, purposePersonalButton, purposeMixButton, purposeNotApplicableButton)
     }
     private val row3 by lazy {
-        listOf(selfInitiatedButton, notificationInitiatedButton)
+        listOf(triggerExternalButton, triggerInnerButton, triggerNoReasonButton)
     }
 
     fun showDialog(
@@ -352,12 +361,15 @@ class UnlockDialog {
         val lastShown = getStudyVariable(c, STUDY_DIALOG_LASTSHOWN_TIMESTAMP, 0L)
         // Get the current time in milliseconds
         val currentTime = System.currentTimeMillis()
+
+        /*
         // Define ten minutes in milliseconds
         val tenMinutesInMillis = 10 * 60 * 1000
         // Check if ten minutes have passed since the last shown time
         if (currentTime - lastShown < tenMinutesInMillis) {
             return // exit if less than ten minutes since last dialog
         }
+        */
 
         dialogCreatedTimestamp = System.currentTimeMillis()
         localTestDialogVariable = testDialog
@@ -365,10 +377,10 @@ class UnlockDialog {
         val wm = c.getSystemService(WINDOW_SERVICE) as WindowManager
         val inflater = LayoutInflater.from(c)
         dialogView = when (type) {
-            DIALOG_TYPE_BEDTIME -> {
-                inflater.inflate(R.layout.dialog_layout_unlocked_bedtime, null)
+            DIALOG_TYPE_USAGE_INITIATED -> {
+                inflater.inflate(R.layout.dialog_layout_unlocked, null)
             }
-            DIALOG_TYPE_GOAL_EXCEEDED -> {
+            DIALOG_TYPE_USAGE_CONTINUED -> {
                 inflater.inflate(R.layout.dialog_layout_unlocked, null)
             }
             else -> {
@@ -379,20 +391,21 @@ class UnlockDialog {
         closeButton = dialogView.findViewById(R.id.closeButton)
         submitButton = dialogView.findViewById(R.id.submitButton)
 
-        // First row
-        contextHomeButton = dialogView.findViewById(R.id.contextHomeButton)
-        contextWorkButton = dialogView.findViewById(R.id.contextWorkButton)
-        contextCommuteButton = dialogView.findViewById(R.id.contextCommuteButton)
-        contextOtherButton = dialogView.findViewById(R.id.contextOtherButton)
+        whatdoinkCommunicationButton = dialogView.findViewById(R.id.whatdoink_communication)
+        whatdoinkLeisureButton = dialogView.findViewById(R.id.whatdoink_leisure)
+        whatdoinkUtilitiesButton = dialogView.findViewById(R.id.whatdoink_utilities)
+        whatdoinkOtherButton = dialogView.findViewById(R.id.whatdoink_other)
 
-        // Second row
-        workSchoolButton = dialogView.findViewById(R.id.productiveButton)
-        leisureButton = dialogView.findViewById(R.id.leisureButton)
-        otherButton = dialogView.findViewById(R.id.otherButton)
+        purposeWorkButton = dialogView.findViewById(R.id.purpose_work)
+        purposePersonalButton = dialogView.findViewById(R.id.purpose_personal)
+        purposeMixButton = dialogView.findViewById(R.id.purpose_mix)
+        purposeNotApplicableButton = dialogView.findViewById(R.id.purpose_not_applicable)
 
-        // Third row
-        selfInitiatedButton = dialogView.findViewById(R.id.selfInitiatedButton)
-        notificationInitiatedButton = dialogView.findViewById(R.id.notificationInitiatedButton)
+        triggerExternalButton = dialogView.findViewById(R.id.trigger_external)
+        triggerInnerButton = dialogView.findViewById(R.id.trigger_inner)
+        triggerNoReasonButton = dialogView.findViewById(R.id.trigger_noreason)
+
+        extraQuestionLayout = dialogView.findViewById(R.id.dialogExtraQuestionLayout)
 
         setupButtonGroups(c)
 
@@ -454,6 +467,8 @@ class UnlockDialog {
                 close(c)
             }, 300000L) // 300000 ms = 5 minutes
         }
+
+        if (type == DIALOG_TYPE_USAGE_INITIATED) extraQuestionLayout.isVisible = false
 
         setStudyVariable(c, STUDY_DIALOG_LASTSHOWN_TIMESTAMP, System.currentTimeMillis())
         // Add the view to the window
