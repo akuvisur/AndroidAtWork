@@ -288,7 +288,8 @@ class MainActivity : FragmentActivity() {
         private lateinit var participantInput: EditText
         private lateinit var startServicesButton: Button
 
-        private lateinit var testDialogButton : Button
+        private lateinit var testCDialogButton : Button
+        private lateinit var testIDialogButton : Button
 
         @SuppressLint("StringFormatInvalid", "DefaultLocale")
         override fun onCreateView(
@@ -309,7 +310,8 @@ class MainActivity : FragmentActivity() {
             accessibilityIcon = view.findViewById(R.id.allowAccessibilityImageView)
             participantInput = view.findViewById(R.id.participantIdInput)
             startServicesButton = view.findViewById(R.id.startServicesButton)
-            testDialogButton = view.findViewById(R.id.settings_test_dialog_button)
+            testCDialogButton = view.findViewById(R.id.settings_test_c_dialog_button)
+            testIDialogButton = view.findViewById(R.id.settings_test_i_dialog_button)
 
             // Set participant ID if available
             participantInput.setText(getParticipantId(requireContext()))
@@ -390,7 +392,7 @@ class MainActivity : FragmentActivity() {
             }
 
             accessibilityButton.setOnClickListener {
-                Toast.makeText(requireContext(), "Please allow accessibility service. If you do not see a notification appear, try turning the switch off and back on.", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), "Please allow accessibility service. If you do not see a notification appear, try turning the switch off and back on. Wait until this message has disappeared before turning it on.", Toast.LENGTH_LONG).show()
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             }
 
@@ -432,9 +434,14 @@ class MainActivity : FragmentActivity() {
                 }, 1000) // 1000ms delay
             }
 
-            testDialogButton.setOnClickListener {
+            testCDialogButton.setOnClickListener {
                 val dialog = UnlockDialog()
-                dialog.showDialog(context, System.currentTimeMillis(), 0, 0, 1, DIALOG_TYPE_USAGE_INITIATED, false)
+                dialog.showDialog(context, DIALOG_TYPE_USAGE_CONTINUED)
+            }
+
+            testIDialogButton.setOnClickListener {
+                val dialog = UnlockDialog()
+                dialog.showDialog(context, DIALOG_TYPE_USAGE_INITIATED)
             }
         }
 

@@ -7,7 +7,6 @@
     <!-- Top banner -->
 
     <!-- TextView for more information -->
-
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -18,6 +17,7 @@
         android:layout_marginLeft="24dp"
         android:layout_marginRight="24dp"
         android:layout_marginTop="20dp"
+        android:elevation="12dp"
         >
 
         <TextView
@@ -30,158 +30,177 @@
     </LinearLayout>
 
     <!-- GridLayout for response buttons -->
-    <LinearLayout
+    <!-- Add this to your layout file -->
+
+    <com.google.android.flexbox.FlexboxLayout
+        android:id="@+id/buttonLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_margin="8dp"
-        android:id="@+id/buttonLayout"
+        android:layout_margin="6dp"
+        app:flexWrap="wrap"
+        app:justifyContent="flex_start"
         android:layout_below="@id/infoText">
 
-        <!-- First row with 4 buttons -->
-        <LinearLayout
-            android:layout_width="match_parent"
+        <!-- Communication Set -->
+        <Button
+            android:id="@+id/whatdoink_communication"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_margin="4dp"
+            android:text="communication"
+            android:textSize="11sp"
+            android:backgroundTint="@color/blue_800"
+            android:textColor="@android:color/white"
+            android:background="@drawable/dialog_corners"
+            android:minWidth="64dp"
+            android:minHeight="42dp"/>
 
-            <Button
-                android:id="@+id/whatdoink_communication"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="4dp"
-                android:text="communication"
-                android:textSize="12sp"
-                android:backgroundTint="@color/blue_800"
-                android:textColor="@android:color/white"
-                android:background="@drawable/dialog_corners" />
-
-            <Button
-                android:id="@+id/whatdoink_leisure"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="4dp"
-                android:text="Leisure"
-                android:textSize="12sp"
-                android:backgroundTint="@color/blue_700"
-                android:textColor="@android:color/white"
-                android:background="@drawable/dialog_corners" />
-
-            <Button
-                android:id="@+id/whatdoink_utilities"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="4dp"
-                android:textSize="12sp"
-                android:text="Utilities"
-                android:backgroundTint="@color/blue_600"
-                android:textColor="@android:color/white"
-                android:background="@drawable/dialog_corners" />
-
-            <Button
-                android:id="@+id/whatdoink_other"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="4dp"
-                android:textSize="12sp"
-                android:text="Other"
-                android:backgroundTint="@color/blue_500"
-                android:textColor="@android:color/white"
-                android:background="@drawable/dialog_corners" />
-
-        </LinearLayout>
-
-        <!-- Second row with four buttons -->
-        <LinearLayout
-            android:layout_width="match_parent"
+        <Button
+            android:id="@+id/whatdoink_leisure"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_margin="4dp"
+            android:text="Leisure"
+            android:textSize="11sp"
+            android:backgroundTint="@color/blue_700"
+            android:textColor="@android:color/white"
+            android:background="@drawable/dialog_corners"
+            android:minWidth="64dp"
+            android:minHeight="42dp"/>
 
-            <Button
-                android:id="@+id/purpose_work"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                android:text="Work"
-                android:textSize="12sp"
-                android:backgroundTint="@color/deep_purple_700"
-                android:textColor="@android:color/white"
-                android:background="@drawable/dialog_corners" />
-
-            <Button
-                android:id="@+id/purpose_personal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                android:text="Personal"
-                android:textSize="12sp"
-                android:backgroundTint="@color/deep_purple_500"
-                android:textColor="@android:color/white"
-                android:background="@drawable/dialog_corners" />
-
-            <Button
-                android:id="@+id/purpose_mix"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                android:textSize="12sp"
-                android:text="Mix of both"
-                android:backgroundTint="@color/deep_purple_300"
-                android:textColor="@android:color/white"
-                android:background="@drawable/dialog_corners" />
-
-            <Button
-                android:id="@+id/purpose_not_applicable"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                android:textSize="12sp"
-                android:text="Not applicable"
-                android:backgroundTint="@color/deep_purple_300"
-                android:textColor="@android:color/white"
-                android:background="@drawable/dialog_corners" />
-
-        </LinearLayout>
-
-        <!-- Third row with three buttons -->
-        <LinearLayout
-            android:layout_width="match_parent"
+        <Button
+            android:id="@+id/whatdoink_utilities"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_margin="4dp"
+            android:text="Utilities"
+            android:textSize="11sp"
+            android:backgroundTint="@color/blue_600"
+            android:textColor="@android:color/white"
+            android:background="@drawable/dialog_corners"
+            android:minWidth="64dp"
+            android:minHeight="42dp"/>
 
-            <Button
-                android:id="@+id/trigger_external"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                android:textSize="12sp"
-                android:text="External nudge"
-                android:backgroundTint="@color/teal_700"
-                android:textColor="@android:color/white"
-                android:background="@drawable/dialog_corners" />
+        <Button
+            android:id="@+id/whatdoink_other"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            android:text="Other"
+            android:textSize="11sp"
+            android:backgroundTint="@color/blue_500"
+            android:textColor="@android:color/white"
+            android:background="@drawable/dialog_corners"
+            android:minWidth="64dp"
+            android:minHeight="42dp"/>
 
-            <Button
-                android:id="@+id/trigger_inner"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                android:text="Inner motivation"
-                android:backgroundTint="@color/teal_500"
-                android:textColor="@android:color/white"
-                android:background="@drawable/dialog_corners" />
+        <!-- Line break -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_flexBasisPercent="100%" />
 
-            <Button
-                android:id="@+id/trigger_noreason"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                android:text="No reason"
-                android:backgroundTint="@color/teal_300"
-                android:textColor="@android:color/white"
-                android:background="@drawable/dialog_corners" />
+        <!-- Purpose Set -->
+        <Button
+            android:id="@+id/purpose_work"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:text="Work"
+            android:textSize="11sp"
+            android:backgroundTint="@color/deep_purple_700"
+            android:textColor="@android:color/white"
+            android:background="@drawable/dialog_corners"
+            android:minWidth="64dp"
+            android:minHeight="42dp"/>
 
-        </LinearLayout>
+        <Button
+            android:id="@+id/purpose_personal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:text="Personal"
+            android:textSize="11sp"
+            android:backgroundTint="@color/deep_purple_500"
+            android:textColor="@android:color/white"
+            android:background="@drawable/dialog_corners"
+            android:minWidth="64dp"
+            android:minHeight="42dp"/>
 
-    </LinearLayout>
+        <Button
+            android:id="@+id/purpose_mix"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:text="Mix of both"
+            android:textSize="11sp"
+            android:backgroundTint="@color/deep_purple_300"
+            android:textColor="@android:color/white"
+            android:background="@drawable/dialog_corners"
+            android:minWidth="64dp"
+            android:minHeight="42dp"/>
+
+        <Button
+            android:id="@+id/purpose_not_applicable"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:text="Not applicable"
+            android:textSize="11sp"
+            android:backgroundTint="@color/deep_purple_300"
+            android:textColor="@android:color/white"
+            android:background="@drawable/dialog_corners"
+            android:minWidth="64dp"
+            android:minHeight="42dp"/>
+
+        <!-- Line break -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_flexBasisPercent="100%" />
+
+        <!-- Trigger Set -->
+        <Button
+            android:id="@+id/trigger_external"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:text="External nudge"
+            android:textSize="11sp"
+            android:backgroundTint="@color/teal_700"
+            android:textColor="@android:color/white"
+            android:background="@drawable/dialog_corners"
+            android:minWidth="64dp"
+            android:minHeight="42dp"/>
+
+        <Button
+            android:id="@+id/trigger_inner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:text="Inner motivation"
+            android:textSize="11sp"
+            android:backgroundTint="@color/teal_500"
+            android:textColor="@android:color/white"
+            android:background="@drawable/dialog_corners"
+            android:minWidth="64dp"
+            android:minHeight="42dp"/>
+
+        <Button
+            android:id="@+id/trigger_noreason"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:text="No reason"
+            android:textSize="11sp"
+            android:backgroundTint="@color/teal_300"
+            android:textColor="@android:color/white"
+            android:background="@drawable/dialog_corners"
+            android:minWidth="64dp"
+            android:minHeight="42dp"/>
+
+    </com.google.android.flexbox.FlexboxLayout>
+
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -194,27 +213,17 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="How in control do you feel of this phone use session?"/>
+            android:text="How in control do you feel of this phone use session? (0 = Not at all, 3 = Neutral, 6 = Very much in control)"/>
 
-        <com.google.android.material.slider.Slider
+        <SeekBar
+            android:id="@+id/controlSeekBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:tooltipText="Please select a value for how in control are you"
-            android:value="4"
-            android:valueFrom="1"
-            android:valueTo="7"
-            android:stepSize="1"
-            app:labelBehavior="floating"
+            android:max="6"
+            android:progress="3"
             android:layout_marginTop="16dp"
             android:paddingLeft="16dp"
-            android:paddingRight="16dp"
-            app:trackColor="@color/teal_200"
-            app:trackColorActive="@color/teal_200"
-            app:tickColorInactive="@color/teal_500"
-            app:tickRadiusInactive="5sp"
-            app:tickRadiusActive="5sp"
-            app:thumbColor="@color/teal_800"
-            />
+            android:paddingRight="16dp" />
 
     </LinearLayout>
 
@@ -310,5 +319,7 @@
         android:textColor="@android:color/white"
         android:backgroundTint="@color/blue_A700"
         android:background="@drawable/dialog_corners" />
+
+
 
 </RelativeLayout>

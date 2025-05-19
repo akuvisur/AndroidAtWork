@@ -71,6 +71,11 @@ open class BaselineService : Service() {
     private lateinit var screenStateReceiver: ScreenStateReceiver
     private var receiverRegistered : Boolean = false
 
+    // set to 0.5 after debug
+    private val esm_propability = 1.0
+    // set to 360000 (6 minutes) after debug
+    private val MINIMUM_DIALOG_DELAY = 1
+
     private lateinit var notificationManager : NotificationManager
 
     val channelId = "ScreenLoggerServiceChannel"
@@ -124,17 +129,20 @@ open class BaselineService : Service() {
 
     open inner class ScreenStateReceiver : BroadcastReceiver() {
 
+        private lateinit var dialog : UnlockDialog
+        private var lastDialogTimestamp : Long = 0L
+
         lateinit var screenEvent : ScreenEvent
         var previousEventTimestamp : Long = 0L
         lateinit var previousEventType : String
         private var lastScreenEvent : Long = 0L
+        private var lastScreenoff : Long = 0L
 
         private var sessionStartTimestamp : Long = 0L
-
-        private var timer: CountDownTimer? = null
-        private var timerCount = 0
+        private var sessionDuration : Long = 0L
 
         override fun onReceive(p0: Context?, p1: Intent?) {
+
             lastScreenEvent = System.currentTimeMillis()
 
             val (ts, type) = getPreviousEvent(p0)
@@ -147,6 +155,7 @@ open class BaselineService : Service() {
             if (previousEventTimestamp == 0L) return
 
             val now = System.currentTimeMillis()
+            if (now - previousEventTimestamp < MULTIPLE_SCREEN_EVENT_DELAY) return
 
             /*
             // something weird happening that causes double triggers with 1-10ms delay
@@ -160,19 +169,20 @@ open class BaselineService : Service() {
             */
             when (p1?.action) {
                 Intent.ACTION_SCREEN_OFF -> {
-                    if (previousEventType == "ACTION_USER_PRESENT") {
-                        var diff = System.currentTimeMillis() - previousEventTimestamp
-                        if (diff > 3_600_000) diff = 0
-
-                    }
                     // Screen turned off
                     Log.d("ScreenStateReceiver", "Screen OFF")
                     uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/screen_events/${System.currentTimeMillis()}",
                         FirebaseUtils.FirebaseDataLoggingObject(event = "ACTION_SCREEN_OFF"))
 
                     if (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY) uploadEvent(previousEventType, previousEventTimestamp, p0)
+                    // updating to start a NEW event with type ACTION_SCREEN_OFF
+                    // this event is stored when the NEXT even triggers and is then stored as even of THIS type.
                     updatePreviousEvent(now, "ACTION_SCREEN_OFF", p0)
 
+                    sessionDuration = now-sessionStartTimestamp
+                    lastScreenoff = now
+
+                    if (::dialog.isInitialized) dialog.close(p0)
                 }
 
                 Intent.ACTION_USER_PRESENT -> {
@@ -182,34 +192,40 @@ open class BaselineService : Service() {
                         FirebaseUtils.FirebaseDataLoggingObject(event = "ACTION_USER_PRESENT"))
 
                     if (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY) uploadEvent(previousEventType, previousEventTimestamp, p0)
+                    // updating to start a NEW event with type ACTION_USER_PRESENT
+                    // this event is stored when the NEXT even triggers and is then stored as even of THIS type.
                     updatePreviousEvent(now, "ACTION_USER_PRESENT", p0)
+
+                    // Reset session start only if more than 45 seconds have passed since last usage
+                    if (!usageWithin45Seconds(p0, now, lastScreenoff)) {
+                        sessionStartTimestamp = now
+                        sessionDuration = 0L
+                        // TODO new WORKING timer required
+                        //startEsmTimer(p0, sessionDuration)
+                    }
+                    //else startEsmTimer(p0, sessionDuration)
+
+                    if (Math.random() < esm_propability && (now - lastDialogTimestamp > MINIMUM_DIALOG_DELAY)) {
+                        val dialog = UnlockDialog()
+                        dialog.showDialog(p0, DIALOG_TYPE_USAGE_INITIATED)
+                        lastDialogTimestamp = now
+                    }
+
                 }
 
             }
 
         }
 
-        private fun startUsageTimer(c : Context) {
-            timer?.cancel() // Cancel any existing timer
-            timer = object : CountDownTimer(CONTINUOUS_USAGE_NOTIFICATION_TIMELIMIT*6, CONTINUOUS_USAGE_NOTIFICATION_TIMELIMIT) {
-                override fun onTick(millisUntilFinished: Long) {
-                    if (timerCount > 0) sendUsageEsm(c)
-                    timerCount++
-                }
-                override fun onFinish() {
-                }
-            }.start()
+
+        private fun sendUsageEsm(c: Context, continued: Boolean) {
+            Log.d("esm", "sendUsageEsm $continued")
+            dialog = UnlockDialog()
+            val dialogType = if (continued) DIALOG_TYPE_USAGE_CONTINUED else DIALOG_TYPE_USAGE_INITIATED
+            dialog.showDialog(c, dialogType)
+            lastDialogTimestamp = System.currentTimeMillis()
         }
 
-        private fun cancelUsageTimer() {
-            timer?.cancel()
-            timer = null
-            timerCount = 0
-        }
-
-        private fun sendUsageEsm(c : Context) {
-
-        }
 
         private fun uploadEvent(eventType : String, time : Long, c : Context?) {
             screenEvent = ScreenEvent(eventType, time, System.currentTimeMillis()-time)
@@ -229,6 +245,11 @@ open class BaselineService : Service() {
             previousEventTimestamp = time
             putPreviousEvent(time, type, c)
         }
+    }
+
+    // within 45 seconds continues previous use, no further disruptions after unlock
+    fun usageWithin45Seconds(c : Context?, time : Long, previous : Long) : Boolean {
+        return((time - previous) < 45000)
     }
 
 }

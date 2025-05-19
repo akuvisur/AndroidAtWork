@@ -4,7 +4,7 @@
     <string name="overlay_permission_and_test">Overlay permission is required to draw the the UI after phone unlock during Intervention phase #1. Click below to test what the screen looks like.</string>
 
     # ESM on pickup / after continued use
-    <string name="dialog_unlocked_info">Why did you pick up your phone? Please select one option from each row!</string>
+    <string name="dialog_unlocked_info">Why did you pick up your phone? Please select one option from each group</string>
     <string name="dialog_unlocked_info_continued">What are you doing on your phone right now?</string>
     <!-- Step headers -->
     <string name="step1_header">Step 1 Examples</string>

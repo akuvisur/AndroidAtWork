@@ -64,5 +64,6 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("com.google.android.material:material:1.7.0")
+    implementation("com.google.android.flexbox:flexbox:3.0.0")
     implementation("androidx.appcompat:appcompat:1.4.0")  // or latest version
 }

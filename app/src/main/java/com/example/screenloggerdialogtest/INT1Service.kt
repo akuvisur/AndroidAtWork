@@ -156,15 +156,7 @@ class INT1Service : Service() {
                 Log.d("INT1", "bed goal ${bedtimeGoal} minutes until bed: ${calculateMinutesUntilBedtime(bedtimeGoal)}")
                 Log.d("INT1", "usage within 45 seconds: ${usageWithin45Seconds(p0, now, previousEventTimestamp)}")
                 // Prioritise showing the bedtime dialog
-                if (calculateMinutesUntilBedtime(bedtimeGoal) <= 60 && !usageWithin45Seconds(p0, now, previousEventTimestamp)) {
-                    dialog = UnlockDialog()
-                    dialog.showDialog(p0, now, bedtimeGoal, dailyUsage, dailyUsageGoal, DIALOG_TYPE_USAGE_INITIATED, false)
-                    return
-                }
-                if (dailyUsage > dailyUsageGoal && !usageWithin45Seconds(p0, now, previousEventTimestamp)) {
-                    dialog = UnlockDialog()
-                    dialog.showDialog(p0, now, bedtimeGoal, dailyUsage, dailyUsageGoal, DIALOG_TYPE_USAGE_CONTINUED, false)
-                }
+
             }
             else if (p1?.action == Intent.ACTION_SCREEN_OFF) {
                 if (System.currentTimeMillis() - previousEventTimestamp <= 10000 && ::dialog.isInitialized) {

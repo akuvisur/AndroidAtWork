@@ -347,12 +347,7 @@ class UnlockDialog {
 
     fun showDialog(
         c: Context?,
-        curTime: Long,
-        bedTime: Int,
-        usage: Long,
-        goal: Long,
-        type: String,
-        testDialog : Boolean
+        type: String
     ) {
         if (c == null) {
             return // Exit the function if context is null
@@ -372,7 +367,6 @@ class UnlockDialog {
         */
 
         dialogCreatedTimestamp = System.currentTimeMillis()
-        localTestDialogVariable = testDialog
 
         val wm = c.getSystemService(WINDOW_SERVICE) as WindowManager
         val inflater = LayoutInflater.from(c)
@@ -421,6 +415,7 @@ class UnlockDialog {
         layoutParams.gravity = Gravity.CENTER // Center the view on the screen
 
         closeButton.setOnClickListener {
+            Log.d("dialog", "closebutton clicked")
             if (!localTestDialogVariable) {
                 val data = IgnoredResponse(
                     dialogType = type,
@@ -434,6 +429,8 @@ class UnlockDialog {
         }
 
         submitButton.setOnClickListener {
+            Log.d("dialog", "submitbutton clicked")
+
             val row1Selection = getSelectedButtonText(c, row1)
             val row2Selection = getSelectedButtonText(c, row2)
             val row3Selection = getSelectedButtonText(c, row3)
