@@ -6,6 +6,8 @@
     # ESM on pickup / after continued use
     <string name="dialog_unlocked_info">Why did you pick up your phone? Please select one option from each group</string>
     <string name="dialog_unlocked_info_continued">What are you doing on your phone right now?</string>
+    <string name="dialog_unlocked_end">Please select the last options before you stopped using your phone</string>
+
     <!-- Step headers -->
     <string name="step1_header">Step 1 Examples</string>
     <string name="step2_header">Step 2: What is the primary purpose of this activity?</string>
@@ -27,6 +29,7 @@
         External Nudge: Notification, Call, Alert, etc. \n Inner Motivation: Thought, Habit, Curiosity, etc. \n No specific reason: accidental activation
     </string>
 
+    <string name="end_question">Why did you stop using your phone just now?</string>
 
     <string name="settings_deviceid_text">Device id: %s</string>
 

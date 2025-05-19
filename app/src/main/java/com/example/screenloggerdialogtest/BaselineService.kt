@@ -142,7 +142,7 @@ open class BaselineService : Service() {
         private var sessionDuration : Long = 0L
 
         override fun onReceive(p0: Context?, p1: Intent?) {
-
+            if (::dialog.isInitialized) dialog.close(p0)
             lastScreenEvent = System.currentTimeMillis()
 
             val (ts, type) = getPreviousEvent(p0)
@@ -206,8 +206,9 @@ open class BaselineService : Service() {
                     //else startEsmTimer(p0, sessionDuration)
 
                     if (Math.random() < esm_propability && (now - lastDialogTimestamp > MINIMUM_DIALOG_DELAY)) {
-                        val dialog = UnlockDialog()
+                        dialog = UnlockDialog()
                         dialog.showDialog(p0, DIALOG_TYPE_USAGE_INITIATED)
+                        Log.d("dialog", "Calling dialog to be shown")
                         lastDialogTimestamp = now
                     }
 
