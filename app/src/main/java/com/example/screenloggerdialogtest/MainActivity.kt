@@ -346,7 +346,7 @@ class MainActivity : FragmentActivity() {
                     requireContext(), android.Manifest.permission.POST_NOTIFICATIONS
                 ) == PackageManager.PERMISSION_GRANTED
                 notificationIcon.visibility = if (granted) View.VISIBLE else View.INVISIBLE
-                notificationButton.alpha = if (granted) 1.0f else 0.5f
+                notificationButton.alpha = if (granted) 0.5f else 1.0f
             } else {
                 // Permission not needed on Android 12 and below
                 notificationIcon.visibility = View.VISIBLE
