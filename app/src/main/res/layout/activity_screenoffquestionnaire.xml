@@ -1,9 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="@color/white">
+    android:id="@+id/questionnaireLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        >
 
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
     <!-- Top banner -->
 
     <!-- TextView for more information -->
@@ -23,11 +31,12 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/dialog_unlocked_info"
+            android:text="@string/end_question_info"
             android:textSize="20sp"
             android:padding="4dp"
             android:textColor="@color/white"
-            android:id="@+id/infoTextTextView"/>
+            android:id="@+id/infoTextTextView"
+            />
     </LinearLayout>
 
     <!-- GridLayout for response buttons -->
@@ -100,6 +109,7 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             app:layout_flexBasisPercent="100%" />
+
 
         <!-- Purpose Set -->
         <Button
@@ -202,59 +212,31 @@
 
     </com.google.android.flexbox.FlexboxLayout>
 
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_below="@+id/buttonLayout"
-        android:id="@+id/dialogExtraQuestionLayout"
-        android:padding="8dp">
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="How in control do you feel of this phone use session? (0 = Not at all, 3 = Neutral, 6 = Very much in control)"/>
-
-        <SeekBar
-            android:id="@+id/controlSeekBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="6"
-            android:progress="3"
-            android:layout_marginTop="16dp"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp"
-            />
-
-    </LinearLayout>
-
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/infoLayout"
         android:orientation="vertical"
-        android:layout_below="@id/dialogExtraQuestionLayout"
+        android:layout_below="@id/buttonLayout"
         android:padding="8dp">
-    <!-- Step 1 Header -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="2dp"
-        android:text="@string/step1_header"
-        android:textColor="@color/blue_gray_600"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+        <!-- Step 1 Header -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="2dp"
+            android:text="@string/step1_header"
+            android:textColor="@color/blue_gray_600"
+            android:textSize="14sp"
+            android:textStyle="bold" />
 
-    <!-- Step 1 Options -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="4dp"
-        android:text="@string/step1_options"
-        android:textColor="@color/blue_gray_600"
-        android:textSize="14sp" />
+        <!-- Step 1 Options -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="4dp"
+            android:text="@string/step1_options"
+            android:textColor="@color/blue_gray_600"
+            android:textSize="14sp" />
 
         <!--
     <TextView
@@ -275,53 +257,74 @@
         android:textSize="14sp" />
         -->
 
-    <!-- Step 3 Header -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="2dp"
-        android:text="@string/step3_header"
-        android:textColor="@color/blue_gray_600"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+        <!-- Step 3 Header -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="2dp"
+            android:text="@string/step3_header"
+            android:textColor="@color/blue_gray_600"
+            android:textSize="14sp"
+            android:textStyle="bold" />
 
-    <!-- Step 3 Options -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="4dp"
-        android:text="@string/step3_options"
-        android:textColor="@color/blue_gray_600"
-        android:textSize="14sp" />
+        <!-- Step 3 Options -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="4dp"
+            android:text="@string/step3_options"
+            android:textColor="@color/blue_gray_600"
+            android:textSize="14sp" />
 
 
     </LinearLayout>
-    <!-- Close button -->
-    <Button
-        android:id="@+id/closeButton"
-        android:layout_width="wrap_content"
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentStart="true"
-        android:layout_margin="16dp"
-        android:text="Skip"
-        android:textColor="@android:color/black"
-        android:backgroundTint="@color/white"
-        android:background="@drawable/dialog_corners" />
+        android:id="@+id/extraQuestionlayout"
+        android:orientation="vertical"
+        android:layout_below="@id/infoLayout"
+        android:padding="8dp">
+        <TextView
+            android:id="@+id/questionText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Why did you stop using your phone just now?"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
-    <!-- Submit button -->
-    <Button
-        android:id="@+id/submitButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:layout_margin="16dp"
-        android:text="Submit"
-        android:textColor="@android:color/white"
-        android:backgroundTint="@color/blue_A700"
-        android:background="@drawable/dialog_corners" />
+        <RadioGroup
+            android:id="@+id/radioGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/questionText"
+            android:layout_marginTop="16dp">
 
+            <RadioButton android:id="@+id/option1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Completion: Finished the goal of using my phone" />
+            <RadioButton android:id="@+id/option2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="External reason: Got distracted or interrupted" />
+            <RadioButton android:id="@+id/option3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Internal reason: Feeling guilty or just wanted to be productive" />
+            <RadioButton android:id="@+id/option4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Continue: Switched to another device to continue what I was doing on my phone" />
+            <RadioButton android:id="@+id/option5" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Didn’t mean to stop" />
+            <RadioButton android:id="@+id/option6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Other" />
+        </RadioGroup>
 
+        <Button
+            android:id="@+id/submitButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Submit"
+            android:layout_below="@id/radioGroup"
+            android:layout_marginTop="24dp"
+            android:layout_alignParentEnd="true"
+            android:backgroundTint="@color/blue_A700"
+            android:textColor="@android:color/white"
+            android:background="@drawable/dialog_corners" />
+
+    </LinearLayout>
+
+    </RelativeLayout>
+
+    </ScrollView>
 
 </RelativeLayout>

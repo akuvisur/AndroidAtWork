@@ -1,11 +1,14 @@
 package com.example.screenloggerdialogtest
 
+import android.animation.ObjectAnimator.*
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.app.AlertDialog
 import android.app.Service.WINDOW_SERVICE
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.res.ColorStateList
 import android.graphics.PixelFormat
 import android.os.Handler
 import android.os.Looper
@@ -16,10 +19,11 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.view.isVisible
-import androidx.transition.Visibility
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.text.SimpleDateFormat
@@ -76,6 +80,7 @@ const val SASSV_2_SUBMITTED: String = "SASSV_2_SUBMITTED"
 const val STUDY_COMPLETE_TIMESTAMP: String = "STUDY_COMPLETE_TIMESTAMP"
 
 const val STUDY_DIALOG_LASTSHOWN_TIMESTAMP: String = "STUDY_DIALOG_LASTSHOWN_TIMESTAMP"
+const val DIALOG_RESPONSE : String = "DIALOG_RESPONSE"
 
 const val BEDTIME_GOAL_DEFAULT_VALUE: Int = 22*60
 
@@ -300,7 +305,7 @@ Dialog generation for INT1 phase
 
  */
 
-const val DIALOG_TYPE_USAGE_INITIATED : String = "DIALOG_TYPE_USAGE_INITIATED"
+const val DIALOG_TYPE_USAGE_FLOW_ESM : String = "DIALOG_TYPE_USAGE_FLOW_ESM"
 const val DIALOG_TYPE_USAGE_CONTINUED : String = "DIALOG_TYPE_USAGE_CONTINUED"
 
 const val DIALOG_RESPONSE_SUBMITTED : String = "DIALOG_RESPONSE_SUBMITTED"
@@ -318,6 +323,7 @@ class UnlockDialog {
 
     private lateinit var closeButton : Button
     private lateinit var submitButton : Button
+    private lateinit var infoText : TextView
 
     private lateinit var extraQuestionLayout : LinearLayout
 
@@ -345,6 +351,7 @@ class UnlockDialog {
         listOf(triggerExternalButton, triggerInnerButton, triggerNoReasonButton)
     }
 
+    @SuppressLint("SetTextI18n")
     fun showDialog(
         c: Context?,
         type: String
@@ -353,6 +360,7 @@ class UnlockDialog {
             return // Exit the function if context is null
         }
 
+        val skipCount = getDailySkipCount(c)
         val lastShown = getStudyVariable(c, STUDY_DIALOG_LASTSHOWN_TIMESTAMP, 0L)
         // Get the current time in milliseconds
         val currentTime = System.currentTimeMillis()
@@ -371,7 +379,7 @@ class UnlockDialog {
         val wm = c.getSystemService(WINDOW_SERVICE) as WindowManager
         val inflater = LayoutInflater.from(c)
         dialogView = when (type) {
-            DIALOG_TYPE_USAGE_INITIATED -> {
+            DIALOG_TYPE_USAGE_FLOW_ESM -> {
                 inflater.inflate(R.layout.dialog_layout_unlocked, null)
             }
             DIALOG_TYPE_USAGE_CONTINUED -> {
@@ -384,6 +392,8 @@ class UnlockDialog {
 
         closeButton = dialogView.findViewById(R.id.closeButton)
         submitButton = dialogView.findViewById(R.id.submitButton)
+
+        infoText = dialogView.findViewById(R.id.infoTextTextView)
 
         whatdoinkCommunicationButton = dialogView.findViewById(R.id.whatdoink_communication)
         whatdoinkLeisureButton = dialogView.findViewById(R.id.whatdoink_leisure)
@@ -400,6 +410,20 @@ class UnlockDialog {
         triggerNoReasonButton = dialogView.findViewById(R.id.trigger_noreason)
 
         extraQuestionLayout = dialogView.findViewById(R.id.dialogExtraQuestionLayout)
+
+        closeButton.text = "Skip ${skipCount}/${MAXIMUM_SKIPS}"
+
+        val drawable = ContextCompat.getDrawable(c, R.drawable.dialog_corners)?.mutate()
+        val wrapped = DrawableCompat.wrap(drawable!!)
+        closeButton.background = wrapped // set background first
+        if (skipCount in (MAXIMUM_SKIPS-2)..(MAXIMUM_SKIPS-1)) {
+            closeButton.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(c, R.color.yellow))
+            infoText.setText(R.string.dialog_unlocked_skip4)
+        } else if (skipCount >= MAXIMUM_SKIPS) {
+            closeButton.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(c, R.color.red))
+            closeButton.setTextColor(ContextCompat.getColor(c, R.color.white))
+            infoText.setText(R.string.dialog_unlocked_skip6)
+        }
 
         setupButtonGroups(c)
 
@@ -425,6 +449,11 @@ class UnlockDialog {
                 )
                 FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses/${System.currentTimeMillis()}",data) // does this need onSuccesss?
             }
+            val currentSkipCount = getDailySkipCount(c)
+            setDailySkipCount(c, currentSkipCount + 1)
+
+            // keeps track of required screenOffQuestionnaires
+            setStudyVariable(c, DIALOG_RESPONSE, 0)
             close(c)
         }
 
@@ -435,39 +464,53 @@ class UnlockDialog {
             val row2Selection = getSelectedButtonText(c, row2)
             val row3Selection = getSelectedButtonText(c, row3)
 
-            // Create a Response object
-            val data = Response(
-                contextSelection = row1Selection,
-                purposeSelection = row2Selection,
-                initiationSelection = row3Selection,
-                dialogType = type,
-                dialogClosedTimestamp = System.currentTimeMillis(),
-                dialogCreatedTimestamp = dialogCreatedTimestamp,
-                response = DIALOG_RESPONSE_SUBMITTED
-            )
+            if (row1Selection == null || row2Selection == null || row3Selection == null) {
+                infoText.setText(R.string.dialog_unlocked_info)
+                val animator = ofArgb(infoText, "textColor",
+                    ContextCompat.getColor(c, R.color.red),
+                    ContextCompat.getColor(c, R.color.black)) // Replace default_text_color with your normal color
+                animator.duration = 500
+                animator.repeatCount = 3
+                animator.repeatMode = ValueAnimator.REVERSE
+                animator.start()
+            }
+            else {
+                // Create a Response object
+                val data = Response(
+                    whatdoinkSelection = row1Selection,
+                    purposeSelection = row2Selection,
+                    triggerSelection = row3Selection,
+                    dialogType = type,
+                    dialogClosedTimestamp = System.currentTimeMillis(),
+                    dialogCreatedTimestamp = dialogCreatedTimestamp,
+                    response = DIALOG_RESPONSE_SUBMITTED
+                )
+                // keeps track of required screenOffQuestionnaires
+                setStudyVariable(c, DIALOG_RESPONSE, 1)
 
-            if (!localTestDialogVariable) FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses//${System.currentTimeMillis()}",data) // does this need onSuccesss?
+                if (!localTestDialogVariable) FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses//${System.currentTimeMillis()}",data) // does this need onSuccesss?
 
-            close(c)
-
-            // Set up a timer to close the dialog automatically after 5 minutes
-            Handler(Looper.getMainLooper()).postDelayed({
-                if (!localTestDialogVariable) {
-                    val sentData = IgnoredResponse(
-                        dialogType = type,
-                        dialogClosedTimestamp = System.currentTimeMillis(),
-                        dialogCreatedTimestamp = dialogCreatedTimestamp,
-                        response = DIALOG_RESPONSE_AUTOMATICALLY_CLOSED
-                    )
-                    FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses//${System.currentTimeMillis()}",sentData) // does this need onSuccesss?
-                }
                 close(c)
-            }, 300000L) // 300000 ms = 5 minutes
+            }
         }
 
-        if (type == DIALOG_TYPE_USAGE_INITIATED) extraQuestionLayout.isVisible = false
+        if (type == DIALOG_TYPE_USAGE_FLOW_ESM) extraQuestionLayout.isVisible = false
 
         setStudyVariable(c, STUDY_DIALOG_LASTSHOWN_TIMESTAMP, System.currentTimeMillis())
+
+        // Set up a timer to close the dialog automatically after 5 minutes
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (!localTestDialogVariable) {
+                val sentData = IgnoredResponse(
+                    dialogType = type,
+                    dialogClosedTimestamp = System.currentTimeMillis(),
+                    dialogCreatedTimestamp = dialogCreatedTimestamp,
+                    response = DIALOG_RESPONSE_AUTOMATICALLY_CLOSED
+                )
+                FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses//${System.currentTimeMillis()}",sentData) // does this need onSuccesss?
+            }
+            close(c)
+        }, 60000L) // 1 minute
         // Add the view to the window
         show(dialogView, wm, layoutParams, c)
     }
@@ -525,9 +568,9 @@ class UnlockDialog {
     }
 
     data class Response(
-        val contextSelection: String?,
+        val whatdoinkSelection: String?,
         val purposeSelection: String?,
-        val initiationSelection: String?,
+        val triggerSelection: String?,
         val dialogType: String,
         val dialogClosedTimestamp: Long,
         val dialogCreatedTimestamp: Long,
@@ -550,6 +593,24 @@ class UnlockDialog {
 
 }
 
+
+fun setDailySkipCount(c: Context?, count: Int) {
+    val sharedPrefs = getStudyStateSharedPreferences(c)
+    val editor = sharedPrefs?.edit()
+    val key = "skips_${getTodayString()}"
+    editor?.putInt(key, count)
+    editor?.apply()
+}
+
+fun getDailySkipCount(c: Context?): Int {
+    val sharedPrefs = getStudyStateSharedPreferences(c)
+    val key = "skips_${getTodayString()}"
+    return sharedPrefs?.getInt(key, 0) ?: 0
+}
+
+private fun getTodayString(): String {
+    return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+}
 
 /*
 
@@ -778,12 +839,32 @@ fun getStudyStartedTimestamp(context: Context?): Long? {
     return if (timestamp != -1L) timestamp else null
 }
 
+const val MAXIMUM_SKIPS = 6
 fun calculateStudyDay(context: Context?): Int {
     val startTimestamp = getStudyStartedTimestamp(context) ?: return -1
     val now = System.currentTimeMillis()
     val elapsed = now - startTimestamp
+    val totalDays = (elapsed / (24 * 60 * 60 * 1000)).toInt()
 
-    return (elapsed / (24 * 60 * 60 * 1000)).toInt()
+    // Load skip counts from SharedPreferences
+    val sharedPrefs = getStudyStateSharedPreferences(context)
+    val allEntries = sharedPrefs?.all ?: return totalDays
+
+    var daysToSubtract = 0
+
+    for ((key, value) in allEntries) {
+        if (key.startsWith("skipCount_") && value is Int) {
+            val dateStr = key.removePrefix("skipCount_")
+            val dateMillis = dateStr.toLongOrNull() ?: continue
+
+            // Only consider dates after study start
+            if (dateMillis >= startTimestamp && value > MAXIMUM_SKIPS) {
+                daysToSubtract++
+            }
+        }
+    }
+
+    return (totalDays - daysToSubtract).coerceAtLeast(0)
 }
 
 private const val KEY_PARTICIPANT_ID = "participant_id"

@@ -4,7 +4,10 @@
     <string name="overlay_permission_and_test">Overlay permission is required to draw the the UI after phone unlock during Intervention phase #1. Click below to test what the screen looks like.</string>
 
     # ESM on pickup / after continued use
-    <string name="dialog_unlocked_info">Why did you pick up your phone? Please select one option from each group</string>
+    <string name="dialog_unlocked_info">Why are you using your phone right now? Please select one option from each group</string>
+    <string name="dialog_unlocked_skip4">If you skip more than six ESMs each day, that day wont be counted towards study completion!</string>
+    <string name="dialog_unlocked_skip6">Next skip will stop further ESMs for today</string>
+
     <string name="dialog_unlocked_info_continued">What are you doing on your phone right now?</string>
     <string name="dialog_unlocked_end">Please select the last options before you stopped using your phone</string>
 
@@ -17,7 +20,7 @@
     <string name="step1_options">
     Communication: Calls, messaging, emails, social networking\n
     Entertainment/Leisure: Browsing, gaming, news, videos, social media scrolling\n
-    Tools &amp; Utilities: Checking time, calendar, weather, payments, navigation, system settings\n
+    Tools &amp; Utilities: Camera, checking time, calendar, weather, payments, navigation, system settings\n
     Other/Unconscious Habit: Accidental unlock, habit, etc.
     </string>
 
@@ -29,12 +32,17 @@
         External Nudge: Notification, Call, Alert, etc. \n Inner Motivation: Thought, Habit, Curiosity, etc. \n No specific reason: accidental activation
     </string>
 
-    <string name="end_question">Why did you stop using your phone just now?</string>
+    <string name="end_question">What was the reason you stopped using your phone just now?</string>
+    <string name="end_question_info">What was the last thing you did before you stopped using your phone?</string>
 
     <string name="settings_deviceid_text">Device id: %s</string>
 
     <string name="title_activity_work_time_selector">WorkTimeSelectorActivity</string>
+    <string name="title_activity_exitQuestionnaire">ScreenOffQuestionnaire</string>
+
     <string name="accessibility_service_description">This application tracks foreground application changes when you are using your smartphone.</string>
+
+
 
 
 </resources>

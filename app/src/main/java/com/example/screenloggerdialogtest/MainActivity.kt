@@ -286,10 +286,11 @@ class MainActivity : FragmentActivity() {
         private lateinit var accessibilityButton: Button
         private lateinit var accessibilityIcon: ImageView
         private lateinit var participantInput: EditText
+        private lateinit var deviceidText : TextView
         private lateinit var startServicesButton: Button
 
         private lateinit var testCDialogButton : Button
-        private lateinit var testIDialogButton : Button
+        private lateinit var testScreenOffQuestionnaireButton : Button
 
         @SuppressLint("StringFormatInvalid", "DefaultLocale")
         override fun onCreateView(
@@ -309,12 +310,12 @@ class MainActivity : FragmentActivity() {
             accessibilityButton = view.findViewById(R.id.accessibilityServiceRequestButton)
             accessibilityIcon = view.findViewById(R.id.allowAccessibilityImageView)
             participantInput = view.findViewById(R.id.participantIdInput)
+            deviceidText = view.findViewById(R.id.settings_device_id_text)
             startServicesButton = view.findViewById(R.id.startServicesButton)
             testCDialogButton = view.findViewById(R.id.settings_test_c_dialog_button)
-            testIDialogButton = view.findViewById(R.id.settings_test_i_dialog_button)
+            testScreenOffQuestionnaireButton = view.findViewById(R.id.settings_test_off_q_button)
 
-            // Set participant ID if available
-            participantInput.setText(getParticipantId(requireContext()))
+            deviceidText.text = FirebaseUtils.getCurrentUserUID()
 
             // Set OnFocusChangeListener for participant input
             participantInput.setOnFocusChangeListener { _, hasFocus ->
@@ -335,6 +336,9 @@ class MainActivity : FragmentActivity() {
 
         override fun onResume() {
             super.onResume()
+
+            // Set participant ID if available
+            participantInput.setText(getParticipantId(requireContext()))
 
             // === NOTIFICATION PERMISSION ===
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -396,6 +400,8 @@ class MainActivity : FragmentActivity() {
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             }
 
+
+
             // === START SERVICES BUTTON ===
             startServicesButton.setOnClickListener {
                 // Disable the button and start animation
@@ -436,12 +442,12 @@ class MainActivity : FragmentActivity() {
 
             testCDialogButton.setOnClickListener {
                 val dialog = UnlockDialog()
-                dialog.showDialog(context, DIALOG_TYPE_USAGE_CONTINUED)
+                dialog.showDialog(context, DIALOG_TYPE_USAGE_FLOW_ESM)
             }
 
-            testIDialogButton.setOnClickListener {
-                val dialog = UnlockDialog()
-                dialog.showDialog(context, DIALOG_TYPE_USAGE_INITIATED)
+            testScreenOffQuestionnaireButton.setOnClickListener {
+                val intent = Intent(requireContext(), ScreenOffQuestionnaire::class.java)
+                startActivity(intent)
             }
         }
 

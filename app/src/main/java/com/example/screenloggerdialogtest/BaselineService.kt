@@ -3,22 +3,23 @@ package com.example.screenloggerdialogtest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
-import android.os.CountDownTimer
 import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
-import androidx.core.content.ContentProviderCompat.requireContext
+import android.widget.Toast
+import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.screenloggerdialogtest.FirebaseUtils.ScreenEvent
 import com.example.screenloggerdialogtest.FirebaseUtils.getCurrentUserUID
 import com.example.screenloggerdialogtest.FirebaseUtils.uploadFirebaseEntry
-import java.util.concurrent.TimeUnit
 
 /**
  * ### Service Hierarchy Documentation
@@ -66,15 +67,16 @@ import java.util.concurrent.TimeUnit
  */
 
 const val MULTIPLE_SCREEN_EVENT_DELAY : Int = 1000
+// set to 0.5 after debug
+const val esm_propability = 0.5
+// set to 360000 (6 minutes) after debug
+const val MINIMUM_DIALOG_DELAY = 360000
+// set to 360000 (6 minute) after debug
+const val SCREEN_OFF_QUESTIONNAIRE_DELAY = 360000
 
 open class BaselineService : Service() {
     private lateinit var screenStateReceiver: ScreenStateReceiver
     private var receiverRegistered : Boolean = false
-
-    // set to 0.5 after debug
-    private val esm_propability = 1.0
-    // set to 360000 (6 minutes) after debug
-    private val MINIMUM_DIALOG_DELAY = 1
 
     private lateinit var notificationManager : NotificationManager
 
@@ -131,6 +133,8 @@ open class BaselineService : Service() {
 
         private lateinit var dialog : UnlockDialog
         private var lastDialogTimestamp : Long = 0L
+        private var lastScreenOffQuestionnaire : Long = 0L
+        private var userPresentDialogShown : Boolean = false
 
         lateinit var screenEvent : ScreenEvent
         var previousEventTimestamp : Long = 0L
@@ -139,11 +143,13 @@ open class BaselineService : Service() {
         private var lastScreenoff : Long = 0L
 
         private var sessionStartTimestamp : Long = 0L
-        private var sessionDuration : Long = 0L
+        private var dialogSkipCount : Int = 0
 
         override fun onReceive(p0: Context?, p1: Intent?) {
             if (::dialog.isInitialized) dialog.close(p0)
             lastScreenEvent = System.currentTimeMillis()
+
+            dialogSkipCount = getDailySkipCount(p0)
 
             val (ts, type) = getPreviousEvent(p0)
             previousEventTimestamp = ts
@@ -174,15 +180,20 @@ open class BaselineService : Service() {
                     uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/screen_events/${System.currentTimeMillis()}",
                         FirebaseUtils.FirebaseDataLoggingObject(event = "ACTION_SCREEN_OFF"))
 
+                    cancelUsageFlowDialogs()
+
                     if (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY) uploadEvent(previousEventType, previousEventTimestamp, p0)
                     // updating to start a NEW event with type ACTION_SCREEN_OFF
                     // this event is stored when the NEXT even triggers and is then stored as even of THIS type.
                     updatePreviousEvent(now, "ACTION_SCREEN_OFF", p0)
 
-                    sessionDuration = now-sessionStartTimestamp
                     lastScreenoff = now
 
                     if (::dialog.isInitialized) dialog.close(p0)
+
+                    if (getStudyVariable(p0, DIALOG_RESPONSE, 0) == 1 && dialogSkipCount <= MAXIMUM_SKIPS) {
+                        if (p0 != null) promptScreenOffQuestionnaire(p0)
+                    }
                 }
 
                 Intent.ACTION_USER_PRESENT -> {
@@ -196,20 +207,21 @@ open class BaselineService : Service() {
                     // this event is stored when the NEXT even triggers and is then stored as even of THIS type.
                     updatePreviousEvent(now, "ACTION_USER_PRESENT", p0)
 
-                    // Reset session start only if more than 45 seconds have passed since last usage
-                    if (!usageWithin45Seconds(p0, now, lastScreenoff)) {
-                        sessionStartTimestamp = now
-                        sessionDuration = 0L
-                        // TODO new WORKING timer required
-                        //startEsmTimer(p0, sessionDuration)
-                    }
-                    //else startEsmTimer(p0, sessionDuration)
+                    // Reset session start
+                    sessionStartTimestamp = now
 
-                    if (Math.random() < esm_propability && (now - lastDialogTimestamp > MINIMUM_DIALOG_DELAY)) {
+                    // TODO new WORKING timer to show at 3,10,20 minutes
+                    if (Math.random() < esm_propability && (now - lastDialogTimestamp > MINIMUM_DIALOG_DELAY) && dialogSkipCount <= MAXIMUM_SKIPS) {
                         dialog = UnlockDialog()
-                        dialog.showDialog(p0, DIALOG_TYPE_USAGE_INITIATED)
+                        dialog.showDialog(p0, DIALOG_TYPE_USAGE_FLOW_ESM)
                         Log.d("dialog", "Calling dialog to be shown")
                         lastDialogTimestamp = now
+                        userPresentDialogShown = true
+
+                        if (p0 != null) scheduleUsageFlowDialogs(p0)
+                    }
+                    else {
+                        userPresentDialogShown = false
                     }
 
                 }
@@ -218,15 +230,44 @@ open class BaselineService : Service() {
 
         }
 
+        private var usageFlowHandler: Handler? = null
+        private var usageFlowRunnable: Runnable? = null
+        private var intervalIndex = 0
+        private val INITIAL_INTERVAL = 3L
+        private val ADDITIONAL_INTERVAL = 10L // every 10 min after
 
-        private fun sendUsageEsm(c: Context, continued: Boolean) {
-            Log.d("esm", "sendUsageEsm $continued")
-            dialog = UnlockDialog()
-            val dialogType = if (continued) DIALOG_TYPE_USAGE_CONTINUED else DIALOG_TYPE_USAGE_INITIATED
-            dialog.showDialog(c, dialogType)
-            lastDialogTimestamp = System.currentTimeMillis()
+        private fun scheduleUsageFlowDialogs(context: Context) {
+            cancelUsageFlowDialogs() // cancel any running timer
+
+            usageFlowHandler = Handler(Looper.getMainLooper())
+            intervalIndex = 0
+
+            usageFlowRunnable = object : Runnable {
+                override fun run() {
+                    Toast.makeText(context, "AndroidAtWork: ESM arriving in 5 seconds", Toast.LENGTH_SHORT).show()
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        val dialog = UnlockDialog()
+                        dialog.showDialog(context, DIALOG_TYPE_USAGE_FLOW_ESM)
+                    }, 5000)
+
+                    intervalIndex++
+                    usageFlowHandler?.postDelayed(this, intervalToMillis(ADDITIONAL_INTERVAL)) // schedule next after 10 min
+                }
+            }
+
+            // Schedule first at 3 minutes
+            usageFlowHandler?.postDelayed(usageFlowRunnable!!, intervalToMillis(INITIAL_INTERVAL))
         }
 
+        private fun cancelUsageFlowDialogs() {
+            usageFlowHandler?.removeCallbacksAndMessages(null)
+            usageFlowHandler = null
+            usageFlowRunnable = null
+        }
+
+
+        // after debug switch to 'minutes * 60 * 1000'
+        private fun intervalToMillis(minutes: Long) = minutes * 60 * 1000
 
         private fun uploadEvent(eventType : String, time : Long, c : Context?) {
             screenEvent = ScreenEvent(eventType, time, System.currentTimeMillis()-time)
@@ -246,11 +287,49 @@ open class BaselineService : Service() {
             previousEventTimestamp = time
             putPreviousEvent(time, type, c)
         }
-    }
 
-    // within 45 seconds continues previous use, no further disruptions after unlock
-    fun usageWithin45Seconds(c : Context?, time : Long, previous : Long) : Boolean {
-        return((time - previous) < 45000)
+        private fun promptScreenOffQuestionnaire(p0 : Context) {
+            // dont show screenOffQuestionnaire repeatedly
+            if (System.currentTimeMillis() - lastScreenOffQuestionnaire <= SCREEN_OFF_QUESTIONNAIRE_DELAY) return
+
+            val intent = Intent(p0, ScreenOffQuestionnaire::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            val pendingIntent = PendingIntent.getActivity(
+                p0, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val notificationManager = p0?.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(
+                    "screen_off_channel", "Screen Off Prompts",
+                    NotificationManager.IMPORTANCE_DEFAULT
+                )
+                notificationManager.createNotificationChannel(channel)
+            }
+
+            Handler(Looper.getMainLooper()).postDelayed({
+                val notification = NotificationCompat.Builder(p0, "screen_off_channel")
+                    .setSmallIcon(R.drawable.ic_notification_important) // your own icon
+                    .setContentTitle("Why did you stop using your phone just now?")
+                    .setContentText("Please answer a quick questionnaire.")
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setContentIntent(pendingIntent)
+                    .setAutoCancel(true)
+                    .setColorized(true)
+                    .setColor(ContextCompat.getColor(p0, R.color.blue_800))
+                    .build()
+
+                notificationManager.notify(1001, notification)
+
+                // Schedule removal after 3 minutes
+                Handler(Looper.getMainLooper()).postDelayed({
+                    notificationManager.cancel(1001)
+                }, 180_000)
+            }, 1000) // send notification after one second.
+        }
     }
 
 }

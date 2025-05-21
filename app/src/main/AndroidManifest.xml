@@ -24,6 +24,11 @@
             android:label="@string/title_activity_work_time_selector"
             />
         <activity
+            android:name=".ScreenOffQuestionnaire"
+            android:exported="false"
+            android:label="@string/title_activity_work_time_selector"
+            />
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             >

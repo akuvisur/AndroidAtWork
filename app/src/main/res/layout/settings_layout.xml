@@ -220,6 +220,14 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:text="Device id:"
+                android:textSize="14sp"
+                android:id="@+id/settings_device_id_text"
+                />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:textAlignment="center"
                 android:textSize="14sp"
                 android:text="Once all steps are complete, click 'Start Data Collection' to begin the services. If you encounter any issues, re-check the settings and restart the services using the same button."
@@ -246,15 +254,15 @@
                 <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Test C Dialog"
+                android:text="Test Dialog"
                 android:id="@+id/settings_test_c_dialog_button"
                 />
 
                 <Button
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Test I Dialog"
-                    android:id="@+id/settings_test_i_dialog_button"/>
+                    android:text="Exit Questionnaire"
+                    android:id="@+id/settings_test_off_q_button"/>
 
         </LinearLayout>
 
