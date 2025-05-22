@@ -1,5 +1,6 @@
 package com.example.screenloggerdialogtest
 
+import android.app.NotificationManager
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
@@ -24,6 +25,7 @@ class ScreenOffQuestionnaire : AppCompatActivity() {
 
     private lateinit var triggerExternalButton: Button
     private lateinit var triggerInnerButton: Button
+    private lateinit var triggerPassTimeButton : Button
     private lateinit var triggerNoReasonButton: Button
 
     private val row1 by lazy {
@@ -33,7 +35,7 @@ class ScreenOffQuestionnaire : AppCompatActivity() {
         listOf(purposeWorkButton, purposePersonalButton, purposeMixButton, purposeNotApplicableButton)
     }
     private val row3 by lazy {
-        listOf(triggerExternalButton, triggerInnerButton, triggerNoReasonButton)
+        listOf(triggerExternalButton, triggerInnerButton, triggerPassTimeButton, triggerNoReasonButton)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,6 +58,7 @@ class ScreenOffQuestionnaire : AppCompatActivity() {
 
         triggerExternalButton = findViewById(R.id.trigger_external)
         triggerInnerButton = findViewById(R.id.trigger_inner)
+        triggerPassTimeButton = findViewById(R.id.trigger_passtime)
         triggerNoReasonButton = findViewById(R.id.trigger_noreason)
 
         // for some reason the colors for these buttons need to be set here too
@@ -69,10 +72,10 @@ class ScreenOffQuestionnaire : AppCompatActivity() {
         purposeMixButton.backgroundTintList = ContextCompat.getColorStateList(this, R.color.deep_purple_300)
         purposeNotApplicableButton.backgroundTintList = ContextCompat.getColorStateList(this, R.color.deep_purple_300)
 
-        triggerExternalButton.backgroundTintList = ContextCompat.getColorStateList(this, R.color.teal_700)
-        triggerInnerButton.backgroundTintList = ContextCompat.getColorStateList(this, R.color.teal_500)
+        triggerExternalButton.backgroundTintList = ContextCompat.getColorStateList(this, R.color.teal_900)
+        triggerInnerButton.backgroundTintList = ContextCompat.getColorStateList(this, R.color.teal_700)
+        triggerPassTimeButton.backgroundTintList = ContextCompat.getColorStateList(this, R.color.teal_500)
         triggerNoReasonButton.backgroundTintList = ContextCompat.getColorStateList(this, R.color.teal_300)
-
 
         setupButtonGroups(this)
 
@@ -96,6 +99,14 @@ class ScreenOffQuestionnaire : AppCompatActivity() {
 
                 FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/screen_off_questionnaires//${System.currentTimeMillis()}",data)
                 Toast.makeText(this, "Thank you. You can now close your phone.", Toast.LENGTH_SHORT).show()
+
+                val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.cancel(1001)
+
+                // this is a hack to prevent multiple notifications asking about why stop using.
+                setStudyVariable(this, DIALOG_RESPONSE, 0)
+                setStudyVariable(this, SCREEN_OFF_QUESTIONNAIRE_PENDING, 0)
+
                 finish() // Close activity
             } else {
                 Toast.makeText(this, "Please select an option", Toast.LENGTH_SHORT).show()

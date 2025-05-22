@@ -76,26 +76,13 @@ class MainActivity : FragmentActivity() {
         )
     }
 
-    private var lastResume : Long = 0
     @SuppressLint("SetTextI18n")
     override fun onResume() {
         super.onResume()
     }
 
-    fun refreshUI() {
-        this.recreate()
-    }
-
     fun setViewPagerPage(page : Int) {
         viewPager.currentItem = page
-    }
-
-    override fun onStop() {
-        super.onStop()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
     }
 
     @Deprecated("Deprecated in Java")
@@ -442,12 +429,26 @@ class MainActivity : FragmentActivity() {
 
             testCDialogButton.setOnClickListener {
                 val dialog = UnlockDialog()
-                dialog.showDialog(context, DIALOG_TYPE_USAGE_FLOW_ESM)
+                dialog.showDialog(context, DIALOG_TYPE_USAGE_INITIATED)
             }
 
             testScreenOffQuestionnaireButton.setOnClickListener {
                 val intent = Intent(requireContext(), ScreenOffQuestionnaire::class.java)
                 startActivity(intent)
+            }
+        }
+
+        override fun onStop() {
+            super.onStop()
+
+            // for some reason on some devices the focus lost doesnt work, so this is never stored.
+            val input = participantInput.text.toString().trim()
+            if (input.isNotEmpty()) {
+                saveParticipantId(requireContext(), input)
+
+                val path = "/users/${FirebaseUtils.getCurrentUserUID()}/participant_id/${System.currentTimeMillis()}"
+                val data = FirebaseUtils.FirebaseParticipantIdObject(participantId = input)
+                FirebaseUtils.uploadFirebaseEntry(path, data)
             }
         }
 

@@ -107,8 +107,9 @@
         <!-- Line break -->
         <View
             android:layout_width="0dp"
-            android:layout_height="0dp"
-            app:layout_flexBasisPercent="100%" />
+            android:layout_height="0.75dp"
+            app:layout_flexBasisPercent="100%"
+            android:background="#330000"/>
 
 
         <!-- Purpose Set -->
@@ -167,9 +168,9 @@
         <!-- Line break -->
         <View
             android:layout_width="0dp"
-            android:layout_height="0dp"
-            app:layout_flexBasisPercent="100%" />
-
+            android:layout_height="0.75dp"
+            app:layout_flexBasisPercent="100%"
+            android:background="#330000"/>
         <!-- Trigger Set -->
         <Button
             android:id="@+id/trigger_external"
@@ -178,7 +179,7 @@
             android:layout_margin="6dp"
             android:text="External nudge"
             android:textSize="11sp"
-            android:backgroundTint="@color/teal_700"
+            android:backgroundTint="@color/teal_900"
             android:textColor="@android:color/white"
             android:background="@drawable/dialog_corners"
             android:minWidth="64dp"
@@ -190,6 +191,19 @@
             android:layout_height="wrap_content"
             android:layout_margin="6dp"
             android:text="Inner motivation"
+            android:textSize="11sp"
+            android:backgroundTint="@color/teal_700"
+            android:textColor="@android:color/white"
+            android:background="@drawable/dialog_corners"
+            android:minWidth="64dp"
+            android:minHeight="42dp"/>
+
+        <Button
+            android:id="@+id/trigger_passtime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:text="Passing time"
             android:textSize="11sp"
             android:backgroundTint="@color/teal_500"
             android:textColor="@android:color/white"
@@ -226,7 +240,7 @@
             android:padding="2dp"
             android:text="@string/step1_header"
             android:textColor="@color/blue_gray_600"
-            android:textSize="14sp"
+            android:textSize="12sp"
             android:textStyle="bold" />
 
         <!-- Step 1 Options -->
@@ -236,7 +250,7 @@
             android:padding="4dp"
             android:text="@string/step1_options"
             android:textColor="@color/blue_gray_600"
-            android:textSize="14sp" />
+            android:textSize="11sp" />
 
         <!--
     <TextView
@@ -264,7 +278,7 @@
             android:padding="2dp"
             android:text="@string/step3_header"
             android:textColor="@color/blue_gray_600"
-            android:textSize="14sp"
+            android:textSize="12sp"
             android:textStyle="bold" />
 
         <!-- Step 3 Options -->
@@ -274,7 +288,7 @@
             android:padding="4dp"
             android:text="@string/step3_options"
             android:textColor="@color/blue_gray_600"
-            android:textSize="14sp" />
+            android:textSize="11sp" />
 
 
     </LinearLayout>

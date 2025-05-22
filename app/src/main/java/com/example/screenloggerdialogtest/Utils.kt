@@ -51,9 +51,6 @@ val CONTINUOUS_USAGE_TEXT = arrayOf(
     "Did you have something else to do? You just spent %s minutes on your phone."
 )
 
-
-const val DEBUG = true
-
 const val SETTINGS_PASSKEY = "7621"
 
 // variable name for Shared Preferences filename
@@ -81,8 +78,7 @@ const val STUDY_COMPLETE_TIMESTAMP: String = "STUDY_COMPLETE_TIMESTAMP"
 
 const val STUDY_DIALOG_LASTSHOWN_TIMESTAMP: String = "STUDY_DIALOG_LASTSHOWN_TIMESTAMP"
 const val DIALOG_RESPONSE : String = "DIALOG_RESPONSE"
-
-const val BEDTIME_GOAL_DEFAULT_VALUE: Int = 22*60
+const val SCREEN_OFF_QUESTIONNAIRE_PENDING : String = "SCREEN_OFF_QUESTIONNAIRE_PENDING"
 
 fun showClearConfirmationDialog(context: Context?) {
     context?.let {
@@ -305,27 +301,26 @@ Dialog generation for INT1 phase
 
  */
 
-const val DIALOG_TYPE_USAGE_FLOW_ESM : String = "DIALOG_TYPE_USAGE_FLOW_ESM"
+const val DIALOG_TYPE_USAGE_INITIATED : String = "DIALOG_TYPE_USAGE_INITIATED"
 const val DIALOG_TYPE_USAGE_CONTINUED : String = "DIALOG_TYPE_USAGE_CONTINUED"
 
 const val DIALOG_RESPONSE_SUBMITTED : String = "DIALOG_RESPONSE_SUBMITTED"
 const val DIALOG_RESPONSE_IGNORED : String = "DIALOG_RESPONSE_IGNORED"
 const val DIALOG_RESPONSE_AUTOMATICALLY_CLOSED : String = "DIALOG_RESPONSE_AUTOMATICALLY_CLOSED"
-const val DIALOG_RESPONSE_ADHERED : String = "DIALOG_RESPONSE_ADHERED"
 
 class UnlockDialog {
 
     private lateinit var dialogView: View
+
+    private var dialogAnswered : Boolean = false
+
     var dialogCreatedTimestamp : Long = 0L
-    var dialogType : String = ""
 
     private var localTestDialogVariable : Boolean = false
 
     private lateinit var closeButton : Button
     private lateinit var submitButton : Button
     private lateinit var infoText : TextView
-
-    private lateinit var extraQuestionLayout : LinearLayout
 
     private lateinit var whatdoinkCommunicationButton: Button
     private lateinit var whatdoinkLeisureButton: Button
@@ -339,6 +334,7 @@ class UnlockDialog {
 
     private lateinit var triggerExternalButton: Button
     private lateinit var triggerInnerButton: Button
+    private lateinit var triggerPasstimeButton: Button
     private lateinit var triggerNoReasonButton: Button
 
     private val row1 by lazy {
@@ -348,7 +344,7 @@ class UnlockDialog {
         listOf(purposeWorkButton, purposePersonalButton, purposeMixButton, purposeNotApplicableButton)
     }
     private val row3 by lazy {
-        listOf(triggerExternalButton, triggerInnerButton, triggerNoReasonButton)
+        listOf(triggerExternalButton, triggerInnerButton, triggerPasstimeButton, triggerNoReasonButton)
     }
 
     @SuppressLint("SetTextI18n")
@@ -379,7 +375,7 @@ class UnlockDialog {
         val wm = c.getSystemService(WINDOW_SERVICE) as WindowManager
         val inflater = LayoutInflater.from(c)
         dialogView = when (type) {
-            DIALOG_TYPE_USAGE_FLOW_ESM -> {
+            DIALOG_TYPE_USAGE_INITIATED -> {
                 inflater.inflate(R.layout.dialog_layout_unlocked, null)
             }
             DIALOG_TYPE_USAGE_CONTINUED -> {
@@ -407,9 +403,8 @@ class UnlockDialog {
 
         triggerExternalButton = dialogView.findViewById(R.id.trigger_external)
         triggerInnerButton = dialogView.findViewById(R.id.trigger_inner)
+        triggerPasstimeButton = dialogView.findViewById(R.id.trigger_passtime)
         triggerNoReasonButton = dialogView.findViewById(R.id.trigger_noreason)
-
-        extraQuestionLayout = dialogView.findViewById(R.id.dialogExtraQuestionLayout)
 
         closeButton.text = "Skip ${skipCount}/${MAXIMUM_SKIPS}"
 
@@ -425,6 +420,15 @@ class UnlockDialog {
             infoText.setText(R.string.dialog_unlocked_skip6)
         }
 
+        /*
+        val infoTextRes = when (type) {
+            DIALOG_TYPE_USAGE_INITIATED -> R.string.dialog_unlocked_info
+            DIALOG_TYPE_USAGE_CONTINUED -> R.string.dialog_unlocked_info_continued
+            else -> R.string.dialog_unlocked_info // optional fallback
+        }
+
+        infoText.setText(infoTextRes)
+*/
         setupButtonGroups(c)
 
         // Set up the layout parameters for the WindowManager
@@ -454,6 +458,8 @@ class UnlockDialog {
 
             // keeps track of required screenOffQuestionnaires
             setStudyVariable(c, DIALOG_RESPONSE, 0)
+
+            dialogAnswered = true
             close(c)
         }
 
@@ -490,17 +496,17 @@ class UnlockDialog {
 
                 if (!localTestDialogVariable) FirebaseUtils.sendEntryToDatabase("users/${FirebaseUtils.getCurrentUserUID()}/dialog_responses//${System.currentTimeMillis()}",data) // does this need onSuccesss?
 
+                dialogAnswered = true
+
                 close(c)
             }
         }
-
-        if (type == DIALOG_TYPE_USAGE_FLOW_ESM) extraQuestionLayout.isVisible = false
 
         setStudyVariable(c, STUDY_DIALOG_LASTSHOWN_TIMESTAMP, System.currentTimeMillis())
 
         // Set up a timer to close the dialog automatically after 5 minutes
         Handler(Looper.getMainLooper()).postDelayed({
-            if (!localTestDialogVariable) {
+            if (!localTestDialogVariable && !dialogAnswered) {
                 val sentData = IgnoredResponse(
                     dialogType = type,
                     dialogClosedTimestamp = System.currentTimeMillis(),

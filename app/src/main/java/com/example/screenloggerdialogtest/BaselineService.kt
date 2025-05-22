@@ -21,54 +21,10 @@ import com.example.screenloggerdialogtest.FirebaseUtils.ScreenEvent
 import com.example.screenloggerdialogtest.FirebaseUtils.getCurrentUserUID
 import com.example.screenloggerdialogtest.FirebaseUtils.uploadFirebaseEntry
 
-/**
- * ### Service Hierarchy Documentation
- *
- * This hierarchy explains how the services in the study build upon each other to address the
- * requirements of each phase. Each service inherits functionality from the previous phase while
- * introducing new components tailored to its specific needs.
- */
-
-/**
- * **BaseTrackingService**
- * - **Purpose**: Provides the core functionality for tracking basic smartphone usage events.
- * - **Components**:
- *   - Tracks `SCREEN_ON`, `SCREEN_OFF`, and `USER_PRESENT` events.
- *   - Logs basic screen usage data.
- *   - Forms the foundation for additional functionality in later phases.
- */
-
-/**
- * **INT1Service**
- * - **Purpose**: Extends `BaseTrackingService` to include goal-oriented usage interventions.
- * - **Components**:
- *   - Inherits all functionality from  both `BaseTrackingService` and `INT2Service`.
- *   - Adds **blocking dialogs** to notify the user when usage limits are exceeded.
- *   - Encourages conscious use of the smartphone through real-time interventions.
- */
-
-/**
- * **INT2Service**
- * - **Purpose**: Extends `INT1Service` by adding notifications to promote habit formation.
- * - **Components**:
- *   - Inherits all functionality from `BaseTrackingService.
- *   - Introduces **notifications** about smartphone usage to help participants track their progress.
- *   - Provides reminders and feedback to reinforce positive behavioral changes.
- */
-
-/**
- * **Hierarchy Summary**
- * - `BaseTrackingService`: Tracks core events (SCREEN_ON/OFF/USER_PRESENT).
- * - `INT1Service`: Adds **usage blocking dialogs** for goal-oriented interventions.
- * - `INT2Service`: Adds **usage notifications** to promote habit formation.
- *
- * The hierarchy ensures each service logically builds on its predecessor, minimizing redundancy while
- * enabling tailored interventions for each study phase.
- */
-
 const val MULTIPLE_SCREEN_EVENT_DELAY : Int = 1000
+
 // set to 0.5 after debug
-const val esm_propability = 0.5
+const val esm_propability = 1
 // set to 360000 (6 minutes) after debug
 const val MINIMUM_DIALOG_DELAY = 360000
 // set to 360000 (6 minute) after debug
@@ -100,9 +56,11 @@ open class BaselineService : Service() {
 
         startForeground(1, notification)
 
+        uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/lifecycle_events/${System.currentTimeMillis()}",
+            FirebaseUtils.FirebaseDataLoggingObject(event = "BASELINE_SERVICE_STARTED"))
+
         screenStateReceiver = ScreenStateReceiver()
         val filter = IntentFilter().apply {
-            //addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_SCREEN_OFF)
             addAction(Intent.ACTION_USER_PRESENT)
         }
@@ -111,7 +69,9 @@ open class BaselineService : Service() {
             receiverRegistered = true
         }
 
-        return START_STICKY // Or other flags depending on your use case
+        setStudyVariable(this, SCREEN_OFF_QUESTIONNAIRE_PENDING, 0)
+
+        return START_STICKY
     }
 
     override fun onBind(p0: Intent?): IBinder? {
@@ -123,10 +83,14 @@ open class BaselineService : Service() {
 
         if (::screenStateReceiver.isInitialized) {
             unregisterReceiver(screenStateReceiver)
+            receiverRegistered = false
         }
 
         notificationManager = getSystemService(NotificationManager::class.java)
-        if (::notificationManager.isInitialized) notificationManager.cancel(1)
+        if (::notificationManager.isInitialized) {
+            notificationManager.cancel(1)
+            notificationManager.cancel(1001)
+        }
     }
 
     open inner class ScreenStateReceiver : BroadcastReceiver() {
@@ -137,7 +101,7 @@ open class BaselineService : Service() {
         private var userPresentDialogShown : Boolean = false
 
         lateinit var screenEvent : ScreenEvent
-        var previousEventTimestamp : Long = 0L
+        var previousEventTimestamp : Long = 1L
         lateinit var previousEventType : String
         private var lastScreenEvent : Long = 0L
         private var lastScreenoff : Long = 0L
@@ -161,7 +125,10 @@ open class BaselineService : Service() {
             if (previousEventTimestamp == 0L) return
 
             val now = System.currentTimeMillis()
-            if (now - previousEventTimestamp < MULTIPLE_SCREEN_EVENT_DELAY) return
+            if (now - previousEventTimestamp < MULTIPLE_SCREEN_EVENT_DELAY && now != previousEventTimestamp) {
+                Log.d("Baseline", "Returned early from onReceive()")
+                return
+            }
 
             /*
             // something weird happening that causes double triggers with 1-10ms delay
@@ -202,6 +169,10 @@ open class BaselineService : Service() {
                     uploadFirebaseEntry("/users/${getCurrentUserUID()}/logging/screen_events/${System.currentTimeMillis()}",
                         FirebaseUtils.FirebaseDataLoggingObject(event = "ACTION_USER_PRESENT"))
 
+                    if (getStudyVariable(p0, SCREEN_OFF_QUESTIONNAIRE_PENDING, 0) == 1) {
+                        Toast.makeText(p0, "AndroidAtWork: Answer 'Why did you stop using your phone just now?' questionnaire by clicking the notification", Toast.LENGTH_SHORT).show()
+                    }
+
                     if (now - previousEventTimestamp > MULTIPLE_SCREEN_EVENT_DELAY) uploadEvent(previousEventType, previousEventTimestamp, p0)
                     // updating to start a NEW event with type ACTION_USER_PRESENT
                     // this event is stored when the NEXT even triggers and is then stored as even of THIS type.
@@ -210,10 +181,12 @@ open class BaselineService : Service() {
                     // Reset session start
                     sessionStartTimestamp = now
 
-                    // TODO new WORKING timer to show at 3,10,20 minutes
-                    if (Math.random() < esm_propability && (now - lastDialogTimestamp > MINIMUM_DIALOG_DELAY) && dialogSkipCount <= MAXIMUM_SKIPS) {
+                    if (Math.random() < esm_propability
+                            && (now - lastDialogTimestamp > MINIMUM_DIALOG_DELAY)
+                            && dialogSkipCount <= MAXIMUM_SKIPS
+                            && getStudyVariable(p0, SCREEN_OFF_QUESTIONNAIRE_PENDING, 0) == 0) {
                         dialog = UnlockDialog()
-                        dialog.showDialog(p0, DIALOG_TYPE_USAGE_FLOW_ESM)
+                        dialog.showDialog(p0, DIALOG_TYPE_USAGE_INITIATED)
                         Log.d("dialog", "Calling dialog to be shown")
                         lastDialogTimestamp = now
                         userPresentDialogShown = true
@@ -223,11 +196,8 @@ open class BaselineService : Service() {
                     else {
                         userPresentDialogShown = false
                     }
-
                 }
-
             }
-
         }
 
         private var usageFlowHandler: Handler? = null
@@ -247,7 +217,7 @@ open class BaselineService : Service() {
                     Toast.makeText(context, "AndroidAtWork: ESM arriving in 5 seconds", Toast.LENGTH_SHORT).show()
                     Handler(Looper.getMainLooper()).postDelayed({
                         val dialog = UnlockDialog()
-                        dialog.showDialog(context, DIALOG_TYPE_USAGE_FLOW_ESM)
+                        dialog.showDialog(context, DIALOG_TYPE_USAGE_CONTINUED)
                     }, 5000)
 
                     intervalIndex++
@@ -300,12 +270,12 @@ open class BaselineService : Service() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
-            val notificationManager = p0?.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val notificationManager = p0.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val channel = NotificationChannel(
                     "screen_off_channel", "Screen Off Prompts",
-                    NotificationManager.IMPORTANCE_DEFAULT
+                    NotificationManager.IMPORTANCE_HIGH
                 )
                 notificationManager.createNotificationChannel(channel)
             }
@@ -323,10 +293,12 @@ open class BaselineService : Service() {
                     .build()
 
                 notificationManager.notify(1001, notification)
+                setStudyVariable(p0, SCREEN_OFF_QUESTIONNAIRE_PENDING, 1)
 
                 // Schedule removal after 3 minutes
                 Handler(Looper.getMainLooper()).postDelayed({
                     notificationManager.cancel(1001)
+                    setStudyVariable(p0, SCREEN_OFF_QUESTIONNAIRE_PENDING, 0)
                 }, 180_000)
             }, 1000) // send notification after one second.
         }
