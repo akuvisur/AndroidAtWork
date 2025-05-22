@@ -18,7 +18,7 @@
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/textview_corners_blue"
+        android:background="@drawable/textview_corners_purple"
         android:layout_centerHorizontal="true"
         android:layout_alignParentTop="true"
         android:id="@+id/infoText"
@@ -32,7 +32,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/end_question_info"
-            android:textSize="20sp"
+            android:textSize="16sp"
             android:padding="4dp"
             android:textColor="@color/white"
             android:id="@+id/infoTextTextView"

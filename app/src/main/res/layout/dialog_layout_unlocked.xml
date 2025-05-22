@@ -24,7 +24,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/dialog_unlocked_info"
-            android:textSize="20sp"
+            android:textSize="16sp"
             android:padding="4dp"
             android:textColor="@color/white"
             android:id="@+id/infoTextTextView"/>
